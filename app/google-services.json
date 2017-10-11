@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "879079715914",
+    "firebase_url": "https://pcsandroidapp-c831a.firebaseio.com",
+    "project_id": "pcsandroidapp-c831a",
+    "storage_bucket": "pcsandroidapp-c831a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:879079715914:android:6399dda0f24d282b",
+        "android_client_info": {
+          "package_name": "com.prestoncinema.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "879079715914-6o2cbh095mn6r4fra0qdeslpdc9ljruh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.prestoncinema.app",
+            "certificate_hash": "238dbc769cb08d5c4be7694a9ea735a32cc8c9ad"
+          }
+        },
+        {
+          "client_id": "879079715914-k3d3pt61prcchnb5s2r9o7r4fe7h0uqq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARzbsXS4-Rt_hW39Ee1Rn36Xpi9nAE1K8"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "879079715914-k3d3pt61prcchnb5s2r9o7r4fe7h0uqq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

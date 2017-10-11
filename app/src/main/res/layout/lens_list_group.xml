@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="55dp"
+        android:id="@+id/lensHeaderImageView"
+        android:src="@drawable/ic_expand_more_white_24dp"
+        android:background="@drawable/default_background"
+        android:scaleX="1.5"
+        android:scaleY="1.5"
+        android:layout_alignParentStart="true"
+        android:paddingStart="10dp"
+        android:paddingEnd="5dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="55dp"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:text="Angenieux"
+        android:gravity="center_vertical"
+        android:background="@drawable/default_background"
+        android:id="@+id/lensListHeader"
+        android:layout_toEndOf="@+id/lensHeaderImageView"
+        android:layout_toStartOf="@+id/lensHeaderCountTextView"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="55dp"
+        android:textSize="22sp"
+        android:textColor="#FFFFFF"
+        android:text="16"
+        android:gravity="center_vertical|end"
+        android:background="@drawable/default_background"
+        android:id="@+id/lensHeaderCountTextView"
+        android:layout_alignParentEnd="true"
+        android:paddingStart="0dp"
+        android:paddingEnd="10dp"/>
+
+
+</RelativeLayout>

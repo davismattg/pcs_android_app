@@ -1,0 +1,106 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/default_background"
+    android:paddingBottom="0dp"
+    android:paddingLeft="0dp"
+    android:paddingRight="0dp"
+    android:paddingTop="10dp"
+    tools:context="com.prestoncinema.app.LensActivity">
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical" android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="10dp">
+
+            <Button
+                android:text="Receive"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="7dp"
+                android:id="@+id/ImportLensesButton"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/button_bg"
+                android:textSize="16sp"
+                android:onClick="enableLensImport" />
+
+            <Button
+                android:text="Send"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="7dp"
+                android:id="@+id/ExportLensesButton"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/button_bg"
+                android:textSize="16sp"
+                android:onClick="selectLensFile" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="0dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10sp"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="16dp"
+                android:text="Lens Files On This Device: "
+                android:layout_alignBottom="@+id/importLensFileButton" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Import"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/button_bg"
+                android:id="@+id/importLensFileButton"
+                android:onClick="importLensFile"
+                android:layout_alignParentRight="true" />
+        </RelativeLayout>
+
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="#666666"
+            android:dividerHeight="1dp"
+            android:id="@+id/LensFilesListView" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
+
+        <TextView
+            android:text="Disconnected"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="#000000"
+            android:textColor="#666666"
+            android:paddingLeft="60dp"
+            android:paddingRight="60dp"
+            android:id="@+id/ConnectedTextView"
+            android:textSize="18sp"
+            android:drawableEnd = "@drawable/icon_disconnected"
+            android:gravity="center" />
+    </LinearLayout>
+</RelativeLayout>

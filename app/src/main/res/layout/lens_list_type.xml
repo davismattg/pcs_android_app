@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="45dp"
+        android:id="@+id/lensTypeImageView"
+        android:src="@drawable/ic_expand_more_white_24dp"
+        android:layout_alignParentStart="true"
+        android:paddingStart="10dp"
+        android:paddingEnd="0dp"
+        android:background="#777777"/>
+
+    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="45dp"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:background="#777777"
+        android:paddingStart="0dp"
+        android:paddingEnd="10dp"
+        android:gravity="center_vertical"
+        android:text="Optimo"
+        android:layout_toRightOf="@+id/lensTypeImageView"
+        android:layout_toLeftOf="@+id/lensTypeAddImageView"
+        android:id="@+id/lensListType"/>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="45dp"
+        android:id="@+id/lensTypeAddImageView"
+        android:src="@drawable/ic_add_circle_24dp"
+        android:background="#777777"
+        android:focusable="false"
+        android:layout_alignParentEnd="true"
+        android:paddingEnd="10dp"
+        android:paddingStart="0dp" />
+</RelativeLayout>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.prestoncinema.app.FirmwareUpdateActivity">
+    <group android:id="@+id/firmwareMenuGroup">
+        <item
+            android:id="@+id/myFirmwareFilesMenuItem"
+            android:title="@string/my_firmware_files"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/firmwareVersionHistoryMenuItem"
+            android:title="@string/show_version_histories"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/firmwareUpdateCheckMenuItem"
+            android:title="@string/check_firmware_updates"
+            app:showAsAction="never" />
+    </group>
+</menu>

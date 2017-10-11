@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.prestoncinema.app">
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Needed to download files from dropbox -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <!-- Barcode reading -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Wifi permissions are only needed if the app needs to turn off wifi to improve ble connections -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:name=".PCSApplication"
+        android:theme="@style/AppTheme">
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <!--
+             Set custom default_lenses icon. This is used when no icon is set for incoming notification messages.
+             See README(https://goo.gl/l4GJaQ) for more.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+        <!--
+             Set color used with incoming notification messages. This is used when no color is set for the incoming
+             notification message. See README(https://goo.gl/6BKBk7) for more.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/pcsRed" />
+
+        <!-- Mqtt Service -->
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
+
+        <!-- firebase messaging service -->
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- firebase service for targeting individual menu_devices -->
+        <service android:name=".MyFirebaseInstanceIDService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".BlePinger"
+            android:exported="false" />
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.prestoncinema.app.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="fullUser"
+            android:theme="@style/AppTheme">
+
+            <!-- main filter -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".MainHelpActivity"
+            android:label="@string/title_activity_mainhelp"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".InfoActivity"
+            android:label="@string/title_activity_info"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".CommonHelpActivity"
+            android:parentActivityName=".InfoActivity"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.InfoActivity" />
+        </activity>
+        <activity
+            android:name=".UartActivity"
+            android:label="@string/title_activity_uart"
+            android:screenOrientation="fullUser"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".FirmwareUpdateActivity"
+            android:label="@string/title_activity_firmware_update"
+            android:screenOrientation="fullUser"
+            android:theme="@style/AppTheme"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".LensActivity"
+            android:label="@string/title_activity_lens"
+            android:screenOrientation="fullUser"
+            android:theme="@style/AppTheme"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.PICK" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.OPENABLE" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ManageLensesActivity"
+            android:label="@string/title_activity_manage_lenses"
+            android:screenOrientation="fullUser"
+            android:theme="@style/AppTheme"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.LensActivity" />
+        </activity>
+        <activity
+            android:name=".PinIOActivity"
+            android:label="@string/title_activity_pin_io"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".ControllerActivity"
+            android:label="@string/title_activity_controller"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".PadActivity"
+            android:label="@string/title_activity_pad"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="fullUser" />
+        <activity
+            android:name=".DevicesActivity"
+            android:label="@string/title_activity_devices"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="fullUser" />
+        <activity
+            android:name=".update.NotificationActivity"
+            android:label="@string/dfu_feature_title" />
+
+        <service android:name=".update.DfuService" />
+
+        <activity
+            android:name=".settings.ConnectedSettingsActivity"
+            android:label="@string/title_activity_connected_settings" />
+        <activity
+            android:name=".BeaconActivity"
+            android:label="@string/title_activity_beacon"
+            android:windowSoftInputMode="stateVisible|adjustPan" />
+        <activity
+            android:name=".ColorPickerActivity"
+            android:label="@string/title_activity_color_picker"
+            android:parentActivityName=".ControllerActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.ControllerActivity" />
+        </activity>
+        <activity
+            android:name=".settings.MqttUartSettingsActivity"
+            android:label="@string/title_activity_mqtt"
+            android:parentActivityName=".UartActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.UartActivity" />
+        </activity>
+        <activity
+            android:name=".settings.MqttUartSettingsCodeReaderActivity"
+            android:label="@string/title_activity_mqtt_uart_settings_code_reader"
+            android:parentActivityName=".settings.MqttUartSettingsActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.settings.MqttUartSettingsActivity" />
+        </activity>
+        <activity
+            android:name=".neopixel.NeopixelActivity"
+            android:label="@string/title_activity_neopixel"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.MainActivity" />
+        </activity>
+        <activity
+            android:name=".neopixel.NeopixelColorPickerActivity"
+            android:theme="@style/AppTheme.NoActionBarDialog" />
+        <activity
+            android:name=".neopixel.NeopixelBoardSelectorActivity"
+            android:theme="@style/AppTheme.NoActionBarDialog" />
+        <activity
+            android:name=".neopixel.NeopixelBoardTypeActivity"
+            android:theme="@style/AppTheme.NoActionBarDialog" />
+        <activity
+            android:name=".neopixel.NeopixelHelpActivity"
+            android:parentActivityName=".neopixel.NeopixelActivity"
+            android:screenOrientation="fullUser">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.neopixel.NeopixelActivity" />
+        </activity>
+        <!-- <activity -->
+        <!-- android:name=".FileSelectActivity" -->
+        <!-- android:label="@File Selector" > -->
+        <!-- <intent-filter> -->
+        <!-- <action -->
+        <!-- android:name="android.intent.action.PICK" /> -->
+        <!-- <category -->
+        <!-- android:name="android.intent.category.DEFAULT" /> -->
+        <!-- <category -->
+        <!-- android:name="android.intent.category.OPENABLE" /> -->
+        <!-- <data android:mimeType="text/plain" /> -->
+        <!-- </intent-filter> -->
+        <!-- </activity> -->
+        <activity android:name=".FirmwareInfoActivity"></activity>
+    </application>
+
+</manifest>

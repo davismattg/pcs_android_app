@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <!--android:id="@+id/NewLensLayout"-->
+    <!--android:orientation="vertical"-->
+    <!--android:background="#FFFFFF"-->
+    <!--android:padding="10dp">-->
+
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--<TextView-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Manufacturer"-->
+            <!--android:textStyle="bold"-->
+            <!--android:textColor="#000000"-->
+            <!--android:textSize="16sp"-->
+            <!--android:layout_weight="1"/>-->
+
+        <!--<TextView-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Series"-->
+            <!--android:textStyle="bold"-->
+            <!--android:textColor="#000000"-->
+            <!--android:textSize="16sp"-->
+            <!--android:layout_weight="1"/>-->
+    <!--</LinearLayout>-->
+
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_marginBottom="20dp"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--<Spinner-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="40dp"-->
+            <!--android:layout_weight="1"-->
+            <!--android:id="@+id/LensManufSpinner"/>-->
+
+        <!--<Spinner-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="40dp"-->
+            <!--android:layout_weight="1"-->
+            <!--android:id="@+id/LensTypeSpinner"/>-->
+    <!--</LinearLayout>-->
+
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--<TextView-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Focal Length"-->
+            <!--android:textStyle="bold"-->
+            <!--android:textColor="#000000"-->
+            <!--android:textSize="16sp"-->
+            <!--android:layout_marginEnd="15dp"-->
+            <!--android:layout_weight="1"/>-->
+
+        <!--<TextView-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Serial Number"-->
+            <!--android:textStyle="bold"-->
+            <!--android:textColor="#000000"-->
+            <!--android:textSize="16sp"-->
+            <!--android:layout_weight="1"/>-->
+    <!--</LinearLayout>-->
+
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--<LinearLayout-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="2"-->
+            <!--android:layout_marginEnd="15dp"-->
+            <!--android:orientation="horizontal">-->
+
+            <!--<EditText-->
+                <!--android:layout_width="0dp"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_weight="2"-->
+                <!--android:textSize="18sp"-->
+                <!--android:textStyle="bold"-->
+                <!--android:inputType="number"-->
+                <!--android:id="@+id/LensFocal1EditText"/>-->
+            <!--<TextView-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:textSize="18sp"-->
+                <!--android:text="-"-->
+                <!--android:textStyle="bold"-->
+                <!--android:textColor="#000000"-->
+                <!--android:id="@+id/LensFocalDashTextView"/>-->
+            <!--<EditText-->
+                <!--android:layout_width="0dp"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_weight="3"-->
+                <!--android:textSize="18sp"-->
+                <!--android:textStyle="bold"-->
+                <!--android:textColor="#000000"-->
+                <!--android:inputType="number"-->
+                <!--android:id="@+id/LensFocal2EditText"/>-->
+            <!--<TextView-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:textSize="18sp"-->
+                <!--android:text="mm"-->
+                <!--android:textColor="#000000"-->
+                <!--android:textStyle="bold"/>-->
+        <!--</LinearLayout>-->
+
+
+        <!--<EditText-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="2"-->
+            <!--android:textSize="18sp"-->
+            <!--android:id="@+id/LensSerialEditText"/>-->
+    <!--</LinearLayout>-->
+
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--<CheckBox-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="My List A"-->
+            <!--android:textColor="#000000"-->
+            <!--android:id="@+id/MyListACheckBox"/>-->
+
+        <!--<CheckBox-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="My List B"-->
+            <!--android:textColor="#000000"-->
+            <!--android:id="@+id/MyListBCheckBox"/>-->
+
+        <!--<CheckBox-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="My List C"-->
+            <!--android:textColor="#000000"-->
+            <!--android:id="@+id/MyListCCheckBox"/>-->
+    <!--</LinearLayout>-->
+
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:orientation="vertical"-->
+        <!--android:gravity="bottom|end">-->
+
+        <!--<Button-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Save"-->
+            <!--android:id="@+id/SaveLensButton"-->
+            <!--android:background="#007700"-->
+            <!--android:textColor="#FFFFFF"-->
+            <!--android:textSize="16sp"-->
+            <!--android:onClick="saveNewLens"/>-->
+    <!--</LinearLayout>-->
+</LinearLayout>

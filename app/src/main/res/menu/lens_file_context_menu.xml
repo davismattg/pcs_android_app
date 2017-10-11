@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:title="Rename"
+        android:id="@+id/renameLensFile" />
+    <item
+        android:title="Share"
+        android:id="@+id/shareLensFile" />
+    <item
+        android:title="Duplicate"
+        android:id="@+id/duplicateLensFile" />
+    <item
+        android:title="Delete"
+        android:id="@+id/deleteLensFile" />
+</menu>

@@ -1,0 +1,93 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/default_background"
+    android:paddingBottom="0dp"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.prestoncinema.app.FirmwareUpdateActivity">
+
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:orientation="vertical"-->
+        <!--android:layout_alignParentTop="true"-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:weightSum="1"-->
+        <!--android:id="@+id/linearLayout">-->
+
+        <!--<Button-->
+            <!--android:text="Program"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:id="@+id/ProgramButton"-->
+            <!--android:onClick="enableProgramMode"-->
+            <!--android:textColor="#FFFFFF"-->
+            <!--android:background="#CC0000"-->
+            <!--android:textSize="16sp"/>-->
+
+    <!--</LinearLayout>-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Firmware versions on this device:"-->
+            <!--android:textColor="#FFFFFF"-->
+            <!--android:layout_marginStart="0dp"-->
+            <!--android:textSize="16sp" />-->
+
+        <!--<android.support.v4.widget.SwipeRefreshLayout-->
+            <!--android:id="@+id/firmwareSwipeRefreshLayout"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_marginTop="10dp"-->
+            <!--android:layout_marginBottom="10dp"-->
+            <!--android:visibility="visible">-->
+
+            <!--<ListView-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:id="@+id/firmwareListView">-->
+            <!--</ListView>-->
+
+        <!--</android.support.v4.widget.SwipeRefreshLayout>-->
+
+        <TextView
+            android:text="@string/firmware_update_instructions"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_centerHorizontal="true"
+            android:id="@+id/firmwareUpdateInstructionsTextView" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:text="Not Connected"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="#000000"
+                android:textColor="#666666"
+                android:paddingLeft="100dp"
+                android:paddingRight="100dp"
+                android:id="@+id/ConnectedTextView"
+                android:textSize="18sp"
+                android:layout_alignParentBottom="true"
+                android:drawableEnd = "@drawable/icon_disconnected"
+                android:gravity="center" />
+        </RelativeLayout>
+
+    </LinearLayout>
+</RelativeLayout>

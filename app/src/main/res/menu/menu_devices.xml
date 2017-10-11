@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.prestoncinema.app.DevicesActivity">
+    <group android:id="@+id/devicesMenuGroup">
+        <item
+            android:id="@+id/eraseDeviceHistory"
+            android:title="Forget all devices"
+            app:showAsAction="never" />
+
+        <!--<item-->
+        <!--android:id="@+id/action_refreshcache"-->
+        <!--android:title="@string/action_refreshcache"-->
+        <!--app:showAsAction="never" />-->
+
+    </group>
+</menu>
