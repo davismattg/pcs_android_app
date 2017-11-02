@@ -1,27 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:title="Rename"
-        android:id="@+id/renameLens" />
-    <item
-        android:title="Add to My List A"
-        android:id="@+id/addToMyListA" />
-    <item
-        android:title="Remove from My List A"
-        android:id="@+id/removeFromMyListA" />
-    <item
-        android:title="Add to My List B"
-        android:id="@+id/addToMyListB" />
-    <item
-        android:title="Remove from My List B"
-        android:id="@+id/removeFromMyListB" />
-    <item
-        android:title="Add to My List C"
-        android:id="@+id/addToMyListC" />
-    <item
-        android:title="Remove from My List C"
-        android:id="@+id/removeFromMyListC" />
+        android:title="Edit"
+        android:id="@+id/editLensContextMenuItem" />
     <item
         android:title="Delete"
-        android:id="@+id/deleteLens" />
+        android:id="@+id/deleteLensContextMenuItem" />
 </menu>

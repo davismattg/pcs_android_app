@@ -92,7 +92,6 @@
             <!-- main filter -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -165,7 +164,8 @@
             android:label="@string/title_activity_manage_lenses"
             android:screenOrientation="fullUser"
             android:theme="@style/AppTheme"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.prestoncinema.app.LensActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.prestoncinema.app.LensActivity" />

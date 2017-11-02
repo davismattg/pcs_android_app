@@ -41,6 +41,7 @@ import android.text.Html;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -48,6 +49,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -242,6 +244,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
         mScanButton = (Button) findViewById(R.id.scanButton);
         mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
+        registerForContextMenu(mConnectedTextView);
 
         BluetoothDevice device = mBleManager.getConnectedDevice();
         if (device != null) {
@@ -338,6 +341,49 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         // Request Bluetooth scanning permissions
         requestLocationPermissionIfNeeded();
         requestExternalStoragePermissionIfNeeded();
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        ContextMenu.ContextMenuInfo info = (ContextMenu.ContextMenuInfo) menuInfo;
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.ble_device_context_menu, menu);
+
+        if (!isConnected) {
+            menu.findItem(R.id.DisconnectBLEMenuItem).setVisible(false);
+            menu.findItem(R.id.ForgetBLEMenuItem).setVisible(false);
+        }
+    }
+
+    // handle the user's item selection
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        ContextMenu.ContextMenuInfo info = (ContextMenu.ContextMenuInfo) item.getMenuInfo();
+
+        switch (item.getItemId()) {
+            case R.id.ScanBLEMenuItem:
+                Timber.d("Scan for new devices");
+                autostartScan();
+                return true;
+            case R.id.DisconnectBLEMenuItem:
+                Timber.d("Disconnect from this device");
+                autostartScan();
+                return true;
+            case R.id.ForgetBLEMenuItem:
+                Timber.d("Forget this device");
+                forgetBLEDevice(mBleManager.getConnectedDevice());
+                autostartScan();
+                return true;
+            case R.id.MyDevicesMenuItem:
+                Timber.d("Go to my devices");
+                Intent intent = new Intent();
+                intent.setClass(MainActivity.this, DevicesActivity.class);
+                startActivityForResult(intent, kActivityRequestCode_Devices);
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
     }
 
     @Override
@@ -1650,6 +1696,15 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         startActivity(intent);
     }
 
+    private void forgetBLEDevice(BluetoothDevice device) {
+        SharedPreferences sharedPref = getSharedPreferences("deviceHistory", MODE_PRIVATE);         // retrieve the file
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.remove(device.getAddress());
+        editor.apply();
+        Timber.d("shared pref: " + sharedPref.toString());
+        Timber.d("forget BLE device: " + device.getAddress());
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2010,7 +2065,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
 
     // endregion
-
 
     // region adapters
     private class ExpandableListAdapter extends BaseExpandableListAdapter {
