@@ -17,25 +17,18 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.text.InputType;
 import android.text.SpannableStringBuilder;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.prestoncinema.app.settings.ConnectedSettingsActivity;
 import com.prestoncinema.app.settings.MqttUartSettingsActivity;
 import com.prestoncinema.ble.BleManager;
 import com.prestoncinema.mqtt.MqttManager;
@@ -44,32 +37,15 @@ import com.prestoncinema.mqtt.MqttSettings;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.Charset;
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import timber.log.Timber;
-
-import static android.R.attr.direction;
-import static android.util.Log.d;
-//import static com.prestoncinema.app.R.id.firmwareVersionTextView;
-import static com.prestoncinema.app.R.id.lensProgress;
-import static com.prestoncinema.app.R.id.start;
-import static com.prestoncinema.app.R.id.uploadProgress;
-import static com.prestoncinema.app.R.xml.preferences;
 
 /**
 * Created by MATT on 2/23/2017.
@@ -676,15 +652,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             });
         }
     }
-
-    private void startHelp() {
-        // Launch app help activity
-        Intent intent = new Intent(this, CommonHelpActivity.class);
-        intent.putExtra("title", getString(R.string.uart_help_title));
-        intent.putExtra("help", "uart_help.html");
-        startActivity(intent);
-    }
-    // endregion
 
     @Override
     public void onDisconnected() {

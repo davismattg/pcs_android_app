@@ -1204,27 +1204,6 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
         }
     }
 
-    private void startHelp() {
-        // Launch app help activity
-        Intent intent = new Intent(this, CommonHelpActivity.class);
-        intent.putExtra("title", getString(R.string.uart_help_title));
-        intent.putExtra("help", "uart_help.html");
-        startActivity(intent);
-    }
-    // endregion
-
-    // region BleManagerListener
-    /*
-    @Override
-    public void onConnected() {
-
-    }
-
-    @Override
-    public void onConnecting() {
-
-    }
-*/
     @Override
     public void onDisconnected() {
         super.onDisconnected();

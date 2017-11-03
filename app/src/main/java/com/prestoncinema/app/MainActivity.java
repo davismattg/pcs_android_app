@@ -22,24 +22,19 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.PopupMenu;
-import android.text.Editable;
 import android.text.Html;
 import android.text.Spanned;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
@@ -49,13 +44,10 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -65,14 +57,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.prestoncinema.app.UartActivity;
-import com.prestoncinema.app.FirmwareUpdateActivity;
-import com.prestoncinema.app.R;
-import com.prestoncinema.app.neopixel.NeopixelActivity;
 import com.prestoncinema.app.settings.SettingsActivity;
-//import com.adafruit.bluefruit.le.connect.app.update.DownloadTask;
 import com.prestoncinema.app.update.FirmwareUpdater;
-//import com.adafruit.bluefruit.le.connect.app.PCSReleaseParser;
 import com.prestoncinema.app.update.ProgressFragmentDialog;
 import com.prestoncinema.app.update.ReleasesParser;
 import com.prestoncinema.ble.BleDevicesScanner;
@@ -80,7 +66,6 @@ import com.prestoncinema.ble.BleManager;
 import com.prestoncinema.ble.BleUtils;
 import com.prestoncinema.ui.utils.DialogUtils;
 import com.prestoncinema.ui.utils.ExpandableHeightExpandableListView;
-import com.prestoncinema.app.neopixel.NeopixelActivity;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -91,13 +76,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.prefs.Preferences;
 
 import timber.log.Timber;
 
 import static android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
-import static com.prestoncinema.app.R.xml.preferences;
-
 
 public class MainActivity extends AppCompatActivity implements BleManager.BleManagerListener, BleUtils.ResetBluetoothAdapterListener, FirmwareUpdater.FirmwareUpdaterListener {
     // Constants
@@ -406,10 +388,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             return true;
         }
         else if (id == R.id.action_scan) {
-//            isConnected = false;
-//            updateConnectedTextView(isConnected);
-            mBleManager.disconnect();
-//            autostartScan();
+            autostartScan();
             return true;
         }
         else if (id == R.id.action_devices) {
@@ -422,11 +401,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             intent.setClass(MainActivity.this, SettingsActivity.class);
             startActivityForResult(intent, kActivityRequestCode_Settings);
             return true;
-//        } else if (id == R.id.action_licenses) {
-//            Intent intent = new Intent(this, CommonHelpActivity.class);
-//            intent.putExtra("title", getString(R.string.licenses_title));
-//            intent.putExtra("help", "licenses.html");
-//            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -820,55 +794,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
         }
     }
-
-//    private void showChooseDeviceServiceDialog(final BluetoothDeviceData deviceData) {
-//        // Prepare dialog
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        String title = String.format(getString(R.string.scan_connectto_dialog_title_format), deviceData.getNiceName());
-//        String[] items = new String[kComponentsNameIds.length];
-//        for (int i = 0; i < kComponentsNameIds.length; i++)
-//            items[i] = getString(kComponentsNameIds[i]);
-//
-//        builder.setTitle(title)
-//                .setItems(items, new DialogInterface.OnClickListener() {
-//                    public void onClick(DialogInterface dialog, int which) {
-//                        switch (kComponentsNameIds[which]) {
-//                            case R.string.scan_connectservice_info: {          // Info
-//                                mComponentToStartWhenConnected = com.prestoncinema.app.InfoActivity.class;
-//                                break;
-//                            }
-//                            case R.string.scan_connectservice_uart: {           // Uart
-//                                mComponentToStartWhenConnected = FirmwareUpdateActivity.class;
-//                                break;
-//                            }
-//                            case R.string.scan_connectservice_pinio: {        // PinIO
-//                                mComponentToStartWhenConnected = com.prestoncinema.app.PinIOActivity.class;
-//                                break;
-//                            }
-//                            case R.string.scan_connectservice_controller: {    // Controller
-//                                mComponentToStartWhenConnected = com.prestoncinema.app.ControllerActivity.class;
-//                                break;
-//                            }
-//                            case R.string.scan_connectservice_beacon: {        // Beacon
-//                                mComponentToStartWhenConnected = com.prestoncinema.app.BeaconActivity.class;
-//                                break;
-//                            }
-//                            case R.string.scan_connectservice_neopixel: {       // Neopixel
-//                                mComponentToStartWhenConnected = NeopixelActivity.class;
-//                                break;
-//                            }
-//                        }
-//
-//                        if (mComponentToStartWhenConnected != null) {
-//                            connect(deviceData.device);            // First connect to device, and when connected go to selected activity
-//                        }
-//                    }
-//                });
-//
-//        // Show dialog
-//        AlertDialog dialog = builder.create();
-//        dialog.show();
-//    }
 
     private boolean manageBluetoothAvailability() {
         boolean isEnabled = true;
@@ -1361,27 +1286,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
         // Launch activity
         showConnectionStatus(false);
-
-
-
-
-        // set the activity to be UART cuz that's all we need for this project
-////        mComponentToStartWhenConnected = FirmwareUpdateActivity.class;
-//        mComponentToStartWhenConnected = MainActivity.class;
-////        if (mComponentToStartWhenConnected != null) {
-//        Log.d(TAG, "Start component:" + mComponentToStartWhenConnected);
-//        Intent intent = new Intent(MainActivity.this, mComponentToStartWhenConnected);
-//        if (mComponentToStartWhenConnected == com.prestoncinema.app.BeaconActivity.class && mSelectedDeviceData != null) {
-//            intent.putExtra("rssi", mSelectedDeviceData.rssi);
-//        }
-//        startActivityForResult(intent, kActivityRequestCode_ConnectedActivity);
-
-
-
-//        }
-//        else {
-//            Log.d(TAG, "component null");
-//        }
     }
 
     // region BleManagerListener

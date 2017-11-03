@@ -30,12 +30,6 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.prestoncinema.app.R;
-import com.prestoncinema.app.CommonHelpActivity;
-import com.prestoncinema.app.DownloadCompleteListener;
-import com.prestoncinema.app.DownloadFirmwareTask;
-import com.prestoncinema.app.UartInterfaceActivity;
-import com.prestoncinema.app.settings.ConnectedSettingsActivity;
 import com.prestoncinema.app.settings.MqttUartSettingsActivity;
 import com.prestoncinema.ble.BleManager;
 import com.prestoncinema.mqtt.MqttManager;
@@ -259,7 +253,7 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
 //        setDisplayFormatToTimestamp(isTimestampDisplayMode);
         mIsEchoEnabled = preferences.getBoolean(kPreferences_echo, true);
         mIsEolEnabled = preferences.getBoolean(kPreferences_eol, true);
-        invalidateOptionsMenu();        // udpate options menu with current values
+//        invalidateOptionsMenu();        // udpate options menu with current values
 
         // Continue
         onServicesDiscovered();
@@ -543,11 +537,9 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
 
         switch (id) {
             case R.id.action_help:
-                startHelp();
                 return true;
 
             case R.id.action_connected_settings:
-                startConnectedSettings();
                 return true;
 
             case R.id.action_refreshcache:
@@ -599,46 +591,17 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         return super.onOptionsItemSelected(item);
     }
 
-    private void startConnectedSettings() {
-        // Launch connected settings activity
-        Intent intent = new Intent(this, ConnectedSettingsActivity.class);
-        startActivityForResult(intent, kActivityRequestCode_ConnectedSettingsActivity);
-    }
-
     @Override
     protected void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
 //        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == kActivityRequestCode_ConnectedSettingsActivity && resultCode == RESULT_OK) {
             finish();
-        } else if (requestCode == kActivityRequestCode_MqttSettingsActivity && resultCode == RESULT_OK) {
+        }
+        else if (requestCode == kActivityRequestCode_MqttSettingsActivity && resultCode == RESULT_OK) {
 
-//        } else if (requestCode == kActivityRequestCode_SelectLensFile && resultCode == RESULT_OK) {
-//            Uri selectedFile = intent.getData();
-//            loadLensFile(selectedFile);
         }
     }
 
-    private void startHelp() {
-        // Launch app help activity
-        Intent intent = new Intent(this, CommonHelpActivity.class);
-        intent.putExtra("title", getString(R.string.uart_help_title));
-        intent.putExtra("help", "uart_help.html");
-        startActivity(intent);
-    }
-    // endregion
-
-    // region BleManagerListener
-    /*
-    @Override
-    public void onConnected() {
-
-    }
-
-    @Override
-    public void onConnecting() {
-
-    }
-*/
     @Override
     public void onDisconnected() {
         super.onDisconnected();

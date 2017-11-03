@@ -69,9 +69,6 @@
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
-        <service
-            android:name=".BlePinger"
-            android:exported="false" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -103,23 +100,6 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.prestoncinema.app.MainActivity" />
-        </activity>
-        <activity
-            android:name=".InfoActivity"
-            android:label="@string/title_activity_info"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="fullUser">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.MainActivity" />
-        </activity>
-        <activity
-            android:name=".CommonHelpActivity"
-            android:parentActivityName=".InfoActivity"
-            android:screenOrientation="fullUser">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.InfoActivity" />
         </activity>
         <activity
             android:name=".UartActivity"
@@ -171,31 +151,6 @@
                 android:value="com.prestoncinema.app.LensActivity" />
         </activity>
         <activity
-            android:name=".PinIOActivity"
-            android:label="@string/title_activity_pin_io"
-            android:screenOrientation="fullUser">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.MainActivity" />
-        </activity>
-        <activity
-            android:name=".ControllerActivity"
-            android:label="@string/title_activity_controller"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="fullUser">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.MainActivity" />
-        </activity>
-        <activity
-            android:name=".PadActivity"
-            android:label="@string/title_activity_pad"
-            android:screenOrientation="fullUser">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.MainActivity" />
-        </activity>
-        <activity
             android:name=".settings.SettingsActivity"
             android:label="@string/title_activity_settings"
             android:parentActivityName=".MainActivity"
@@ -211,21 +166,6 @@
 
         <service android:name=".update.DfuService" />
 
-        <activity
-            android:name=".settings.ConnectedSettingsActivity"
-            android:label="@string/title_activity_connected_settings" />
-        <activity
-            android:name=".BeaconActivity"
-            android:label="@string/title_activity_beacon"
-            android:windowSoftInputMode="stateVisible|adjustPan" />
-        <activity
-            android:name=".ColorPickerActivity"
-            android:label="@string/title_activity_color_picker"
-            android:parentActivityName=".ControllerActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.ControllerActivity" />
-        </activity>
         <activity
             android:name=".settings.MqttUartSettingsActivity"
             android:label="@string/title_activity_mqtt"
@@ -243,46 +183,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.prestoncinema.app.settings.MqttUartSettingsActivity" />
         </activity>
-        <activity
-            android:name=".neopixel.NeopixelActivity"
-            android:label="@string/title_activity_neopixel"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="fullUser">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.MainActivity" />
+
+        <activity android:name=".FirmwareInfoActivity">
+
         </activity>
-        <activity
-            android:name=".neopixel.NeopixelColorPickerActivity"
-            android:theme="@style/AppTheme.NoActionBarDialog" />
-        <activity
-            android:name=".neopixel.NeopixelBoardSelectorActivity"
-            android:theme="@style/AppTheme.NoActionBarDialog" />
-        <activity
-            android:name=".neopixel.NeopixelBoardTypeActivity"
-            android:theme="@style/AppTheme.NoActionBarDialog" />
-        <activity
-            android:name=".neopixel.NeopixelHelpActivity"
-            android:parentActivityName=".neopixel.NeopixelActivity"
-            android:screenOrientation="fullUser">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.neopixel.NeopixelActivity" />
-        </activity>
-        <!-- <activity -->
-        <!-- android:name=".FileSelectActivity" -->
-        <!-- android:label="@File Selector" > -->
-        <!-- <intent-filter> -->
-        <!-- <action -->
-        <!-- android:name="android.intent.action.PICK" /> -->
-        <!-- <category -->
-        <!-- android:name="android.intent.category.DEFAULT" /> -->
-        <!-- <category -->
-        <!-- android:name="android.intent.category.OPENABLE" /> -->
-        <!-- <data android:mimeType="text/plain" /> -->
-        <!-- </intent-filter> -->
-        <!-- </activity> -->
-        <activity android:name=".FirmwareInfoActivity"></activity>
     </application>
 
 </manifest>
