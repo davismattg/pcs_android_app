@@ -877,22 +877,15 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 //    }
 
     // if Prime lens, just show ___ mm. If zoom lens, show ____-____ mm
-    // TODO: "Other" could be prime or zoom. Need to give user ability to select
     private boolean isPrime(String type) {
         switch (type) {
             // all the lens types that are zoom
             case "Optimo":case "Rouge":case "HR":case "Cinema Zoom":case "Zoom":case "Premier Zoom":case "Alura Zoom":case "Primo Zoom":case "Anam. Zoom":
                 Timber.d("Zoom lens detected, switch to zoom lens FL mode");
                 return false;
-//                mLensFocal2EditText.setVisibility(View.VISIBLE);
-//                mLensFocalDashTextView.setVisibility(View.VISIBLE);
-//                break;
             default:            // a prime lens detected
                 Timber.d("Prime lens detected, switch to prime lens FL mode");
                 return true;
-//                mLensFocal2EditText.setVisibility(View.GONE);
-//                mLensFocalDashTextView.setVisibility(View.GONE);
-//                break;
         }
     }
 
@@ -2454,6 +2447,9 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         @Override
         public Object getChild(int groupPosition, int childPosition)
         {
+            Timber.d("--------------- getChild (" + groupPosition + ", " + childPosition + ") -------------");
+            Timber.d("listDataHeader: " + this._listDataHeader.toString());
+            Timber.d("listDataChild: " + this._listDataChild.toString());
             return this._listDataChild.get(this._listDataHeader.get(groupPosition)).get(childPosition);
         }
 
@@ -2780,7 +2776,8 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         @Override
         public int getChildrenCount(int groupPosition)
         {
-
+            Timber.d("getChildrenCount (" + groupPosition + ")");
+            Timber.d(this._listDataChildIndices.toString());
             try {
                 return this._listDataChildIndices.get(groupPosition).size();
             }
@@ -2830,6 +2827,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
             typeTextView.setText(typeTitle);
 
             int childCount = getChildrenCount(groupPosition);
+            Timber.d("childCount: " + childCount);
 
             if (childCount == 0) {
                 typeTextView.setTextColor(0xFFBBBBBB);

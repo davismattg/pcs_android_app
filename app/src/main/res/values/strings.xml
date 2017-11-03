@@ -195,10 +195,10 @@
 
     <string-array name="lens_type_Panavision">
         <item>Primo Prime</item>
-        <item>Anam. Prime</item>
-        <item>P70 Prime</item>
         <item>Primo Zoom</item>
+        <item>Anam. Prime</item>
         <item>Anam. Zoom</item>
+        <item>P70 Prime</item>
         <item>Other</item>
     </string-array>
 
