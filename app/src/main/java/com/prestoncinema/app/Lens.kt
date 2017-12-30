@@ -6,6 +6,7 @@ package com.prestoncinema.app
 
 class Lens (
         var id: Int,
+        var dataString: String,
         var manufacturer: String,
         var series: String,
         var manufacturerPosition: Int,

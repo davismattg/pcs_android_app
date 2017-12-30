@@ -1,22 +1,17 @@
 package com.prestoncinema.app;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.hardware.input.InputManager;
+import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.NavUtils;
-import android.text.Editable;
+import android.support.v4.view.ViewPager;
 import android.text.InputType;
-import android.text.TextWatcher;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -25,8 +20,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.inputmethod.BaseInputConnection;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
@@ -35,13 +28,10 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.NumberPicker;
-import android.widget.SimpleAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.prestoncinema.ui.tabs.TabFragmentOne;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -50,37 +40,21 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 
-import static android.R.attr.id;
-import static android.R.attr.key;
-import static android.R.attr.layout_marginLeft;
-import static android.R.attr.name;
-import static android.R.attr.tag;
-import static android.R.attr.type;
-import static android.R.attr.width;
-import static android.R.id.edit;
-import static android.R.id.input;
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+
 import static android.media.CamcorderProfile.get;
 import static android.util.Log.d;
-import static android.view.ViewGroup.LayoutParams.FILL_PARENT;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static com.prestoncinema.app.R.array.lens_type_Angenieux;
-import static com.prestoncinema.app.R.id.lensIndexTextView;
-import static com.prestoncinema.app.R.id.lensManufTextView;
-import static com.prestoncinema.app.R.id.lensSeriesTextView;
 
 
 import timber.log.Timber;
@@ -92,67 +66,46 @@ import timber.log.Timber;
  * TODO: Restrict input length on focal length (9999mm max) and serial/note length (14 bytes including focal length)
  */
 
-public class ManageLensesActivity extends UartInterfaceActivity implements AdapterView.OnItemSelectedListener { //implements MqttManager.MqttManagerListener
+public class ManageLensesActivity extends UartInterfaceActivity implements AdapterView.OnItemSelectedListener, MyListFragment.OnLensChangedListener, LensListFragment.OnLensAddedListener, LensListFragment.OnChildLensChangedListener { //implements MqttManager.MqttManagerListener
     // Log
     private final static String TAG = LensActivity.class.getSimpleName();
 
     // UI
-    private TextView mNumLensesTextView;
-//    private TextView mLensFileTextView;
-//    private TextView mHeaderCountTextView;
     private ProgressDialog mProgressDialog;
-    private ListView mLensesListView;
-//    private ArrayAdapter<String> adapter;
-    private SimpleAdapter adapter;
-    private LensParentLevel expAdapter;
+    private LensListParentExpListViewAdapter expAdapter;
+    private MyListExpListViewAdapter myListExpAdapter;
+    private ExpandableListView myListExpListView;
     private ExpandableListView expListView;
+    private TabLayout listTabs;
+    private ViewPager viewPager;
+//    private FloatingActionButton fab;
 
-    private List<String> listDataHeader = new ArrayList<>(Arrays.asList("Angenieux", "Canon", "Cooke", "Fujinon", "Leica", "Panavision", "Zeiss", "Other"));
-    private Map<Integer, Integer> listDataHeaderCount = new HashMap<Integer, Integer>(listDataHeader.size());
-    private HashMap<String, List<String>> listDataChild;
-    private HashMap<String, List<String>> lensTypeMap;
+
+    private List<String> lensListDataHeader = new ArrayList<>(Arrays.asList("Angenieux", "Canon", "Cooke", "Fujinon", "Leica", "Panavision", "Zeiss", "Other"));
+    private Map<Integer, Integer> lensListDataHeaderCount = new HashMap<Integer, Integer>(lensListDataHeader.size());
+
+    private List<String> myListDataHeader;
+    private HashMap<String, List<Lens>> myListDataChild;
+    private List<Lens> temporaryLensList = new ArrayList<>();
 
     private ArrayList<Lens> lensObjectArray = new ArrayList<>();
-    private List<String> lensManufHeader = new ArrayList<String>();
-    private HashMap<String, List<String>> lensTypeHeader = new HashMap<>();
-    private HashMap<String, List<String>> lensNameHeader = new HashMap<>();
-    private HashMap<String, List<String>> lensSerialAndNoteHeader = new HashMap<>();
-    private HashMap<String, List<String>> lensStatusHeader = new HashMap<>();
-    private HashMap<String, List<Integer>> lensNameIndex = new HashMap<>();
-//    private HashMap<String, Map<Integer, Map<String, String>>> lensInfoMap = new HashMap<>();
+    private List<String> lensListManufHeader = new ArrayList<String>();
+    private HashMap<String, List<String>> lensListTypeHeader = new HashMap<>();
 
-    private ArrayAdapter<CharSequence> manufAdapter;
-    private ArrayAdapter<CharSequence> typeAdapter;
-    private ArrayAdapter<CharSequence> sortAdapter;
-//    private Spinner mLensManufSpinner;
-//    private Spinner mLensTypeSpinner;
-//    private Spinner mSortBySpinner;
-//    private EditText mLensFocal1EditText;
-//    private EditText mLensFocal2EditText;
-//    private TextView mLensFocalDashTextView;
-//    private EditText mLensSerialEditText;
-//    private CheckBox myListACheckBox;
-//    private CheckBox myListBCheckBox;
-//    private CheckBox myListCCheckBox;
-//    private Button mSaveLensButton;
-//    private Button mAddLensButton;
     private ImageView mAddLensImageView;
 
-    // Lens
     private ArrayList<String> lensArray = new ArrayList<String>();
-//    private ArrayList<String> lensDisplayArray = new ArrayList<String>();
-//    private List<Map<String, String>> lensMap = new ArrayList<Map<String, String>>();
     private HashMap<Integer, HashMap<String, Object>> lensMap = new HashMap<Integer, HashMap<String, Object>>();
     private HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap = new HashMap<Integer, HashMap<Integer, ArrayList<Integer>>>();
     private int numLenses = 0;
-    private int currentLens = 0;
     private String lensFileString = "";
     private String lensFileStringStripped = "";
 
     private File lensFile;
-    private boolean lensFileLoaded = false;
-    private boolean changeDetected = false;
     private boolean isPrime = false;
+
+    private int currentTab;
+    private boolean myListEditEnabled = false;
 
     private int ang_byte = 0x0;
     private int can_byte = 0x1;
@@ -162,9 +115,6 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     private int pan_byte = 0x5;
     private int zei_byte = 0x6;
     private int oth_byte = 0xF;
-    private int mLA = 0x8;
-    private int mLB = 0x1;
-    private int mLC = 0x2;
     private int maxSerialLength = 14;
 
     private int lensId;                                                 // used to identify
@@ -172,7 +122,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     private byte[] STX = {02};
     private String STXStr = new String(STX);
 
-//    private enum sortManufAsc = {}
+    private LensListFragmentAdapter lensListFragmentAdapter;
 
     public ManageLensesActivity() throws MalformedURLException {
     }
@@ -182,129 +132,93 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_manage_lenses);
 
-//        // special logging shit to work with Huawei Phones
-//        if (BuildConfig.DEBUG) {
-//            String deviceManufacturer = android.os.Build.MANUFACTURER;
-//            if (deviceManufacturer.toLowerCase().contains("huawei")) {
-//                Timber.plant(new HuaweiTree());
-//            } else {
-//                Timber.plant(new Timber.DebugTree());
-//            }
-//        }
-
         // UI initialization
-        mNumLensesTextView = (TextView) findViewById(R.id.NumLensesTextView);
-//        mLensFileTextView = (TextView) findViewById(R.id.lensFileTextView);
-//        mHeaderCountTextView = (TextView) findViewById(R.id.lensHeaderCountTextView);
-//        mLensesListView = (ListView) findViewById(R.id.LensesListView);
-//        mLensManufSpinner = (Spinner) findViewById(R.id.LensManufSpinner);
-//        mLensTypeSpinner = (Spinner) findViewById(R.id.LensTypeSpinner);
-//        mSortBySpinner = (Spinner) findViewById(R.id.sortBySpinner);
-//        mLensFocal1EditText = (EditText) findViewById(R.id.LensFocal1EditText);
-//        mLensFocal2EditText = (EditText) findViewById(R.id.LensFocal2EditText);
-//        mLensFocalDashTextView = (TextView) findViewById(R.id.LensFocalDashTextView);
-//        mLensSerialEditText = (EditText) findViewById(R.id.LensSerialEditText);
-//        myListACheckBox = (CheckBox) findViewById(R.id.MyListACheckBox);
-//        myListBCheckBox = (CheckBox) findViewById(R.id.MyListBCheckBox);
-//        myListCCheckBox = (CheckBox) findViewById(R.id.MyListCCheckBox);
-//        mSaveLensButton = (Button) findViewById(R.id.SaveLensButton);
-//        mAddLensButton = (Button) findViewById(R.id.AddLensButton);
-        mAddLensImageView = (ImageView) findViewById(R.id.lensTypeAddImageView);
+        mAddLensImageView = findViewById(R.id.lensTypeAddImageView);
+//        fab = findViewById(R.id.LensListFab);
 
-        // create the array adapters that are used to populate the new lens and sorting spinners, using string-array resource for the values
-        manufAdapter = ArrayAdapter.createFromResource(this, R.array.lens_manuf_array, android.R.layout.simple_spinner_item);
-        typeAdapter = ArrayAdapter.createFromResource(this, R.array.lens_type_Angenieux, android.R.layout.simple_spinner_item);
-        sortAdapter = ArrayAdapter.createFromResource(this, R.array.lens_sort_array, android.R.layout.simple_spinner_item);
-
-        // set the view resource for the spinner items
-        manufAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        // assign the adapter and itemSelectedListener to each spinner
-//        mLensManufSpinner.setAdapter(manufAdapter);
-//        mLensManufSpinner.setSelection(0, false);
-//        mLensManufSpinner.setOnItemSelectedListener(this);
-
-//        mLensTypeSpinner.setAdapter(typeAdapter);
-//        mLensTypeSpinner.setSelection(0, false);
-//        mLensTypeSpinner.setOnItemSelectedListener(this);
-
-//        mSortBySpinner.setAdapter(sortAdapter);
-//        mSortBySpinner.setSelection(0, false);
-//        mSortBySpinner.setOnItemSelectedListener(this);
-
-//        adapter = new SimpleAdapter(ManageLensesActivity.this, lensMap, R.layout.lens_list_item, new String[] {"manufString", "serialString", "flString", "statusString"}, new int[] {R.id.lensTypeTextView, R.id.lensSerialTextView, R.id.lensFocalTextView, R.id.lensStatusTextView});
-//        mLensesListView.setAdapter(adapter);
-//        mLensesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-//                // make a toast here that informs the user to long-press for editing abilities
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        Context context = getApplicationContext();
-//                        CharSequence toastText = "Press and hold to edit this lens.";
-//                        int duration = Toast.LENGTH_SHORT;
-//
-//                        Toast toast = Toast.makeText(context, toastText, duration);
-//                        toast.show();
-//                    }
-//                });
-////                Timber.d("list item clicked. id: " + id);
-//            }
-//        });
-
-        listDataChild = populateLensTypeHeader(listDataHeader);
-
-        for (int i=0; i < listDataHeader.size(); i++) {
-            listDataHeaderCount.put(i, 0);
+        for (int i = 0; i < lensListDataHeader.size(); i++) {
+            lensListDataHeaderCount.put(i, 0);
             lensPositionMap.put(i, new HashMap<Integer, ArrayList<Integer>>());
-//            listDataHeaderCount.put(i == 6 ? "F" : String.valueOf(i), 0);
-//            listDataHeaderCount.put(i == 6 ? 15 : i, 0);
         }
 
-        lensManufHeader = Arrays.asList(getResources().getStringArray(R.array.lens_manuf_array));
-        lensTypeHeader = populateLensTypeHeader(lensManufHeader);
-        lensNameHeader = populateLensNameHeader(lensTypeHeader);
-        lensSerialAndNoteHeader = populateLensNameHeader(lensTypeHeader);
-        lensStatusHeader = populateLensNameHeader(lensTypeHeader);
-        lensNameIndex = populateLensIndex(lensTypeHeader);
-//        lensInfoMap = populateLensMap(lensTypeHeader);
+        lensListManufHeader = Arrays.asList(getResources().getStringArray(R.array.lens_manuf_array));                                                   // use the lens manuf string array resource to populate the headers of the lens list view
+        lensListTypeHeader = populateLensTypeHeader(lensListManufHeader);                                                                               // using the header, populate the children (lens series) header
 
-        expAdapter = new LensParentLevel(this, lensManufHeader, lensTypeHeader);
-        expListView = (ExpandableListView) findViewById(R.id.ParentLensLevel);
-        expListView.setAdapter(expAdapter);
+        /* Initialize the My List HashMap used to populate the My List ExpandableListView by adding empty List<Lens> for each list */
+        myListDataChild = new HashMap<String, List<Lens>>();
+        myListDataChild.put("My List A", new ArrayList<Lens>());
+        myListDataChild.put("My List B", new ArrayList<Lens>());
+        myListDataChild.put("My List C", new ArrayList<Lens>());
 
-//        registerForContextMenu(expListView);
-
-//        expListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                Timber.d("view: " + view.toString());
-//            }
-//        });
-//        mLensesListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-//            @Override
-//            public boolean onItemLongClick(AdapterView<?> parent, View v, int position, long id) {
-//                Timber.d("item long-clicked: " + position);
-//                return true;
-//            }
-//        });
-
-        // register the longclick menu for when the user long-presses on a lens within the list
-//        registerForContextMenu(mLensesListView);
-
-        /* Get the filename string from the previous activity (LensActivity) */
+        /* Get the filename string from the previous activity (LensActivity) and import the file */
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             lensFileString = extras.getString("lensFile");
-            lensFileStringStripped = lensFileString.split("/")[lensFileString.split("/").length - 1].split(".lens")[0];
-            setTitle(lensFileStringStripped);
+            String[] fileStringArray = lensFileString.split("/");
+            String tempLensFileString = fileStringArray[fileStringArray.length - 1];
+            lensFileStringStripped = tempLensFileString.substring(0, tempLensFileString.length() - 5); //.substring(0, lensFileString.length() - 5);
 
+            /* IMPORT THE LENS FILE INTO lensArray and lensObjectArray */
             lensFile = new File(lensFileString);
             importLensFile(lensFile);
+
+            /* Set the activity title in the top bar */
+            updateActivityTitle();
         }
+
+        /* Initialize the data header for the My List ListView */
+        myListDataHeader = Arrays.asList(getResources().getStringArray(R.array.my_list_array));                                                         // use the my list string array resource to populate the header of the my list list view
+
+        /* Initialize the FloatingActionButton used to edit My Lists */
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+////                Timber.d("FAB clicked, tab: " + currentTab);
+//                int tabToEdit = 0;
+//                if (myListEditEnabled) {                    // done editing
+//                    myListEditEnabled = false;
+//                }
+//                else {                                      // enable editing
+//                    myListEditEnabled = true;
+//                    tabToEdit = currentTab;
+//                }
+//                respondToFab(myListEditEnabled, tabToEdit);
+//            }
+//        });
+
+        /* Initialize the tabs that are used to toggle between My List and All Lenses ExpandableListViews */
+        viewPager = findViewById(R.id.LensFileTabViewPager);
+        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, ManageLensesActivity.this);
+        viewPager.setAdapter(lensListFragmentAdapter);
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                currentTab = position;
+
+//                switch (position) {
+//                    case 3:
+//                        if (!myListEditEnabled) {
+//                            fab.hide();
+//                        }
+//                        break;
+//                    default:
+//                        fab.show();
+//                        break;
+//                }
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
+
+        listTabs = (TabLayout) findViewById(R.id.LensFileTabLayout);
+        listTabs.setupWithViewPager(viewPager);
     }
 
     @Override
@@ -323,47 +237,67 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         super.onDestroy();
     }
 
-    // when the user presses the back button, if changes are detected, prompt them to save the file
-//    @Override
-//    public void onBackPressed() {
-//        Timber.d("Back button pressed");
-//        super.onBackPressed();
-//
-//    }
-////        if (changeDetected == true) {
-////            runOnUiThread(new Runnable() {
-////                @Override
-////                public void run() {
-////                    new AlertDialog.Builder(ManageLensesActivity.this)
-////                            .setMessage("Would you like to save your changes?")
-////                            .setPositiveButton("Save", new DialogInterface.OnClickListener() {
-////                                @Override
-////                                public void onClick(DialogInterface dialog, int which) {
-////                                    saveLensFile(lensFileString, false);
-////                                }
-////                            })
-////                            .setNeutralButton("Save As...", new DialogInterface.OnClickListener() {
-////                                @Override
-////                                public void onClick(DialogInterface dialog, int which) {
-////                                    saveLensFileAs();
-////                                }
-////                            })
-////                            .setNegativeButton("Discard", new DialogInterface.OnClickListener() {
-////                                @Override
-////                                public void onClick(DialogInterface dialog, int which) {
-////                                    Intent intent = new Intent(ManageLensesActivity.this, LensActivity.class);
-////                                    startActivity(intent);
-////                                }
-////                            })
-////                            .setCancelable(true)
-////                            .show();
-////                }
-////            });
-////        }
-////        else {
-////            super.onBackPressed();
-////        }
-//    }
+
+    /* ---------------------------------------------------------------------------------------------------------------------------- */
+    /* ---------------------------------------------------------------------------------------------------------------------------- */
+    /* The following methods facilitate communication with the tabbed ViewPager that holds the My Lists and All Lenses lists. */
+    /** onLensChanged handles changes made to a lens from within one of the "My List" tabs
+     * @param lens
+     * @param focal
+     * @param serial
+     * @param note
+     * @param listA
+     * @param listB
+     * @param listC
+     */
+    public void onLensChanged(Lens lens, String focal, String serial, String note, boolean listA, boolean listB, boolean listC) {
+        editLens(lens, focal, serial, note, listA, listB, listC);
+    }
+
+    /** onLensDeleted handles when the user deletes a lens from the popup within one of the "My List" tabs
+     * @param lens
+     */
+    public void onLensDeleted(Lens lens) {
+        deleteLens(lens.getId());
+    }
+
+    /** onLensAdded handles new lenses that are added from the "All Lenses" tab by clicking the + button next to a lens series header
+     *
+     * @param manuf
+     * @param series
+     * @param focal1
+     * @param focal2
+     * @param serial
+     * @param note
+     */
+    public void onLensAdded(String manuf, String series, int focal1, int focal2, String serial, String note) {
+        buildLensData(manuf, series, focal1, focal2, serial, note, false, false, false);
+    }
+
+    /** onChildLensChanged handles changes to existing lenses from within the "All Lenses" tab
+     *
+     * @param lens
+     * @param focal
+     * @param serial
+     * @param note
+     * @param listA
+     * @param listB
+     * @param listC
+     */
+    public void onChildLensChanged(Lens lens, String focal, String serial, String note, boolean listA, boolean listB, boolean listC) {
+        editLens(lens, focal, serial, note, listA, listB, listC);
+    }
+
+    /** onChildLensDeleted handles deleting a lens when the user selects "Delete" from the Edit Lens dialog
+     *
+     * @param lens
+     */
+    public void onChildLensDeleted(Lens lens) {
+        deleteLens(lens.getId());
+    }
+    /* ------------------------------------------------------------------------------------------------------------------------------------------- */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------- */
+
 
     // the menu that's created when the user long-presses on a lens within the lens list
     @Override
@@ -468,6 +402,17 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 
         return super.onOptionsItemSelected(item);
     }
+
+//    private void respondToFab(boolean editEnabled, int tab) {
+//        if (!editEnabled) {
+//            Timber.d("save the changes to tab: " + tab);
+//            fab.setImageResource(R.drawable.ic_edit_24dp);
+//        }
+//        else {
+//            Timber.d("enable editing for tab: " + tab);
+//            fab.setImageResource(R.drawable.ic_done_white_24dp);
+//        }
+//    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // this function brings up a dialog box where the user can enter a new name for the lens file.  //
@@ -837,7 +782,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 //        // access the string-array resource where the manufacturer names are stored
 //        manufNames = Arrays.asList(getResources().getStringArray(R.array.lens_manuf_array));
 //
-//        for (String manufName : listDataHeader) {                                                   // loop through array of manuf names
+//        for (String manufName : lensListDataHeader) {                                                   // loop through array of manuf names
 //            final int arrayId;                                            // the ID of the string-array resource containing the lens names
 //
 //            switch (manufName) {
@@ -876,19 +821,6 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 //        return lensTypes;
 //    }
 
-    // if Prime lens, just show ___ mm. If zoom lens, show ____-____ mm
-    private boolean isPrime(String type) {
-        switch (type) {
-            // all the lens types that are zoom
-            case "Optimo":case "Rouge":case "HR":case "Cinema Zoom":case "Zoom":case "Premier Zoom":case "Alura Zoom":case "Primo Zoom":case "Anam. Zoom":
-                Timber.d("Zoom lens detected, switch to zoom lens FL mode");
-                return false;
-            default:            // a prime lens detected
-                Timber.d("Prime lens detected, switch to prime lens FL mode");
-                return true;
-        }
-    }
-
     // ask the user if they want to delete a lens; called when they select the "Delete" option from the lens context menu
     private void confirmLensDelete(AdapterView.AdapterContextMenuInfo lens) {
         final int id = (int) lens.id;
@@ -924,38 +856,25 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     private void importLensFile(File lensFile) {
         Timber.d("Customer selected lens file: " + lensFile.toString());
         BufferedReader reader = null;
-        lensArray.clear();                                                  // clear the lens array since we'll be populating it with the file contens
+        lensArray.clear();                                                                          // clear the lens array since we'll be populating it with the file contens
 
         try {
-            FileInputStream lensIn = new FileInputStream(lensFile);         // open a FileInputStream for the selected file
+            FileInputStream lensIn = new FileInputStream(lensFile);                                 // open a FileInputStream for the selected file
             reader = new BufferedReader(
-                    new InputStreamReader(lensIn));                         // read the file
-            String line;                                                    // read the file one line at a time
+                    new InputStreamReader(lensIn));                                                 // read the file
+            String line;                                                                            // read the file one line at a time
             while ((line = reader.readLine()) != null) {
                 if (line.length() > 0) {
-                    lensArray.add(line);                                    // add the read lens into the array
+                    lensArray.add(line);                                                            // add the read lens into the array
                 }
             }
-            if (lensArray.size() > 0) {                                     // make sure something was actually imported
-                lensFileLoaded = true;                                      // set the flag
-                numLenses = lensArray.size();                               // the number of lenses, used for loops and display on the UI
-                currentLens = 0;                                            // index mostly used for looping
+            if (lensArray.size() > 0) {                                                             // make sure something was actually imported
+                numLenses = lensArray.size();                                                       // the number of lenses, used for loops and display on the UI
 
                 lensObjectArray = new ArrayList<>(numLenses);
-
-                for (int i=0; i < lensArray.size(); i++) {
-                    String len = lensArray.get(i);
-                    countLensLine(len);
-                    lensObjectArray.add(i, parseLensLine(len, i, true));
-                }
+                populateAllLenses();
+                populateMyLists();
             }
-
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mNumLensesTextView.setText(numLenses + " lenses in this file");                     // setting the UI to display how many lenses were found
-                }
-            });
         } catch (Exception ex) {
             Timber.d("importLensFile()", ex);
         } finally {
@@ -969,6 +888,53 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         }
     }
 
+    private void populateAllLenses() {
+        Timber.d("populating lenses (" + numLenses + ")");
+        lensObjectArray.clear();
+        initializeLensListHeaderCount();
+        for (int i=0; i < numLenses; i++) {
+            String len = lensArray.get(i);
+            countLensLine(len);
+            Lens thisLens = parseLensLine(len, i, true);
+
+            lensObjectArray.add(i, thisLens);
+        }
+    }
+
+    private void populateMyLists() {
+        myListDataChild.get("My List A").clear();
+        myListDataChild.get("My List B").clear();
+        myListDataChild.get("My List C").clear();
+
+        for (Lens thisLens : lensObjectArray) {
+            if (thisLens.getMyListA()) {
+                temporaryLensList = myListDataChild.get("My List A");
+                temporaryLensList.add(thisLens);
+                myListDataChild.put("My List A", temporaryLensList);
+            }
+
+            if (thisLens.getMyListB()) {
+                temporaryLensList = myListDataChild.get("My List B");
+                temporaryLensList.add(thisLens);
+                myListDataChild.put("My List B", temporaryLensList);
+            }
+
+            if (thisLens.getMyListC()) {
+                List<Lens> myListCLenses = myListDataChild.get("My List C");
+                myListCLenses.add(thisLens);
+                myListDataChild.put("My List C", myListCLenses);
+            }
+        }
+    }
+
+    private void initializeLensListHeaderCount() {
+        lensListDataHeaderCount.clear();
+        for (int i = 0; i < lensListDataHeader.size(); i++) {
+            lensListDataHeaderCount.put(i, 0);
+//            lensPositionMap.put(i, new HashMap<Integer, ArrayList<Integer>>());
+        }
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     //                             Custom function to sort the lens Array                              //
     // this function looks at each lens data string after truncating the part before it. For example,  //
@@ -979,56 +945,53 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     // indices.                                                                                        //
     //  TODO: Finish sorting logic and make it responsive to the sorting spinner                       //
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-//    private ArrayList<String> sortLensArray(ArrayList<String> arr, String param, String dir) {
-    private void sortLensArray(ArrayList<String> arr, String param, String dir) {
-        Timber.d("sorting lens array --------------------------------------------");
-
-        ArrayList<String> sub_arr = new ArrayList<String>(arr.size());                       // initialize the ArrayList that will store the truncated strings
-        ArrayList<String> new_arr = new ArrayList<String>(arr.size());                  // initialize the ArrayList that will store the rearranged array
-        int sub_ind = 0;                                                                // the index to chop the lens strings. depends on param
-        switch(param) {
-            case "manufacturer":
-                sub_ind = 17;               // lens manuf bytes start at index 17
-                break;
-            case "fLength":
-                sub_ind = 19;               // focal length starts at index 19
-                break;
-        }
-
-        for (int i=0; i < arr.size(); i++) {
-            sub_arr.add(arr.get(i).substring(sub_ind));
-        }
-
-        Collections.sort(sub_arr);
-
-        for (int j=0; j < sub_arr.size(); j++) {
-            for (String str : arr) {
-                if (str.contains(sub_arr.get(j))) {
-                    new_arr.add(j, str);
-                }
-            }
-        }
-
-        lensArray.clear();
-        lensArray = new_arr;
-    }
+//    private void sortLensArray(ArrayList<String> arr, String param, String dir) {
+//        Timber.d("sorting lens array --------------------------------------------");
+//
+//        ArrayList<String> sub_arr = new ArrayList<String>(arr.size());                       // initialize the ArrayList that will store the truncated strings
+//        ArrayList<String> new_arr = new ArrayList<String>(arr.size());                  // initialize the ArrayList that will store the rearranged array
+//        int sub_ind = 0;                                                                // the index to chop the lens strings. depends on param
+//        switch(param) {
+//            case "manufacturer":
+//                sub_ind = 17;               // lens manuf bytes start at index 17
+//                break;
+//            case "fLength":
+//                sub_ind = 19;               // focal length starts at index 19
+//                break;
+//        }
+//
+//        for (int i=0; i < arr.size(); i++) {
+//            sub_arr.add(arr.get(i).substring(sub_ind));
+//        }
+//
+//        Collections.sort(sub_arr);
+//
+//        for (int j=0; j < sub_arr.size(); j++) {
+//            for (String str : arr) {
+//                if (str.contains(sub_arr.get(j))) {
+//                    new_arr.add(j, str);
+//                }
+//            }
+//        }
+//
+//        lensArray.clear();
+//        lensArray = new_arr;
+//    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////
     // This function takes in the raw string from the lens file and formats it in the way we want  //
     // to display it in the UI. Check the HU3 document/ask Mirko for the data structure            //
     /////////////////////////////////////////////////////////////////////////////////////////////////
     private Lens parseLensLine(String line, int index, boolean isNewLens) {
-        Timber.d("parse line: " + line);
-
         /* Initialize the Lens object that will store all the info about this lens */
-        Lens lensObject = new Lens(index, "", "", 0, 0,
+        Lens lensObject = new Lens(index, "","", "", 0, 0,
                 0, 0, false, "", "", false,
                 false, false, false, false, false);
 
         byte[] bytes = line.getBytes();                                                             // get the hex bytes from the ASCII string
 
         /* Lens status (calibrated, myList, etc) */
-        byte[] status1 = Arrays.copyOfRange(bytes, 15, 17);                               // bytes 15 and 16 (ASCII bytes) are the first (hex) status byte
+        byte[] status1 = Arrays.copyOfRange(bytes, 14, 16);                               // bytes 15 and 16 (ASCII bytes) are the first (hex) status byte
         HashMap<String, boolean[]> statusMap = convertLensStatus(status1);
         lensObject.setCalibratedF(statusMap.get("calibrated")[0]);
         lensObject.setCalibratedI(statusMap.get("calibrated")[1]);
@@ -1038,7 +1001,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         lensObject.setMyListC(statusMap.get("myList")[2]);
 
         /* Lens Manufacturer and Type */
-        byte[] status2 = Arrays.copyOfRange(bytes, 17, 19);                                         // bytes 17 and 18 (ASCII bytes) are the second (hex) status byte
+        byte[] status2 = Arrays.copyOfRange(bytes, 16, 18);                                         // bytes 17 and 18 (ASCII bytes) are the second (hex) status byte
         HashMap<String, Object> nameAndTypeMap = convertManufName(status2);
         lensObject.setManufacturer((String) nameAndTypeMap.get("manufacturer"));
         lensObject.setSeries((String) nameAndTypeMap.get("series"));
@@ -1065,18 +1028,18 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         lensPositionMap.put(manufPos, currentLensPositionMap);                                      // add the ids back into the correct position of the overall lens position map
 
         /* Focal length(s) */
-        String focal1 = line.substring(19, 23);                                                     // bytes 19-22 (ASCII bytes) are the first (hex) focal length byte
-        String focal2 = line.substring(23, 27);                                                     // bytes 23-26 (ASCII bytes) are the second (hex) focal length byte
+        String focal1 = line.substring(18, 22);                                                     // bytes 19-22 (ASCII bytes) are the first (hex) focal length byte
+        String focal2 = line.substring(22, 26);                                                     // bytes 23-26 (ASCII bytes) are the second (hex) focal length byte
         lensObject.setFocalLength1(convertFocalLength(focal1));
         lensObject.setFocalLength2(convertFocalLength(focal2));
 
         /* Serial number */
-        String serial = line.substring(27, 31);
+        String serial = line.substring(26, 30);
         String convertedSerial = convertSerial(serial);
         lensObject.setSerial(convertedSerial);
 
         /* Note */
-        String lensName = line.substring(0, 15);                                                    // get the substring that contains the note (& serial & focal lengths)
+        String lensName = line.substring(0, 14);                                                    // get the substring that contains the note (& serial & focal lengths)
         int noteBegin;
         String lensNote;
         if (convertedSerial.length() > 0) {                                                         // serial string present, look for it in the lens name
@@ -1088,6 +1051,9 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 
         lensNote = lensName.substring(noteBegin).trim();                                            // grab the note using the index determined above
         lensObject.setNote(lensNote);                                                               // set the note property of the lens object
+
+        /* Data String (raw String that gets sent to HU3 */
+        lensObject.setDataString(line);
 
         return lensObject;
     }
@@ -1393,7 +1359,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     }
 
     /* Method to build the correctly formatted focal length(s) String depending on if the lens is a zoom or prime (focalLength2 == 0) */
-    private String constructFocalLengthString(int fL1, int fL2) {
+    public static String constructFocalLengthString(int fL1, int fL2) {
         if (fL2 > 0) {                                                                     // fL2 > 0 implies zoom lens
             return String.valueOf(fL1) + "-" + String.valueOf(fL2) + "mm";
         }
@@ -1621,7 +1587,6 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
                 }
                 try {
                     fos.close();
-                    currentLens = 0;
                     Timber.d("Changes saved successfully.");
 //                    Intent intent = new Intent(ManageLensesActivity.this, LensActivity.class);
 //                    startActivity(intent);
@@ -1668,7 +1633,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     private void deleteLens(int id) {
         Timber.d("delete lens ID: " + id);
         lensArray.remove(id);
-        lensMap.remove(id);
+        lensObjectArray.remove(id);
         updateLensList();
     }
 
@@ -1942,7 +1907,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    private boolean editLens(int lensInd, int childPosition, String manufTitle, String typeTitle, String focal1, String focal2, String serial, boolean myListA, boolean myListB, boolean myListC) {
-    private boolean editLens(Lens lensObject, String focalLen, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+    private void editLens(Lens lensObject, String focalLen, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
         Timber.d("///////////////////////////////////////////////////////////////");
         Timber.d("editLens - params: ");
         Timber.d("focal: " + focalLen);
@@ -2053,10 +2018,12 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         Timber.d(String.valueOf(newLensObject.getManufacturerPosition()));
         Timber.d(String.valueOf(newLensObject.getSeriesPosition()));
 
+//        lensObjectArray.remove(lensInd);
         lensObjectArray.set(lensInd, newLensObject);
+
         updateLensList();
 
-        return true;
+//        return true;
     }
 
     public boolean isBitSet(int val, int bitNumber) {
@@ -2125,30 +2092,41 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         return (maxEntry.getKey() + 1);
     }
 
-    // TODO: get working to update adapter properly when lens is edited. Editing is working, but adapter isn't refreshing view elements
     private void updateLensList() {
         Timber.d("Updating lens list.");
+//        Timber.d("my list data child: " + myListDataChild.toString());
 
         // get the new numLenses in case the user added a lens
         numLenses = lensArray.size();
 
-        Timber.d("numLenses during update: " + numLenses);
+
+//        Timber.d("numLenses during update: " + numLenses);
 
         // save the lens file right away
         saveLensFile(lensFileString, false);
+
+        // clear lensObjectArray so there will be correct data when refreshing the LensListFragmentAdapter
+        populateAllLenses();
+
+        // clear the My List lists so that there will be new data when we notify the LensListFragmentAdapter
+        populateMyLists();
 
         // run the UI updates on the UI thread
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Context context = getApplicationContext();
-                expAdapter.notifyDataSetChanged();                                                      // let the expandableListView custom adapter know we have changed data
 
-                String numLensesText = numLenses + " lenses in this file:";                             // building the text to populate the number of lenses textView
-                mNumLensesTextView.setText(numLensesText);                                              // set the text
+                if (lensListFragmentAdapter != null) {
+                    Timber.d("update lens list fragment adapter data");
+                    lensListFragmentAdapter.notifyDataSetChanged();
+                }
+
+                /* Update the title of the activity in case the number of lenses has changed */
+                updateActivityTitle();
 
                 // make a toast letting the user know that their changes were successful
-                CharSequence toastText = "File modified successfully.";
+                CharSequence toastText = "Changes saved.";
                 int duration = Toast.LENGTH_LONG;
 
                 Toast toast = Toast.makeText(context, toastText, duration);
@@ -2157,21 +2135,13 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         });
     }
 
-    private boolean checkSerialLength(String focal, String serial, String note) {
-        String completeString;
-        int completeStringLength;
-
-        completeString = focal + " " + serial + note;
-        Timber.d("completeString: " + completeString);
-
-        completeStringLength = completeString.length();
-        Timber.d("length: " + completeStringLength);
-
-        return completeStringLength <= maxSerialLength;
+    private void updateActivityTitle() {
+        String titleString = lensFileStringStripped + " (" + numLenses + ")";
+        setTitle(titleString);
     }
 
     private void countLensLine(String lens) {
-        int sub_ind = 17;                                                                        // the index to chop the lens strings (17 for manufacturer)
+        int sub_ind = 16;                                                                           // the index to chop the lens strings (16 for manufacturer)
         int key = 0;
 
         String subLensString = lens.substring(sub_ind, sub_ind + 1).trim();
@@ -2205,8 +2175,8 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
                 break;
         }
 
-        int currCount = listDataHeaderCount.get(key);
-        listDataHeaderCount.put(key, currCount + 1);
+        int currCount = lensListDataHeaderCount.get(key);
+        lensListDataHeaderCount.put(key, currCount + 1);
     }
 
     public File getLensStorageDir(String lens) {
@@ -2235,743 +2205,138 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         return false;
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    // parent-level adapter class to generate custom multi-level ExpandableListView for displaying //
-    // lenses currently in a file. This level is the Header, which should just be the lens manuf.   //
-    // names (lensDataHeader var)                                                                  //
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    public class LensParentLevel extends BaseExpandableListAdapter {
-        private Context _context;
-        private List<String> _listDataHeader;       // header titles. Lens Manuf Names in this case
-        private HashMap<String, List<String>> _listDataChild;
-
-        public LensParentLevel(Context context, List<String> listDataHeader, HashMap<String, List<String>> listChildData) {
-            this._context = context;
-            this._listDataHeader = listDataHeader;
-            this._listDataChild = listChildData;
-        }
-
-        @Override
-        public Object getChild(int groupPosition, int childPosition)
-        {
-            return this._listDataChild.get(this._listDataHeader.get(groupPosition)).get(childPosition);
-        }
-
-        @Override
-        public long getChildId(int groupPosition, int childPosition)
-        {
-            return childPosition;
-        }
-
-        @Override
-        public View getChildView(int groupPosition, int childPosition,
-                                 boolean isLastChild, View convertView, ViewGroup parent)
-        {
-            List<String> lensTypeList = this._listDataChild.get(_listDataHeader.get(groupPosition));
-            String parentNode = (String) getGroup(groupPosition); //_listDataHeader.get(groupPosition);
-            HashMap<Integer, ArrayList<Integer>> lensPositionIndicesMap = lensPositionMap.get(groupPosition);
-
-            HashMap<String, ArrayList<Lens>> lensChildHash = new HashMap<>();
-
-            for (String series : lensTypeList) {
-                ArrayList<Lens> tempLensList = new ArrayList<>();
-                lensChildHash.put(series, tempLensList);
-                for (Lens lens : lensObjectArray) {
-                    if (lens.getManufacturer().equals(parentNode) && lens.getSeries().equals(series)) {
-                        tempLensList.add(lens);
-                    }
-                }
-                lensChildHash.put(series, tempLensList);
-            }
-
-            /* Initialize the 2nd level of the ExpandableListView */
-            LensSecondLevel lensSecondLevel = new LensSecondLevel(ManageLensesActivity.this);
-            /* Initialize the adapter for the 2nd level of the ExpandableListView */
-            SecondLevelListViewAdapter lensSecondLevelAdapter = new SecondLevelListViewAdapter(
-                                                                    ManageLensesActivity.this,
-                                                                    this._listDataChild.get(parentNode),
-                                                                    lensChildHash,
-                                                                    lensPositionIndicesMap,
-                                                                    parentNode
-                                                                );
-            lensSecondLevel.setAdapter(lensSecondLevelAdapter);
-            lensSecondLevel.setGroupIndicator(null);
-
-            // TODO: Get onGroupCollapseListener working to prevent group collapse when focus on EditText in Dialog
-//            lensSecondLevel.setOnGroupCollapseListener(new ExpandableListView.OnGroupCollapseListener() {
-//                @Override
-//                public void onGroupCollapse(int groupIndex) {
-//                    Timber.d("collapse called for position %d", groupIndex);
-//                    lensSecondLevel.expandGroup(groupIndex);
-//                }
-//            });
-
-//            registerForContextMenu(lensSecondLevel);
-            return lensSecondLevel;
-        }
-
-        @Override
-        public int getChildrenCount(int groupPosition)
-        {
-            // TODO: try to figure out why this has to be hard-coded 1 as opposed to actually using the children's array size
-//            int count = this._listDataChild.get(this._listDataHeader.get(groupPosition)).size();
-//            return count;
-            return 1;
-        }
-
-        @Override
-        public Object getGroup(int groupPosition)
-        {
-            return this._listDataHeader.get(groupPosition);
-        }
-
-        @Override
-        public int getGroupCount()
-        {
-            return this._listDataHeader.size();
-        }
-
-        @Override
-        public long getGroupId(int groupPosition)
-        {
-            return groupPosition;
-        }
-
-        @Override
-        public View getGroupView(int groupPosition, boolean isExpanded,
-                                 View convertView, ViewGroup parent)
-        {
-            String headerTitle = (String) getGroup(groupPosition);
-            String headerCount = String.valueOf(listDataHeaderCount.get(groupPosition));
-
-            if (convertView == null) {
-                LayoutInflater headerInflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                convertView = headerInflater.inflate(R.layout.lens_list_group, null);
-            }
-
-            ImageView headerImageView = (ImageView) convertView.findViewById(R.id.lensHeaderImageView);
-            TextView headerTextView = (TextView) convertView.findViewById(R.id.lensListHeader);
-            TextView headerCountTextView = (TextView) convertView.findViewById(R.id.lensHeaderCountTextView);
-
-            headerImageView.setImageResource(isExpanded ? R.drawable.ic_expand_less_white_24dp : R.drawable.ic_expand_more_white_24dp);
-            headerTextView.setText(headerTitle);
-            headerCountTextView.setText(headerCount);
-
-            // TODO: make this use newRed color resource
-            headerImageView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF333333);
-            headerTextView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF333333);
-            headerCountTextView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF333333);
-
-            return convertView;
-        }
-
-        @Override
-        public boolean hasStableIds()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean isChildSelectable(int groupPosition, int childPosition)
-        {
-            return true;
-        }
+    /* Checks if any of the My List assignment states are toggled from the + button on the My List A/B/C header */
+    private boolean myListEnabled() {
+        return (myListExpAdapter.addToMyListA || myListExpAdapter.addToMyListB || myListExpAdapter.addToMyListC);
     }
 
-
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    // second level of multi-level ExpandableListView for displaying lenses within a given file    //
-    // this is typically the lens type "Optimo, Prime, Cinema Zoom," etc, and is dependent on the  //
-    // lens manufacturer that is the parent to this second level                                   //
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    public class LensSecondLevel extends ExpandableListView
-    {
-        int groupPosition, childPosition, groupid;
-
-        public LensSecondLevel(Context context)
-        {
-            super(context);
-        }
-
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
-        {
-            widthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY);
-            heightMeasureSpec = MeasureSpec.makeMeasureSpec(100000000, MeasureSpec.AT_MOST);
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        }
+    /* Adds or removes the selected lens from the selected list */
+    private boolean toggleMyList(String list, Lens lens, boolean currentStatus) {
+        editMyList(list, lens, !currentStatus);
+        return !currentStatus;
     }
 
-    public class SecondLevelListViewAdapter extends BaseExpandableListAdapter
-    {
-        private Context _context;
-        private List<String> _listDataHeader;                                                             // header titles (lens types, per manufacturer)
-//        private HashMap<Integer, HashMap<String, Object>> _listDataChild;
-//        private ArrayList<Lens> _listDataChild;
-        private HashMap<String, ArrayList<Lens>> _listDataChild;
-        private HashMap<Integer, ArrayList<Integer>> _listDataChildIndices;
-        //        private HashMap<String, List<String>> _listDataChild;                                   // child data in format of header title, child title (list of lenses within each type)
-//        private HashMap<String, List<String>> _listDataChildSerial;                                     // child data in format of heaer title, child title (list of serial numbers by lens)
-//        private HashMap<String, List<String>> _listDataChildNote;                                       // note of each lens
-//        private HashMap<String, List<String>> _listDataChildStatus;                                     // status of each lens (myList, calibrated, etc)
-//        private HashMap<String, List<Integer>> _listDataChildIndex;                                     // index of each lens within the overall lensArray
-        private String _manufName;                                                                      // manufacturer name
+    /* Adds a lens to specified "My List" */
+    private void editMyList(String list, Lens lens, boolean add) {
+        Timber.d("-- Edit -- List: " + list + ", Lens: " + lens.getId() + ", add: " + add);
 
-        public SecondLevelListViewAdapter(Context context,
-                                          List<String> listDataHeader,
-                                          HashMap<String, ArrayList<Lens>> listDataChild,
-//                                          HashMap<Integer, HashMap<String, Object>> listChildMap,
-                                          HashMap<Integer, ArrayList<Integer>> listDataChildIndices,
-//                                          HashMap<String, List<String>> listChildData,
-//                                          HashMap<String, List<String>> listDataChildSerial,
-//                                          HashMap<String, List<String>> listDataChildStatus,
-//                                          HashMap<String, List<Integer>> listDataChildIndex,
-                                          String manufName) {
-            this._context = context;
-            this._listDataHeader = listDataHeader;
-            this._listDataChild = listDataChild;
-            this._listDataChildIndices = listDataChildIndices;
-//            this._listDataChild = listChildData;
-//            this._listDataChildSerial = listDataChildSerial;
-////            this._listDataChildNote = listDataChildNote;
-//            this._listDataChildStatus = listDataChildStatus;
-//            this._listDataChildIndex = listDataChildIndex;
-            this._manufName = manufName;
+        int lensInd = lens.getId();
+        String originalData = lensArray.get(lensInd);
+        Timber.d("original String: " + originalData);
 
-//            Timber.d("LensSecondLevel: ");
-//            Timber.d("header: " + this._listDataHeader.toString());
-//            Timber.d("children: " + this._listDataChild.toString());
-//            Timber.d("indices: " + this._listDataChildIndices.toString());
+        char[] data = originalData.toCharArray();
+
+        char status0H = data[15];                                                                   // Status byte 0 for the lens (Cal and MyList status)
+        char status0L = data[16];
+
+        int statByte0H = Integer.parseInt(String.valueOf(status0H), 16);                                      // convert to int
+        int statByte0L = Integer.parseInt(String.valueOf(status0L), 16);                                      // convert to int
+
+        // update the status bytes according to the my list assignments
+        switch(list) {
+            case "A":
+                if (add) statByte0L += 0x8;                                                         // add 0x8 to add to My List A
+                else statByte0L -= 0x8;                                                             // subtract 0x8 to remove from My List A
+                break;
+            case "B":
+                if (add) statByte0H += 0x1;                                                         // add 0x1 to add to My List B
+                else statByte0H -= 0x1;                                                             // subtract 0x1 to remove from My List A
+                break;
+            case "C":
+                if (add) statByte0H += 0x2;                                                         // add 0x2 to add to My List C
+                else statByte0H -= 0x2;                                                             // subtract 0x2 to remove from My List A
+                break;
         }
 
-        @Override
-        public Object getChild(int groupPosition, int childPosition)
-        {
-            Timber.d("--------------- getChild (" + groupPosition + ", " + childPosition + ") -------------");
-            Timber.d("listDataHeader: " + this._listDataHeader.toString());
-            Timber.d("listDataChild: " + this._listDataChild.toString());
-            return this._listDataChild.get(this._listDataHeader.get(groupPosition)).get(childPosition);
+        if (statByte0H == 10) {                      // keep everything in Hex
+            statByte0H = 0xA;
         }
 
-        @Override
-        public long getChildId(int groupPosition, int childPosition)
-        {
-            return childPosition;
+        if (statByte0H == 11) {                      // keep everything in Hex
+            statByte0H = 0xB;
         }
 
-        public Object getChildTag(int groupPosition, int childPosition) {
-            return this._listDataChildIndices.get(groupPosition).get(childPosition);
+        // convert to the hex characters given the new My List assignment
+        String newStatus0H = Integer.toHexString(statByte0H).toUpperCase();
+        String newStatus0L = Integer.toHexString(statByte0L).toUpperCase();
+
+        // set the individual status byte characters (2 ASCII bytes)
+        data[15] = newStatus0H.charAt(0);
+        data[16] = newStatus0L.charAt(0);
+
+        // the updated string
+        String updatedData = String.valueOf(data);
+        Timber.d("updated String:  " + updatedData);
+
+        // update the variables used in the ExpandableListView adapter
+        // TODO: get rid of lensArray and make everything go off lensObjectArray using getDataString() field for each lens string
+        lensArray.set(lensInd, updatedData);
+
+        Lens updatedLens = parseLensLine(updatedData, lensInd, false);
+
+        lensObjectArray.set(lensInd, updatedLens);
+
+        String listName = "My List " + list;
+        temporaryLensList = myListDataChild.get(listName);
+        Timber.d("myListLenses before adding: " + temporaryLensList.toString());
+
+        if (add) {
+            temporaryLensList.add(updatedLens);
+        }
+        else {
+            temporaryLensList.remove(lens);
         }
 
-        @Override
-        public View getChildView(int groupPosition, int childPosition,
-                                 boolean isLastChild, View convertView, ViewGroup parent)
-        {
-            final Lens childObject = (Lens) getChild(groupPosition, childPosition);
-
-            // get the strings that will be used to populate the lens row
-            final String childText = constructFocalLengthString(childObject.getFocalLength1(), childObject.getFocalLength2());
-            final String childSerialText = childObject.getSerial();
-            final String childNoteText = childObject.getNote();
-//            final String childStatusText = "Cal: None";                                                                                       // TODO: implement boolean values
-            final String manufTitle = childObject.getManufacturer();
-            final String typeTitle = childObject.getSeries();
-//            final String childText = (String) getChild(groupPosition, childPosition);                                                       // "24-290mm"
-//            final String childSerialText = (String) getChildSerial(groupPosition, childPosition);                                           // "111 ANA"
-//            final String childNoteText = (String) getChildNote(groupPosition, childPosition);
-//            final String childStatusText = (String) getChildStatus(groupPosition, childPosition);                                           // "Cal: F \n MyList: A"
-
-//            Timber.d("childText: " + childText);
-//            Timber.d("childSerialText: " + childSerialText);
-
-            if (convertView == null) {
-                LayoutInflater headerInflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                convertView = headerInflater.inflate(R.layout.lens_list_lens, null);                                                        // inflate the view used to display the lens
-            }
-
-            TextView lensView = (TextView) convertView.findViewById(R.id.lensListLensTextView);                                             // the textView that displays the lens focal length
-            TextView serialView = (TextView) convertView.findViewById(R.id.lensListSerialTextView);                                         // the textView that displays the lens serial number
-            ImageView fCalImageView = (ImageView) convertView.findViewById(R.id.lensCalFImageView);                                         // ImageView that holds the "F" icon
-            ImageView iCalImageView = (ImageView) convertView.findViewById(R.id.lensCalIImageView);                                         // ImageView that holds the "I" icon
-            ImageView zCalImageView = (ImageView) convertView.findViewById(R.id.lensCalZImageView);                                         // ImageView that holds the "Z" icon
-
-            ImageView myListAImageView = (ImageView) convertView.findViewById(R.id.myListAImageView);                                       // ImageView that holds the "A" icon
-            ImageView myListBImageView = (ImageView) convertView.findViewById(R.id.myListBImageView);                                       // ImageView that holds the "B" icon
-            ImageView myListCImageView = (ImageView) convertView.findViewById(R.id.myListCImageView);                                       // ImageView that holds the "C" icon
-
-            final ImageView editLensImageView = (ImageView) convertView.findViewById(R.id.editLensImageView);                               // the imageView used to contain the edit icon (pencil)
-
-            // TODO: get lens note showing up
-            lensView.setText(childText);                                                                                                    // set the focal length string text
-            serialView.setText(childSerialText + " " + childNoteText);                                                                      // set the serial string text
-
-            // Display the appropriate ImageViews depending on the lens status
-            if (childObject.getCalibratedF()) {
-                fCalImageView.setVisibility(View.VISIBLE);
-            }
-            if (childObject.getCalibratedI()) {
-                iCalImageView.setVisibility(View.VISIBLE);
-            }
-            if (childObject.getCalibratedZ()) {
-                zCalImageView.setVisibility(View.VISIBLE);
-            }
-            if (childObject.getMyListA()) {
-                myListAImageView.setVisibility(View.VISIBLE);
-            }
-            if (childObject.getMyListB()) {
-                myListBImageView.setVisibility(View.VISIBLE);
-            }
-            if (childObject.getMyListC()) {
-                myListCImageView.setVisibility(View.VISIBLE);
-            }
-
-            editLensImageView.setTag(getChildTag(groupPosition, childPosition));                                                            // set the tag, which is the lens' index in the overall array (lensArray var)
-            convertView.setTag(getChildTag(groupPosition, childPosition));
-
-            convertView.setId((int) getChildTag(groupPosition, childPosition));
-            convertView.setLongClickable(true);                                                                                             // enable longClick on the lens view
-
-            registerForContextMenu(convertView);                                                                                            // register the lens for a context menu
-
-            // listen for the onGroupCollapsed event so we can override it to prevent list from collapsing when dialog is present
-
-
-//            convertView.setOnLongClickListener(new View.OnLongClickListener() {
-//                @Override
-//                public boolean onLongClick(View v) {
-//                    lensId = (int) getChildTag(groupPosition, childPosition);
-//                    registerForContextMenu(convertView);
-//                    openContextMenu(convertView);
-//                    return true;
-//                }
-//            });
-            // onClickListener for when the user taps on the edit lens icon. This is used to inflate the dialog where the use can actually edit the lens.
-            editLensImageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-//                    openContextMenu(editLensImageView);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            LayoutInflater dialogInflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                            final View editLensView = dialogInflater.inflate(R.layout.dialog_edit_lens, null);                               // inflate the view to use as the edit dialog
-
-                            // initialize the UI components so we can access their contents when the user presses "Save"
-                            TextView lensManufAndSeriesTextView = (TextView) editLensView.findViewById(R.id.lensManufAndSeriesTextView);                       // textView to display the lens manufacturer name
-                            final TextView lensFocalLengthTextView = (TextView) editLensView.findViewById(R.id.lensFocalTextView);
-                            final EditText lensSerialEditText = (EditText) editLensView.findViewById(R.id.LensSerialEditText);
-                            final EditText lensNoteEditText = (EditText) editLensView.findViewById(R.id.LensNoteEditText);
-
-                            final CheckBox myListACheckBox = (CheckBox) editLensView.findViewById(R.id.MyListACheckBox);
-                            final CheckBox myListBCheckBox = (CheckBox) editLensView.findViewById(R.id.MyListBCheckBox);
-                            final CheckBox myListCCheckBox = (CheckBox) editLensView.findViewById(R.id.MyListCCheckBox);
-
-                            ImageView CalFImageView = (ImageView) editLensView.findViewById(R.id.lensCalFImageView);
-                            ImageView CalIImageView = (ImageView) editLensView.findViewById(R.id.lensCalIImageView);
-                            ImageView CalZImageView = (ImageView) editLensView.findViewById(R.id.lensCalZImageView);
-
-                            // the hidden textView where we store the lens index (in the form of the view's tag)
-                            final TextView lensIndexTextView = (TextView) editLensView.findViewById(R.id.lensIndexTextView);
-
-                            // check the status string to see if the lens is part of a list
-                            final boolean myListA = childObject.getMyListA();
-                            final boolean myListB = childObject.getMyListB();
-                            final boolean myListC = childObject.getMyListC();
-
-                            boolean calF = childObject.getCalibratedF();
-                            boolean calI = childObject.getCalibratedI();
-                            boolean calZ = childObject.getCalibratedZ();
-
-                            if (calF) {
-                                CalFImageView.setVisibility(View.VISIBLE);
-                            }
-
-                            if (calI) {
-                                CalIImageView.setVisibility(View.VISIBLE);
-                            }
-
-                            if (calZ) {
-                                CalZImageView.setVisibility(View.VISIBLE);
-                            }
-
-                            // set up listeners for when the user checks the MyList boxes. If F of Lens isn't calibrated, don't let them add to list
-                            MyListCheckBoxListener listener = new MyListCheckBoxListener();
-                            listener.mContext = _context;
-                            listener.isFCal = childObject.getCalibratedF();
-
-                            myListACheckBox.setOnCheckedChangeListener(listener);
-                            myListBCheckBox.setOnCheckedChangeListener(listener);
-                            myListCCheckBox.setOnCheckedChangeListener(listener);
-
-
-                            // populate the text fields with existing values from the lens
-                            String lensManufAndSerial = childObject.getManufacturer() + " - " + childObject.getSeries();
-                            lensManufAndSeriesTextView.setText(lensManufAndSerial);
-                            lensFocalLengthTextView.setText(constructFocalLengthString(childObject.getFocalLength1(), childObject.getFocalLength2()));
-
-                            lensSerialEditText.setText(childObject.getSerial());
-                            lensSerialEditText.setSelection(childObject.getSerial().length());             // position the cursor at the end of the serial string
-
-                            // check the myList checkboxes according to whether it's a member of the appropriate list
-                            myListACheckBox.setChecked(myListA);
-                            myListBCheckBox.setChecked(myListB);
-                            myListCCheckBox.setChecked(myListC);
-
-                            // add the tag from the lens item in the listView to the hidden textView so we can retrieve it later
-                            int lensTag = (int) editLensImageView.getTag();
-                            lensIndexTextView.setText(String.valueOf(lensTag));
-
-                            final Lens thisLens = lensObjectArray.get(lensTag);
-                            Timber.d(thisLens.getManufacturer());
-                            Timber.d(thisLens.getSeries());
-                            Timber.d(String.valueOf(thisLens.getFocalLength1()));
-                            Timber.d(String.valueOf(thisLens.getFocalLength2()));
-
-                            final AlertDialog dialog = new AlertDialog.Builder(_context)
-//                                    .setTitle("Edit Lens")
-                                    .setView(editLensView)
-                                    .setPositiveButton("Save", null)
-                                    .setNegativeButton("Cancel", null)
-                                    .setNeutralButton("Delete", null)
-                                    .setCancelable(true)
-                                    .create();
-
-//                            // set up the TextWatcher on the lens serial editText so we can check the entered text length as the user types
-//                            final TextWatcher serialTextWatcher = new TextWatcher() {
-//                                boolean acceptEntry = true;
-//                                boolean wasTrimmed = false;                                                                                // boolean to indicate if the text was changed by the TextWatcher afterTextChanged method
-//                                int maxEnteredLength;
-//                                @Override
-//                                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-//                                    Timber.d("before changing text, s = " + s);
-//                                    if (!wasTrimmed) {
-//                                        String serial = lensSerialEditText.getText().toString().trim();
-////                                        String serial = s.toString();
-//                                        // returns true if the lens serial + note is 14 chars or less
-//                                        int serialStringLength = checkSerialLength(childText, serial, note), serial);
-//                                        maxEnteredLength = 14 - serialStringLength;
-//                                        if (serialStringLength > 14) {
-//                                            acceptEntry = false;
-//                                        } else {
-//                                            acceptEntry = true;
-//                                        }
-//                                    }
-//                                }
-//
-//                                @Override
-//                                public void onTextChanged(CharSequence s, int start, int before, int count) {
-//                                    Timber.d("onTextChanged: " + s);
-//                                }
-//
-//                                @Override
-//                                public void afterTextChanged(Editable s) {
-//                                    Timber.d("max length allowed: " + maxEnteredLength);
-//                                    if (acceptEntry) {
-////                                    if (maxEnteredLength > 0) {
-//                                        wasTrimmed = false;
-//                                        Timber.d("accepted. s = " + s);
-//                                        return;
-//                                    }
-//
-//                                    else {
-////                                        acceptEntry = true;
-//                                        wasTrimmed = true;
-//
-//                                        CharSequence toastText = "Error: Lens name too long.";
-//                                        int duration = Toast.LENGTH_SHORT;
-//                                        Toast toast = Toast.makeText(_context, toastText, duration);
-//                                        toast.show();
-//
-//                                        Timber.d("acceptEntry false, s length = " + s.length());
-//                                        Timber.d("s.length() - 1: " + s.charAt(s.length() - 2));
-//                                        Timber.d("s.length(): " + s.charAt(s.length() - 1));
-//
-//
-//                                        s.delete(s.length() - 1, s.length());
-////                                        s.replace(s.length() - 1, s.length(), "");
-////                                        Timber.d("s = " + s);
-////                                        CharSequence trimmedSerial = s.delete(s.length() - 1, s.length());
-////                                        CharSequence trimmedSerial = s.subSequence(0, s.length() - 1);
-////                                        Timber.d("s = " + s + ", trimmed = " + trimmedSerial);
-////                                        lensSerialEditText.setText(trimmedSerial);
-////                                        lensSerialEditText.setText(s.delete(s.length() - 2, s.length() - 1));
-//                                    }
-//
-//                                    Timber.d("afterTextChanged: " + s);
-//                                }
-//                            };
-////
-//                            lensSerialEditText.addTextChangedListener(serialTextWatcher);
-
-                            // custom onShowListener so we can do some checks before saving the lens. prevents "Save" button from automatically closing the dialog
-                            dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-                                @Override
-                                public void onShow(final DialogInterface dialog) {
-                                    Button posButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
-                                    Button negButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEGATIVE);
-                                    Button neutralButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEUTRAL);
-
-                                    // perform some housekeeping before closing the dialog. Specifically, make sure the lens serial/note is not more than 14 chars long
-                                    posButton.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View view) {
-//                                            String fLength1 = lensFLength1.getText().toString().trim();                                             // get the first focal length string
-//                                            String fLength2 = (isPrime(typeTitle) ? fLength1 : lensFLength2.getText().toString().trim());           // second focal length (if it's a zoom)
-                                            String newSerial = lensSerialEditText.getText().toString().trim();                                         // serial of the lens
-                                            String newNote = lensNoteEditText.getText().toString().trim();
-
-                                            // get the (potentially new) my list assignments for the lens
-                                            boolean myListA = myListACheckBox.isChecked();
-                                            boolean myListB = myListBCheckBox.isChecked();
-                                            boolean myListC = myListCCheckBox.isChecked();
-
-                                            // returns true if the lens serial + note is 14 chars or less
-//                                            boolean readyToSave = checkSerialLength(typeTitle, fLength1, fLength2, serial);
-                                            boolean readyToSave = checkSerialLength(childText, newSerial, newNote);
-
-                                            if (readyToSave) {
-                                                boolean editSuccessful = editLens(childObject, childText, newSerial, newNote, myListA, myListB, myListC);
-                                                if (editSuccessful) {
-                                                    dialog.dismiss();
-                                                }
-                                                else {
-                                                    CharSequence toastText = "Error updating lens. Please try again.";
-                                                    int duration = Toast.LENGTH_LONG;
-
-                                                    Toast toast = Toast.makeText(_context, toastText, duration);
-                                                    toast.show();
-                                                }
-                                            }
-                                            else {
-                                                CharSequence toastText = "Error: Lens name too long.";
-                                                int duration = Toast.LENGTH_LONG;
-
-                                                Toast toast = Toast.makeText(_context, toastText, duration);
-                                                toast.show();
-                                            }
-                                            // get the tag from the hidden textView. This is the index of the lens in the overall lensArray variable that we actually need to update
-//                                            int lensInd = Integer.parseInt(lensIndexTextView.getText().toString());
-
-                                            // if everything is OK, dismiss dialog
-//                                            if (readyToSave == true) {
-//                                                dialog.dismiss();
-//                                                Timber.d("Edit this lens. New attributes for lens index " + String.valueOf(lensInd) + ": ");
-//                                                boolean editSuccessful = editLens(lensInd, childPosition, manufTitle, typeTitle, fLength1, fLength2, serial, myListA, myListB, myListC);
-//                                            }
-
-                                        }
-                                    });
-                                }
-                            });
-
-                            dialog.show();
-                        }
-                    });
-                }
-            });
-
-            return convertView;
-        }
-
-        @Override
-        public int getChildrenCount(int groupPosition)
-        {
-            Timber.d("getChildrenCount (" + groupPosition + ")");
-            Timber.d(this._listDataChildIndices.toString());
-            try {
-                return this._listDataChildIndices.get(groupPosition).size();
-            }
-            catch (Exception e) {
-                return 0;
-            }
-        }
-
-        @Override
-        public Object getGroup(int groupPosition)
-        {
-            return this._listDataHeader.get(groupPosition);
-        }
-
-        @Override
-        public int getGroupCount()
-        {
-            return this._listDataHeader.size();
-        }
-
-        @Override
-        public long getGroupId(int groupPosition)
-        {
-            return groupPosition;
-        }
-
-        // this method is called when creating the views for the lens types (Optimo, Cinema Prime, etc).
-        // We attach a "+" button (ImageView really) to each header so the user can add a lens in that series.
-        // The alert dialog builder in the setOnClickListener function takes care of this.
-        @Override
-        public View getGroupView(final int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-            final String manufTitle = this._manufName;                                                                                      // the name of the lens manufacturer
-            final String typeTitle = (String) getGroup(groupPosition);                                                                      // the series of the lens (Optimo, Cinema Prime, etc)
-
-            // inflate the view to be shown
-            if (convertView == null) {
-                LayoutInflater headerInflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                convertView = headerInflater.inflate(R.layout.lens_list_type, null);
-            }
-
-            // initialize the view components
-            ImageView typeImageView = (ImageView) convertView.findViewById(R.id.lensTypeImageView);
-            TextView typeTextView = (TextView) convertView.findViewById(R.id.lensListType);
-            ImageView addImageView = (ImageView) convertView.findViewById(R.id.lensTypeAddImageView);
-
-            // set the lens type in the textView
-            typeTextView.setText(typeTitle);
-
-            int childCount = getChildrenCount(groupPosition);
-            Timber.d("childCount: " + childCount);
-
-            if (childCount == 0) {
-                typeTextView.setTextColor(0xFFBBBBBB);
-                typeImageView.setImageResource(R.drawable.ic_expand_more_empty_24dp);
-            }
-            else {
-                typeTextView.setTextColor(0xFFFFFFFF);
-                // depending on the isExpanded state of the group (and if there are > 0 children in the group), display the appropriate up/down chevron icon
-                typeImageView.setImageResource(isExpanded ? R.drawable.ic_expand_less_white_24dp : R.drawable.ic_expand_more_white_24dp);
-            }
-
-            addImageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            // inflate the layout from dialog_add_lens.xml
-                            LayoutInflater dialogInflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                            final View addLensView = dialogInflater.inflate(R.layout.dialog_add_lens, null);
-
-                            // initialize the UI components
-                            TextView lensManufTextView = (TextView) addLensView.findViewById(R.id.lensManufTextView);
-                            TextView lensSeriesTextView = (TextView) addLensView.findViewById(R.id.lensSeriesTextView);
-                            final TextView lensDashTextView = (TextView) addLensView.findViewById(R.id.LensFocalDashTextView);
-
-                            // initialize the UI components so we can access their contents when the user presses "Save"
-                            final EditText lensFLength1 = (EditText) addLensView.findViewById(R.id.LensFocal1EditText);
-                            final EditText lensFLength2 = (EditText) addLensView.findViewById(R.id.LensFocal2EditText);
-                            final EditText lensSerialEditText = (EditText) addLensView.findViewById(R.id.LensSerialEditText);
-                            final EditText lensNoteEditText = (EditText) addLensView.findViewById(R.id.LensNoteEditText);
-
-                            final CheckBox myListACheckBox = (CheckBox) addLensView.findViewById(R.id.MyListACheckBox);
-                            final CheckBox myListBCheckBox = (CheckBox) addLensView.findViewById(R.id.MyListBCheckBox);
-                            final CheckBox myListCCheckBox = (CheckBox) addLensView.findViewById(R.id.MyListCCheckBox);
-
-                            lensManufTextView.setText(manufTitle);
-                            lensSeriesTextView.setText(typeTitle);
-
-                            // check if the lens type is a Prime or Zoom (or Other) and show/hide Zoom/Prime toggle button accordingly
-                            isPrime = isPrime(typeTitle);
-                            togglePrimeOrZoom(isPrime, lensDashTextView, lensFLength2);
-
-                            final AlertDialog dialog = new AlertDialog.Builder(_context)
-                                    .setView(addLensView)
-                                    .setPositiveButton("Save", null)
-                                    .setNegativeButton("Cancel", null)
-                                    .setNeutralButton("Zoom", null)
-                                    .setCancelable(true)
-                                    .create();
-
-                            dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-                                @Override
-                                public void onShow(final DialogInterface dialog) {
-                                    Button posButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
-                                    final Button modeButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEUTRAL);
-
-                                    if (typeTitle.trim().equals("Other")) {
-                                        modeButton.setVisibility(View.VISIBLE);
-                                    }
-                                    else {
-                                        modeButton.setVisibility(View.GONE);
-                                    }
-
-                                    posButton.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View view) {
-                                            int fLength1 = Integer.parseInt(lensFLength1.getText().toString().trim());
-                                            int fLength2 = Integer.parseInt((isPrime ? "0" : lensFLength2.getText().toString().trim()));
-                                            String serial = lensSerialEditText.getText().toString().trim();
-                                            String note = lensNoteEditText.getText().toString().trim();
-
-                                            String completeFocalString = constructFocalLengthString(fLength1, fLength2);
-
-                                            boolean readyToSave = checkSerialLength(completeFocalString, serial, note);
-
-                                            if (readyToSave) {
-                                                saveNewLens(manufTitle, typeTitle, fLength1, fLength2, serial, note);
-                                                dialog.dismiss();
-                                            }
-                                            else {
-                                                CharSequence toastText = "Error: Lens name too long.";
-                                                int duration = Toast.LENGTH_SHORT;
-
-                                                Toast toast = Toast.makeText(_context, toastText, duration);
-                                                toast.show();
-                                            }
-                                        }
-                                    });
-
-                                    modeButton.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            if (isPrime) {
-                                                isPrime = false;
-                                                modeButton.setText("Prime");
-                                            }
-                                            else {
-                                                isPrime = true;
-                                                modeButton.setText("Zoom");
-                                            }
-                                            togglePrimeOrZoom(isPrime, lensDashTextView, lensFLength2);
-                                        }
-                                    });
-                                }
-                            });
-
-                            dialog.show();
-                        }
-                    });
-                }
-            });
-
-            return convertView;
-        }
-
-        @Override
-        public boolean hasStableIds() {
-            // TODO Auto-generated method stub
-            return true;
-        }
-
-        @Override
-        public boolean isChildSelectable(int groupPosition, int childPosition) {
-            // TODO Auto-generated method stub
-            return true;
-        }
-
-//        public void setNewItems(List<String> listDataHeader, HashMap<String, List<String>> listChildData) {
-//            this._listDataHeader = listDataHeader;
-//            this._listDataChild = listChildData;
-//            notifyDataSetChanged();
+//        Timber.d("myListALenses after adding: " + temporaryLensList.toString());
+        myListDataChild.put(listName, temporaryLensList);
+
+        // TODO: Toggle icons for My List edit when you click directly on the edit image for another list
+        // update the adapter to refresh the UI
+        updateLensList();
+    }
+
+//    private void setListViewHeight(ExpandableListView listView, int group) {
+//        Timber.d("ListView id: " + listView.getId());
+//        BaseExpandableListAdapter listAdapter;
+//        if (listView.getId() == expListView.getId()) {
+//            listAdapter = (MultiLevelExpListViewAdapter) listView.getExpandableListAdapter();
 //        }
-
-        private void togglePrimeOrZoom(boolean prime, TextView dash, EditText serial2) {
-            if (prime) {
-                dash.setVisibility(View.GONE);
-                serial2.setVisibility(View.GONE);
-            }
-            else {
-                dash.setVisibility(View.VISIBLE);
-                serial2.setVisibility(View.VISIBLE);
-            }
-        }
-
-    }
+//        else if (listView.getId() == myListExpListView.getId()) {
+//            listAdapter = (MyListExpListViewAdapter) listView.getExpandableListAdapter();
+//        }
+//        else {
+//            listAdapter = (SecondLevelListViewAdapter) listView.getExpandableListAdapter();
+//        }
+//
+//        int totalHeight = 0;
+//        int desiredWidth = View.MeasureSpec.makeMeasureSpec(listView.getWidth(), View.MeasureSpec.EXACTLY);
+//        for (int i = 0; i < listAdapter.getGroupCount(); i++) {
+//            View groupItem = listAdapter.getGroupView(i, false, null, listView);
+//            groupItem.measure(desiredWidth, View.MeasureSpec.UNSPECIFIED);
+//
+//            totalHeight += groupItem.getMeasuredHeight();
+//
+//            if (((listView.isGroupExpanded(i)) && (i != group))
+//                    || ((!listView.isGroupExpanded(i)) && (i == group))) {
+//                for (int j = 0; j < listAdapter.getChildrenCount(i); j++) {
+//                    View listItem = listAdapter.getChildView(i, j, false, null,
+//                            listView);
+//                    listItem.measure(desiredWidth, View.MeasureSpec.UNSPECIFIED);
+//
+//                    totalHeight += listItem.getMeasuredHeight();
+//
+//                }
+//            }
+//        }
+//
+//        ViewGroup.LayoutParams params = listView.getLayoutParams();
+//        int height = totalHeight + (listView.getDividerHeight() * (listAdapter.getGroupCount() - 1));
+//        if (height < 10) {
+//            height = 200;
+//        }
+//
+//        params.height = height;
+//        listView.setLayoutParams(params);
+//        listView.requestLayout();
+//    }
 }

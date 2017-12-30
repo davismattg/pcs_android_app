@@ -5,9 +5,9 @@
 
     <ImageView
         android:layout_width="wrap_content"
-        android:layout_height="55dp"
+        android:layout_height="45dp"
         android:id="@+id/lensHeaderImageView"
-        android:src="@drawable/ic_expand_more_white_24dp"
+        android:src="@drawable/ic_expand_more_alt_white_24dp"
         android:background="@drawable/default_background"
         android:scaleX="1.5"
         android:scaleY="1.5"
@@ -17,10 +17,10 @@
 
     <TextView
         android:layout_width="wrap_content"
-        android:layout_height="55dp"
-        android:textSize="22sp"
+        android:layout_height="45dp"
+        android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/white"
         android:text="Angenieux"
         android:gravity="center_vertical"
         android:background="@drawable/default_background"
@@ -30,9 +30,9 @@
 
     <TextView
         android:layout_width="wrap_content"
-        android:layout_height="55dp"
-        android:textSize="22sp"
-        android:textColor="#FFFFFF"
+        android:layout_height="45dp"
+        android:textSize="20sp"
+        android:textColor="@color/white"
         android:text="16"
         android:gravity="center_vertical|end"
         android:background="@drawable/default_background"

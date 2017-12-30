@@ -1,126 +1,102 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@drawable/default_background"
-    android:paddingBottom="0dp"
-    android:paddingLeft="0dp"
-    android:paddingRight="0dp"
-    android:paddingTop="10dp"
     tools:context="com.prestoncinema.app.ManageLensesActivity">
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical"
+     <!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+        <!--android:orientation="vertical"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content">-->
+
+    <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="wrap_content">
 
-        <!--<ScrollView-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content">-->
-            <!--<LinearLayout-->
-                <!--android:layout_width="match_parent"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:orientation="vertical">-->
-                <!--<LinearLayout-->
-                    <!--android:layout_width="match_parent"-->
-                    <!--android:layout_height="wrap_content"-->
-                    <!--android:orientation="horizontal">-->
-        <!--<TextView-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginStart="16dp"-->
-            <!--android:layout_marginEnd="16dp"-->
-            <!--android:id="@+id/lensFileTextView"-->
-            <!--android:text="File: "-->
-            <!--android:textColor="#CCCCCC"-->
-            <!--android:textSize="20sp"/>-->
-
-        <TextView
+        <android.support.design.widget.TabLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginTop="5dp"
-            android:id="@+id/NumLensesTextView"
-            android:text="180 lenses in this file"
-            android:textColor="#CCCCCC"
-            android:textSize="16sp" />
+            android:id="@+id/LensFileTabLayout"
+            app:tabBackground="@color/darkestGray"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabIndicatorColor="@color/newRed"
+            app:tabTextColor="@color/lightMedGray"
+            app:tabSelectedTextColor="@color/white"
+            app:tabIndicatorHeight="@dimen/tabh"/>
+    </android.support.design.widget.AppBarLayout>
 
-                    <!--<LinearLayout-->
-                        <!--android:layout_width="0dp"-->
-                        <!--android:layout_height="wrap_content"-->
-                        <!--android:orientation="horizontal"-->
-                        <!--android:layout_weight="1"-->
-                        <!--android:gravity="end">-->
+    <android.support.v4.view.ViewPager
+        android:id="@+id/LensFileTabViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
-                        <!--<Button-->
-                            <!--android:layout_width="wrap_content"-->
-                            <!--android:layout_height="wrap_content"-->
-                            <!--android:text="Add Lens"-->
-                            <!--android:id="@+id/AddLensButton"-->
-                            <!--android:background="#FFFFFF"-->
-                            <!--android:textColor="#000000"-->
-                            <!--android:textSize="16sp"-->
-                            <!--android:onClick="toggleAddNewLens"/>-->
-                    <!--</LinearLayout>-->
-                <!--</LinearLayout>-->
-            <!--</LinearLayout>-->
-        <!--</ScrollView>-->
+    <!--<android.support.design.widget.FloatingActionButton-->
+        <!--android:layout_width="56dp"-->
+        <!--android:layout_height="56dp"-->
+        <!--android:id="@+id/LensListFab"-->
+        <!--android:src="@drawable/ic_edit_24dp"-->
+        <!--android:layout_margin="15dp"-->
+        <!--app:layout_anchor="@+id/LensFileTabViewPager"-->
+        <!--app:layout_anchorGravity="bottom|right"/>-->
 
-        <!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
-            <!--android:orientation="vertical"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent">-->
+    <!--<TextView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="My Lists"-->
+        <!--android:paddingStart="15dp"-->
+        <!--android:paddingEnd="15dp"-->
+        <!--android:paddingTop="10dp"-->
+        <!--android:paddingBottom="3dp"-->
+        <!--android:textSize="18sp"-->
+        <!--android:background="@color/lightGray"-->
+        <!--android:textColor="@color/darkGray"/>-->
 
-        <ExpandableListView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scrollbars="none"
-            android:dividerHeight="1dp"
-            android:groupIndicator="@null"
-            android:divider="#666666"
-            android:id="@+id/ParentLensLevel"
-            android:focusable="true">
-        </ExpandableListView>
-
-        <!--</LinearLayout>-->
-
-        <!--<LinearLayout-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:orientation="horizontal">-->
+    <!--<ExpandableListView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:scrollbars="none"-->
+        <!--android:divider="@color/dividerGray"-->
+        <!--android:dividerHeight="1dp"-->
+        <!--android:groupIndicator="@null"-->
+        <!--android:id="@+id/MyListExpListView"-->
+        <!--android:visibility="gone"-->
+        <!--android:focusable="true" />-->
 
 
-            <!--<LinearLayout-->
-                <!--android:layout_width="0dp"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:layout_weight="1"-->
-                <!--android:gravity="end">-->
-                <!--<TextView-->
-                    <!--android:layout_width="wrap_content"-->
-                    <!--android:layout_height="wrap_content"-->
-                    <!--android:text="Sort by"-->
-                    <!--android:visibility="gone"-->
-                    <!--android:textColor = "#FFFFFF"-->
-                    <!--android:textSize="16sp" />-->
 
-                <!--<Spinner-->
-                    <!--android:layout_width="wrap_content"-->
-                    <!--android:layout_height="wrap_content"-->
-                    <!--android:visibility="gone"-->
-                    <!--android:id="@+id/sortBySpinner"-->
-                    <!--/>-->
+    <!--<TextView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="All lenses"-->
+        <!--android:paddingStart="15dp"-->
+        <!--android:paddingEnd="15dp"-->
+        <!--android:paddingTop="10dp"-->
+        <!--android:paddingBottom="3dp"-->
+        <!--android:textSize="18sp"-->
+        <!--android:background="@color/lightGray"-->
+        <!--android:textColor="@color/darkGray"/>-->
 
-            <!--</LinearLayout>-->
-        <!--</LinearLayout>-->
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="1dp"-->
+        <!--android:background="@color/dividerGray" />-->
 
-
-        <!--<ListView-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginTop="10dp"-->
-            <!--android:id="@+id/LensesListView" />-->
-
-    </LinearLayout>
-</RelativeLayout>
+    <!--<ExpandableListView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:scrollbars="none"-->
+        <!--android:dividerHeight="1dp"-->
+        <!--android:groupIndicator="@null"-->
+        <!--android:divider="@color/dividerGray"-->
+        <!--android:id="@+id/ParentLensLevel"-->
+        <!--android:visibility="gone"-->
+        <!--android:focusable="true">-->
+    <!--</ExpandableListView>-->
+    <!--</LinearLayout>-->
+</android.support.design.widget.CoordinatorLayout>

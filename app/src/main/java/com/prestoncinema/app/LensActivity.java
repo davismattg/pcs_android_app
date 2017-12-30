@@ -63,6 +63,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -891,6 +892,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     private void uartSendData(String data, boolean wasReceivedFromMqtt) {
         lastDataSent = data;
         Timber.d("lastDataSent: " + lastDataSent + "--");
+        Timber.d("in bytes: " + Arrays.toString(lastDataSent.getBytes()));
 
         // MQTT publish to TX
         MqttSettings settings = MqttSettings.getInstance(LensActivity.this);
@@ -1438,8 +1440,9 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
                             byte[] STX = {0x02};
                             byte[] ETX = {0x0A, 0x0D};
                             String lensInfo = lensArray.get(currentLens);
+                            Timber.d("lensInfo: " + Arrays.toString(lensInfo.getBytes()));
                             uartSendData(STX, false);
-                            uartSendData(lensArray.get(currentLens), false);
+                            uartSendData(SharedHelper.checkLensChars(lensArray.get(currentLens)), false);
                             uartSendData(ETX, false);
                             currentLens += 1;
                         } else if (currentLens == numLenses) {
@@ -1682,10 +1685,6 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
 
     // save the lenses stored in lensArray to a text file
     private void saveLensList(ArrayList<String> lensArray, String fileName) {
-        Timber.d("lensArray: ");
-        Timber.d(lensArray.toString());
-        Timber.d("--------------------------------------");
-
         if (isExternalStorageWritable()) {
             Timber.d("savelensList: Number of lenses in array: " + lensArray.size());
 
@@ -1703,7 +1702,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
                 for (String lens : lensArray) {
                     Timber.d("lens: " + lens + "$$");
                     try {
-                        fos.write(lens.getBytes());
+                        fos.write(SharedHelper.checkLensChars(lens.getBytes()));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

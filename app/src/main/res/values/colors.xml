@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <drawable name="default_background">#333333</drawable>
-    <drawable name="default_textcolor">#B8B8B8</drawable>
-    <drawable name="default_infotextcolor">#7c7c7c</drawable>
-    <drawable name="light_textcolor">#FFFFFF</drawable>
+    <drawable name="default_background">#FF333333</drawable>
+    <drawable name="default_textcolor">#FFB8B8B8</drawable>
+    <drawable name="default_infotextcolor">#FF7c7c7c</drawable>
+    <drawable name="light_textcolor">#FFFFFFFF</drawable>
 
-    <item name="newRed" type="color">#FF533D</item>
-    <item name="pcsRed" type="color">#FF0000</item>
-    <item name="white" type="color">#FFFFFF</item>
-    <item name="bluetoothBlue" type="color">#0000CC</item>
+    <item name="newRed" type="color">#FFFF533D</item>
+    <item name="newBlue" type="color">#FF006699</item>
+    <item name="darkGray" type="color">#FF333333</item>
+    <item name="darkestGray" type="color">#FF222222</item>
+    <item name="medGray" type="color">#FF555555</item>
+    <item name="dividerGray" type="color">#FF666666</item>
+    <item name="lightMedGray" type="color">#FF888888</item>
+    <item name="lightGray" type="color">#FFCCCCCC</item>
+    <item name="lightestGray" type="color">#FFEEEEEE</item>
+    <item name="pcsRed" type="color">#FFFF0000</item>
+    <item name="white" type="color">#FFFFFFFF</item>
+    <item name="altWhite" type="color">#FFCCFF00</item>
+    <item name="bluetoothBlue" type="color">#FF0000CC</item>
+    <item name="newGreen" type="color">#FF3DCC3D</item>
 </resources>

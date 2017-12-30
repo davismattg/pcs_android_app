@@ -35,12 +35,10 @@ public class UartInterfaceActivity extends AppCompatActivity implements BleManag
     // region Send Data to UART
     protected void sendData(String text) {
         final byte[] value = text.getBytes(Charset.forName("UTF-8"));
-//        Log.d(TAG, "Step 2 (string): MDR4 data in bytes: " + Arrays.toString(value));
         sendData(value);
     }
 
     protected void sendData(byte[] data) {
-//        Log.d(TAG, "Step 3 (bytes): MDR4 data in bytes: " + Arrays.toString(data));
         if (mUartService != null) {
             // Split the value into chunks (UART service has a maximum number of characters that can be written )
             for (int i = 0; i < data.length; i += kTxMaxCharacters) {

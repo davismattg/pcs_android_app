@@ -130,12 +130,20 @@
 
     <!-- Manage Lenses Activity -->
     <string name="title_activity_manage_lenses"><font fgcolor="white">Edit </font><font fgcolor="#FF533D">Lenses</font></string>
+    <string name="my_list_tab">My Lists</string>
+    <string name="all_lenses_tab">All Lenses</string>
 
     <string-array name="lens_sort_array">
         <item>Manuf: A-Z</item>
         <item>Manuf: Z-A</item>
         <item>Focal Length: Asc</item>
         <item>Focal Length: Desc</item>
+    </string-array>
+
+    <string-array name="my_list_array">
+        <item>My List A</item>
+        <item>My List B</item>
+        <item>My List C</item>
     </string-array>
 
     <string-array name="lens_manuf_array">
