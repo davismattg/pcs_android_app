@@ -11,13 +11,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import timber.log.Timber;
+
 import static android.R.attr.value;
+import static android.content.Context.MODE_PRIVATE;
 
 /**
  * Created by MATT on 2/15/2017.
@@ -60,15 +64,11 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
     // main function to do the heavy lifting of the download
     private Map<String, Map<String, PCSReleaseParser.ProductInfo>> downloadData(String urlString) throws IOException {
         Map<String, Map<String, PCSReleaseParser.ProductInfo>> latestFirmwareFiles = new HashMap<>();
-        SharedPreferences firmwarePrefs = mContext.getSharedPreferences("firmwareURLs", mContext.MODE_PRIVATE);
+        SharedPreferences firmwarePrefs = mContext.getSharedPreferences("firmwareURLs", MODE_PRIVATE);
         try {
             URL url = new URL(urlString);
-//            Log.d(TAG, "XML file URL: " + url);
 
             Map<String, PCSReleaseParser.ProductInfo> productMap = PCSReleaseParser.parseReleasesXml(url);
-
-//            Log.d(TAG, "productMap: ");
-//            Log.d(TAG, productMap.toString());
 
             for (Map.Entry<String, PCSReleaseParser.ProductInfo> entry : productMap.entrySet()) {           // entry.getKey() = "Hand3", version: latestRelease.version
                 PCSReleaseParser.FirmwareInfo latestRelease;
@@ -122,8 +122,6 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
                             Log.d(TAG, "file written successfully @ " + productFile.toString());
 
                             latestRelease.internalFileLocation = productFile.toString();
-                            //                            changesAndFile.put(latestRelease.changes, productFile);
-                            //                            Log.d(TAG, "latest release: " + latestRelease.version + ", changes: " + latestRelease.changes);
                             versionInfo.put(latestRelease.version, productInfo);
                             latestFirmwareFiles.put(entry.getKey(), versionInfo);
                         } catch (IOException e) {
@@ -145,18 +143,28 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
     }
 
     private boolean addToFirmwarePref(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareMap) {
-        SharedPreferences sharedURLPref = mContext.getSharedPreferences("firmwareURLs", mContext.MODE_PRIVATE);
-        PCSReleaseParser.ProductInfo prodInfo = new PCSReleaseParser.ProductInfo();
+        boolean urlOK = false;
+        boolean changesOK = false;
+
+        SharedPreferences sharedURLPref = mContext.getSharedPreferences("firmwareURLs", MODE_PRIVATE);
+        SharedPreferences sharedChangesPref = mContext.getSharedPreferences("firmwareChanges", MODE_PRIVATE);
+
+        PCSReleaseParser.ProductInfo prodInfo; // = new PCSReleaseParser.ProductInfo();
 
         // handle the file URLs first
-        SharedPreferences.Editor editor = sharedURLPref.edit();
+        SharedPreferences.Editor urlEditor = sharedURLPref.edit();
+        SharedPreferences.Editor changesEditor = sharedChangesPref.edit();
+
         for (Map.Entry<String, Map<String, PCSReleaseParser.ProductInfo>> entry : firmwareMap.entrySet()) {
             Map<String, PCSReleaseParser.ProductInfo> productMap = entry.getValue();
             Collection<PCSReleaseParser.ProductInfo> versionValues = productMap.values();
             Set<String> versionKeys = productMap.keySet();
+            String productName = "";
             String versionNum = "";
             String versionHexFile = "";
             String internalHexFile = "";
+
+            String changes = "";
 
             Log.d(TAG, "productInfo Map: " + productMap.toString());
 
@@ -166,29 +174,43 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
 
             for (Object val : versionValues) {
                 prodInfo = (PCSReleaseParser.ProductInfo) val;
-                versionHexFile = prodInfo.firmwareReleases.get(0).hexFileUrl;
+                productName = prodInfo.firmwareReleases.get(0).description;
                 internalHexFile = prodInfo.firmwareReleases.get(0).internalFileLocation;
-//                Log.d(TAG, "class: " + val.getClass());
+                changes = stringifyFirmwareChanges(prodInfo.firmwareReleases.get(0).changes);
+                Timber.d("changes: " + changes);
             }
 
+            String hexValue = versionNum + "=" + internalHexFile + "=" + changes;
+//            String changeValue = productName + "=" + changes;
 
-            Log.d(TAG, "productInfo versionValues: " + versionValues);
-            Log.d(TAG, "versionNum: " + versionNum);
-            Log.d(TAG, "versionHexFile: " + versionHexFile);
-            Log.d(TAG, "internalHexFile: " + internalHexFile);
-
-//            String value = versionNum + "=" + versionHexFile;
-            String value = versionNum + "=" + internalHexFile;
-
-            Log.d(TAG, "putting " + entry.getKey() + ", value " + value);
-            editor.putString(entry.getKey(), value);
+            urlEditor.putString(entry.getKey(), hexValue);
+//            changesEditor.putString(entry.getKey(), changes);
         }
-        if (editor.commit()) {
-            Log.d(TAG, "sharedPreferences written to successfully");
+        if (urlEditor.commit()) {
+            Log.d(TAG, "URL pref written to successfully");
+            urlOK = true;
+        }
+
+        if (changesEditor.commit()) {
+            Timber.d("Changes prefs written to successfully");
+            changesOK = true;
+        }
+
+        if (urlOK && changesOK) {
             return true;
         }
-        else {
-            return false;
+
+        return false;
+
+    }
+
+    private String stringifyFirmwareChanges(ArrayList<String> changes) {
+        StringBuilder sb = new StringBuilder();
+
+        for (String change : changes) {
+            sb.append(change).append("&&");
         }
+
+        return sb.toString();
     }
 }

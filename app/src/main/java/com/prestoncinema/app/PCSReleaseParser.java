@@ -24,18 +24,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public class PCSReleaseParser {
     // Constants
     private final static String TAG = PCSReleaseParser.class.getSimpleName();
-//    URL xmlURL;
-//    ArrayList<URL> firmwareURLs = new ArrayList();
-//
-////    @Override
-//    protected Map<String, ProductInfo> doInBackground(String... urls) {
-//        try {
-//            xmlURL = new URL("http://prestoncinema.com/Upgrades/src/firmware.xml");
-//        } catch (MalformedURLException e) {
-//            e.printStackTrace();
-//        }
-//        return parseReleasesXml(xmlURL);
-//    }
 
     public static class ProductInfo {
         public List<FirmwareInfo> firmwareReleases = new ArrayList<>();
@@ -47,7 +35,7 @@ public class PCSReleaseParser {
         public String version;
         public String hexFileUrl;
         public String internalFileLocation;
-        public String changes;
+        public ArrayList<String> changes;
 //        public String iniFileUrl;
         public String description;
 //        public boolean isBeta;
@@ -99,11 +87,22 @@ public class PCSReleaseParser {
                                     Element firmwareElement = (Element) firmwareNode;
 
                                     releaseInfo.version = firmwareElement.getAttribute("version");
-                                    releaseInfo.changes = firmwareElement.getAttribute("changes");
                                     releaseInfo.hexFileUrl = firmwareElement.getAttribute("hexfile");
                                     releaseInfo.internalFileLocation = "";
                                     releaseInfo.description = productName;
 
+                                    /* Populate the changes ArrayList with the <change> elements from the XML */
+                                    NodeList changeNodes = firmwareElement.getElementsByTagName("change");
+                                    ArrayList<String> changesArrayList = new ArrayList<String>(changeNodes.getLength());
+
+                                    for (int k = 0; k < changeNodes.getLength(); k++) {
+                                        Node changeNode = changeNodes.item(k);
+                                        Element changeElement = (Element) changeNode;
+
+                                        changesArrayList.add(changeElement.getTextContent());
+                                    }
+
+                                    releaseInfo.changes = changesArrayList;
                                     productInfo.firmwareReleases.add(releaseInfo);
                                 }
                             }

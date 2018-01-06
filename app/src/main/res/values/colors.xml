@@ -18,5 +18,6 @@
     <item name="white" type="color">#FFFFFFFF</item>
     <item name="altWhite" type="color">#FFCCFF00</item>
     <item name="bluetoothBlue" type="color">#FF0000CC</item>
-    <item name="newGreen" type="color">#FF3DCC3D</item>
+    <!--<item name="newGreen" type="color">#FF3DCC3D</item>-->
+    <item name="newGreen" type="color">#FF53AA3D</item>
 </resources>

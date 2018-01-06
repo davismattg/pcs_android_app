@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="250dp"
+    android:layout_height="400dp"
+    android:background="@color/white"
+    android:padding="10dp">
+
+    <ImageView
+        android:layout_width="230dp"
+        android:layout_height="230dp"
+        android:id="@+id/productTypeImageView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10dp"
+        android:src="@drawable/unknown_cropped"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="15dp"
+        android:layout_marginEnd="15dp"
+        android:id="@+id/updateInfoLinearLayout"
+        android:layout_below="@id/productTypeImageView">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:id="@+id/currentFirmwareLinearLayout">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="14sp"
+                android:textColor="@color/darkestGray"
+                android:text="Version on "
+                android:id="@+id/currentFirmwareProductTextView"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textSize="14sp"
+                android:textColor="@color/darkestGray"
+                android:text="VX.XXX"
+                android:id="@+id/currentFirmwareVersionTextView"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:id="@+id/toInstallFirmwareLinearLayout"
+            android:layout_below="@id/currentFirmwareLinearLayout">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="14sp"
+                android:textColor="@color/darkestGray"
+                android:text="Version to install:"
+                android:id="@+id/toInstallFirmwareProductTextView" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textSize="14sp"
+                android:textColor="@color/darkestGray"
+                android:text="VX.XXX"
+                android:id="@+id/toInstallFirmwareVersionTextView"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:orientation="horizontal"
+            android:background="@color/lightGray"
+            android:id="@+id/divider"
+            android:layout_below="@id/toInstallFirmwareLinearLayout"
+            android:layout_marginTop="5dp"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="5dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/divider"
+            android:layout_marginStart="0dp"
+            android:textSize="14sp"
+            android:textColor="@color/darkestGray"
+            android:textStyle="bold"
+            android:id="@+id/firmwareUpdateWhatsNewTextView"
+            android:text="What's new in VX.XX:"/>
+
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:id="@+id/firmwareUpdateChangesListView"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/firmwareUpdateWhatsNewTextView" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/uploadingLinearLayout"
+        android:layout_marginEnd="15dp"
+        android:layout_marginStart="15dp"
+        android:visibility="gone"
+        android:layout_below="@id/updateInfoLinearLayout">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/pleaseWaitTextView"
+            android:gravity="center_horizontal"
+            android:text="Uploading firmware, please wait..."
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:textColor="@color/darkestGray"/>
+
+        <ProgressBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:progressTint="@color/newRed"
+            android:id="@+id/firmwareUpdateProgressBar"
+            android:visibility="gone"
+            style="@android:style/Widget.ProgressBar.Horizontal"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/warningTextView"
+            android:gravity="center_horizontal"
+            android:text="Do not turn off unit during upload"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:textColor="@color/newRed"/>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/uploadCompleteTextView"
+        android:layout_below="@id/updateInfoLinearLayout"
+        android:textSize="14sp"
+        android:textColor="@color/darkestGray"
+        android:text="Update successful"
+        android:visibility="gone"/>
+</RelativeLayout>

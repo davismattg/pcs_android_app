@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -25,7 +26,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
@@ -42,6 +45,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -56,33 +60,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     // Log
     private final static String TAG = FirmwareUpdateActivity.class.getSimpleName();
 
-    // Activity request codes (used for onActivityResult)
-//    private static final int kActivityRequestCode_ConnectedSettingsActivity = 0;
-//    private static final int kActivityRequestCode_MqttSettingsActivity = 1;
-//    private static final int kActivityRequestCode_SelectLensFile = 2;
-
-    // Constants
-//    private final static String kPreferences = "FirmwareUpdateActivity_prefs";
-//    private final static String kPreferences_eol = "eol";
-//    private final static String kPreferences_echo = "echo";
-//    private final static String kPreferences_asciiMode = "ascii";
-//    private final static String kPreferences_timestampDisplayMode = "timestampdisplaymode";
-//    private final static String kPreferences_versions = "firmwareVersions";
-
-    // Colors
-//    private int mTxColor;
-//    private int mRxColor;
-//    private int mInfoColor = Color.parseColor("#F21625");
-
-    // UI
-
-//    private com.prestoncinema.app.FirmwareUpdateActivity.TimestampListAdapter mBufferListAdapter;
-    //    private EditText mSendEditText;
-//    private MenuItem mMqttMenuItem;
-//    private Handler mMqttMenuItemAnimationHandler;
-//    private TextView mSentBytesTextView;
-//    private TextView mReceivedBytesTextView;
-
     // UI TextBuffer (refreshing the text buffer is managed with a timer because a lot of changes an arrive really fast and could stall the main thread)
     private Handler mUIRefreshTimerHandler = new Handler();
     private Runnable mUIRefreshTimerRunnable = new Runnable() {
@@ -95,91 +72,52 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             }
         }
     };
+
     private boolean isUITimerRunning = false;
-//    private boolean readyToProgram = false;
     private boolean erased = false;
     private boolean programMode = true; //false;
-//    private boolean isProgramming = false;
-//    private boolean lensMode = false;
-//    private boolean lensSendMode = false;
-//    private boolean lensModeConnected = false;
-//    private boolean startLensTransfer = false;
-//    private boolean lensDone = false;
-//    private boolean lensFileLoaded = false;
-//    private boolean numLensesSent = false;
     private boolean programLoaded = false;
     private boolean startConnectionSetup = true;
     private boolean isConnectionReady = false;
     private boolean baudRateSent = false;
     private boolean expectingDone = false;
-//    private boolean isFirstGoodPacket = true;
-//    private boolean commandMode = false;
     private boolean updateConfirmed = false;
     private boolean updateConfirmEntered = false;
     private int currentLine = 0;
     private int progressStatus = 0;
-//    private String responseExpected = "";
     private ArrayList<String> fileArray = new ArrayList<String>();
-    private ArrayList<String> productNameArray = new ArrayList<String>();
-//    private ArrayList<String> lensArray = new ArrayList<String>();
-//    private int[] baudRateArray = {9600, 19200, 57600, 115200};
+    private List<String> productNameArray = new ArrayList<String>();
     private int[] baudRateArray = {19200, 57600, 115200, 9600};
     private int baudRateIndex = 0;
     private StringBuilder sBuilder = new StringBuilder("");
-//    private StringBuilder lensSBuilder = new StringBuilder("");
-//    private ProgressBar uploadProgress;
-//    private ProgressBar lensProgress;
     private Handler handler = new Handler();
-//    private int numLenses = 0;
-//    private int currentLens = 0;
-//    private URL pcsURL = new URL("http://www.prestoncinema.com/");
 
     private boolean isConnected = false;
     private int baudRateWait = 0;          // number of data packets to wait after changing baud rate
     private int packetsToWait = 1;
-//    private byte[] ACK = {06};
-//    private byte[] NAK = {15};
-//    private byte[] EOT = {04};
-//    private byte[] ACK_SYN = {06, 16};
-//    private String EOTStr = new String(EOT);
-//    private String ACKStr = new String(ACK);
-//    private String NAKStr = new String(NAK);
     private String lastDataSent = "";
     private String responseExpected = "Hand3\n";
-//    private byte[] lastDataSentByte;
+    private String productDetected;
 
-//    private String s19FileName = "";
     private String productRxString = "";
-//    private String pcsPath = "http://prestoncinema.com/Upgrades/src/firmware-new.xml";
-    private String pcsPath = "https://prestoncinema.com/Upgrades/src/firmware-new.xml";
+//    private String pcsPath = "https://prestoncinema.com/Upgrades/src/firmware-new.xml";
+    private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=85f014ae-9252-4e69-b1f4-9e3993a57451";
     private String latestVersion = "";
-//    private boolean isDownloadDone = false;
 
-//    private int baudRate = 9600;
+//    private ArrayList<String> firmwareChangesArrayList;
+//    private String[] firmwareChangesArray;
+    private ArrayAdapter<String> firmwareChangesAdapter;
 
     private DownloadCompleteListener downloadCompleteListener;
     private boolean firmwareFilesDownloaded = false;
-
-    // Data
-//    private boolean mShowDataInHexFormat;
-//    private boolean mIsTimestampDisplayMode;
-//    private boolean mIsEchoEnabled;
-//    private boolean mIsEolEnabled;
-
-//    private volatile SpannableStringBuilder mTextSpanBuffer;
-//    private volatile ArrayList<UartDataChunk> mDataBuffer;
-//    private volatile int mSentBytes;
-//    private volatile int mReceivedBytes;
 
     private DataFragment mRetainedDataFragment;
 
     private MqttManager mMqttManager;
 
-//    private int maxPacketsToPaintAsText;
+    private AlertDialog updateDialog;
 
-    //    private ListFragment mListFragment;
     private ProgressDialog mProgressDialog;
-//    private AlertDialog mAlertDialog;
     private TextView mConnectedTextView;
     private ListView mFirmwareListView;
     private ArrayAdapter<String> firmwareArrayAdapter;
@@ -189,6 +127,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
     private List<Map<String, String>> firmwareMap = new ArrayList<Map<String, String>>();
     private SimpleAdapter firmwareAdapter;
+
     public FirmwareUpdateActivity() throws MalformedURLException {
     }
 
@@ -199,51 +138,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_firmware_update);
 
-//        // special logging shit to work with Huawei Phones
-//        if (BuildConfig.DEBUG) {
-//            String deviceManufacturer = android.os.Build.MANUFACTURER;
-//            if (deviceManufacturer.toLowerCase().contains("huawei")) {
-//                Timber.plant(new HuaweiTree());
-//            } else {
-//                Timber.plant(new Timber.DebugTree());
-//            }
-//        }
-
         mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
 
         mProgressDialog = new ProgressDialog(FirmwareUpdateActivity.this);
-//        mAlertDialog = new AlertDialog(FirmwareUpdateActivity.this);
-//        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.firmwareSwipeRefreshLayout);
-//        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-//            @Override
-//            public void onRefresh() {
-//                Timber.d("call firmware update task");
-//
-//                // check if the network is available, and if so, initiate download of latest firmware files
-//                if (isNetworkAvailable()) {
-////                    mProgressDialog = new ProgressDialog(FirmwareUpdateActivity.this);
-//                    mProgressDialog.setMessage("Checking for the latest firmware...");
-//                    mProgressDialog.setCancelable(false);
-//                    mProgressDialog.show();
-//
-//                    startDownload();
-//                } else {
-//                    new AlertDialog.Builder(FirmwareUpdateActivity.this)
-//                            .setTitle("No Internet Connection")
-//                            .setMessage("Please turn on your network connection to download the latest firmware files.")
-//                            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-//                                public void onClick(DialogInterface dialog, int which) {
-//                                }
-//                            }).setIcon(android.R.drawable.ic_dialog_alert).show();
-//                }
-//                mSwipeRefreshLayout.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        mSwipeRefreshLayout.setRefreshing(false);
-//                    }
-//                }, 500);
-//            }
-//        });
+//        uploadDialog = new AlertDialog(FirmwareUpdateActivity.this);
 
         mBleManager = BleManager.getInstance(this);
         isConnected = (mBleManager.getState() == 2);
@@ -268,20 +166,22 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         onServicesDiscovered();
 
         // Product Array Setup
-        productNameArray.add("Hand3\n");
-        productNameArray.add("MDR4\n");
-        productNameArray.add("MDR3\n");
-        productNameArray.add("LightR\n");
-        productNameArray.add("MLink\n");
-        productNameArray.add("MDR\n");
-        productNameArray.add("DM3\n");
-        productNameArray.add("DMF\n");
-        productNameArray.add("F_I\n");
-        productNameArray.add("Tr4\n");
-        productNameArray.add("Tr4\n");
-        productNameArray.add("VLC\n");
-        productNameArray.add("WMF\n");
+        productNameArray = Arrays.asList(getResources().getStringArray(R.array.product_names));
+//        productNameArray.add("Hand3\n");
+//        productNameArray.add("MDR4\n");
+//        productNameArray.add("MDR3\n");
+////        productNameArray.add("LightR\n");
+//        productNameArray.add("MLink\n");
+//        productNameArray.add("MDR\n");
+//        productNameArray.add("DM3\n");
+//        productNameArray.add("DMF\n");
+//        productNameArray.add("F_I\n");
+//        productNameArray.add("Tr4\n");
+//        productNameArray.add("Tr4\n");
+//        productNameArray.add("VLC\n");
+//        productNameArray.add("WMF\n");
 
+        firmwareChangesAdapter = new ArrayAdapter<String>(FirmwareUpdateActivity.this, R.layout.firmware_change_list_item);
 
         // Mqtt init
         mMqttManager = MqttManager.getInstance(this);
@@ -291,11 +191,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
         // check if the network is available, and if so, initiate download of latest firmware files
         if (isNetworkAvailable()) {
-//            mProgressDialog = new ProgressDialog(this);
-//            mProgressDialog.setMessage("Checking for the latest firmware...");
-//            mProgressDialog.setCancelable(false);
-//            mProgressDialog.show();
-
             startDownload();
         } else {
             new AlertDialog.Builder(this)
@@ -989,12 +884,14 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         if (programLoaded && programMode) {
             if (productNameArray.contains(text)) {
 //                Timber.d("Product detected");
-
+                productDetected = convertProductString(text);
                 uartSendData("Y", false);
             }
             else if (text.contains("V")) {
 //                Timber.d("Firmware version detected");
                 if (updateConfirmed) {
+                    updateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setVisibility(View.GONE);
+                    updateDialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
                     uartSendData("Y", false);
                 }
                 else {
@@ -1059,50 +956,161 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
     public void confirmUpdate(String ver) {
         updateConfirmEntered = true;
-        final String response = ver;
-        final String text = response.replaceAll("\n", " ").split(" ")[1];
+        final String currentVersion = ver.replaceAll("\n", " ").split(" ")[1];
         sBuilder.setLength(0);
+
+        SharedPreferences sharedPref = this.getBaseContext().getSharedPreferences("firmwareURLs", Context.MODE_PRIVATE);
+        String productPrefs = sharedPref.getString(trimString(productRxString), "Not found");
+        String[] changesArray = new String[0];
+
+        if (productPrefs != "Not Found") {
+            changesArray = getChangesFromPreferences(productPrefs);
+        }
+
+        final String[] changes = changesArray;
+
+
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Timber.d("Confirm update entered - text = " + response);
-                new AlertDialog.Builder(FirmwareUpdateActivity.this)
-                        .setMessage("Version on device: " + text + "\nVersion to install: V" + latestVersion + "\nWould you like to update?")
-                        .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                updateConfirmed = true;
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        activateUploadProgress();
-                                    }
-                                });
-                                checkRxData(response);
-                            }
-                        })
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Timber.d("program update cancelled ------------------------------------------------------");
-                                restoreDefaults();
-                            }
-                        })
-                        .setCancelable(false)
-                        .show();
+               AlertDialog.Builder builder = new AlertDialog.Builder(FirmwareUpdateActivity.this);
+               LayoutInflater inflater = getLayoutInflater();
+
+               final View firmwareUpdateDialogView = inflater.inflate(R.layout.dialog_firmware_update, null);
+               final String versionToInstall = "V" + latestVersion;
+               updateDialog = builder.setView(firmwareUpdateDialogView)
+                       .setPositiveButton("Update", new DialogInterface.OnClickListener() {
+                           @Override
+                           public void onClick(DialogInterface dialogInterface, int i) {
+                           }
+                       })
+                       .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                           @Override
+                           public void onClick(DialogInterface dialogInterface, int i) {
+                           }
+                       })
+                       .setCancelable(false)
+                       .create();
+
+               updateDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                   @Override
+                   public void onShow(DialogInterface dialogInterface) {
+                       updateDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.newGreen));
+                       updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.newRed));
+
+                       ImageView productImageView = firmwareUpdateDialogView.findViewById(R.id.productTypeImageView);
+                       TextView productNameTextView = firmwareUpdateDialogView.findViewById(R.id.currentFirmwareProductTextView);
+                       TextView currentVersionTextView = firmwareUpdateDialogView.findViewById(R.id.currentFirmwareVersionTextView);
+                       TextView toInstallVersionTextView = firmwareUpdateDialogView.findViewById(R.id.toInstallFirmwareVersionTextView);
+                       TextView whatsNewTextView = firmwareUpdateDialogView.findViewById(R.id.firmwareUpdateWhatsNewTextView);
+                       ListView changesListView = firmwareUpdateDialogView.findViewById(R.id.firmwareUpdateChangesListView);
+                       final ProgressBar progressBar = firmwareUpdateDialogView.findViewById(R.id.firmwareUpdateProgressBar);
+
+                       productImageView.setImageResource(getProductImage(productDetected));
+
+                       String productNameText = productNameTextView.getText() + productDetected + ":";
+                       String whatsNewText = "What's new in " + versionToInstall + ":";
+
+                       productNameTextView.setText(productNameText);
+                       currentVersionTextView.setText(currentVersion);
+                       toInstallVersionTextView.setText(versionToInstall);
+                       whatsNewTextView.setText(whatsNewText);
+
+                       firmwareChangesAdapter.addAll(changes);
+                       changesListView.setAdapter(firmwareChangesAdapter);
+                       firmwareChangesAdapter.notifyDataSetChanged();
+
+                       updateDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                           @Override
+                           public void onClick(View view) {
+                               updateConfirmed = true;
+                               progressBar.setVisibility(View.VISIBLE);
+                               firmwareUpdateDialogView.findViewById(R.id.uploadingLinearLayout).setVisibility(View.VISIBLE);
+                               firmwareUpdateDialogView.findViewById(R.id.updateInfoLinearLayout).setVisibility(View.GONE);
+
+                                activateUploadProgress(progressBar);
+
+                                checkRxData(currentVersion);
+                           }
+                       });
+
+                       updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(new View.OnClickListener() {
+                           @Override
+                           public void onClick(View view) {
+                               restoreDefaults();
+                               updateDialog.dismiss();
+                           }
+                       });
+
+                   }
+               });
+
+               updateDialog.show();
             }
         });
     }
 
-    private void activateUploadProgress() {
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setMessage("Uploading firmware to device, please wait...");
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        mProgressDialog.setIndeterminate(false);
-        mProgressDialog.setMax(fileArray.size());
-        mProgressDialog.setProgressNumberFormat(null);
-        mProgressDialog.show();
+    private String[] getChangesFromPreferences(String preference) {
+        String[] changeSplit = preference.split("=");
+        String[] out = new String[0];
+        String change = "";
+
+        if (changeSplit.length > 2) {
+            change = changeSplit[2];
+            out = change.split("&&");
+        }
+
+        Timber.d("getChangesFromPreferences: ");
+        for (String s : out) {
+            Timber.d(s);
+        }
+
+        Timber.d("---------------------");
+        return out;
+    }
+
+    /** This method returns the image for whatever product is detected for firmware updates
+     *
+     * @param product
+     * @return
+     */
+    private int getProductImage(String product) {
+        Timber.d("get product image for " + product + "$$");
+        int id;
+        switch (product) {
+            case "HU3":
+                id = R.drawable.hu3_cropped;
+                break;
+            case "MDR-4":
+                id = R.drawable.mdr4_cropped;
+                break;
+            case "MDR-3":
+                id = R.drawable.mdr3_cropped;
+                break;
+            case "MDR-2":
+                id = 0;
+//                id = R.drawable.mdr2_cropped;
+                break;
+            case "VI":
+                id = R.drawable.vi_cropped;
+            default:
+                id = R.drawable.unknown_cropped;
+                break;
+
+        }
+        return id;
+    }
+
+    private void activateUploadProgress(final ProgressBar pb) {
+//        mProgressDialog = new ProgressDialog(this);
+//        mProgressDialog.setMessage("Uploading firmware to device, please wait...");
+//        mProgressDialog.setCancelable(false);
+//        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+//        mProgressDialog.setIndeterminate(false);
+//        mProgressDialog.setMax(fileArray.size());
+//        mProgressDialog.setProgressNumberFormat(null);
+//        mProgressDialog.show();
+        pb.setMax(fileArray.size());
 
         new Thread(new Runnable() {
             public void run() {
@@ -1110,7 +1118,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     // Update the progress bar
                     handler.post(new Runnable() {
                         public void run() {
-                            mProgressDialog.setProgress(currentLine);
+                            pb.setProgress(currentLine);
                         }
                     });
                     try {
@@ -1129,41 +1137,39 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (mProgressDialog != null) {
-                    mProgressDialog.hide();
-                }
-                AlertDialog.Builder builder = new AlertDialog.Builder(com.prestoncinema.app.FirmwareUpdateActivity.this);
-                builder.setTitle("Upload complete")
-                        .setMessage("Firmware loaded successfully.")
-                        .setPositiveButton("Done", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                // send the user back to the main activity
-                                Intent intent = new Intent(FirmwareUpdateActivity.this, MainActivity.class);
-                                startActivity(intent);
-                            }
-                        })
-                        .setNegativeButton("Show Change Log", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                // show dialog with firmware revision history for that item
-                                getFirmwareHistory(productRxString);
-//                                        Intent intent = new Intent(FirmwareUpdateActivity.this, MainActivity.class);
-//                                        startActivity(intent);
-                            }
-                        })
-                        .show();
-//                Context context = getApplicationContext();
-//                CharSequence toastText = "Firmware uploaded successfully!";
-//                int duration = Toast.LENGTH_LONG;
+                updateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setText("Done");
+                updateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setVisibility(View.VISIBLE);
+                updateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        updateDialog.dismiss();
+                    }
+                });
+                updateDialog.findViewById(R.id.uploadingLinearLayout).setVisibility(View.GONE);
+                updateDialog.findViewById(R.id.uploadCompleteTextView).setVisibility(View.VISIBLE);
+
+
+//                if (updateDialog != null) {
+//                    updateDialog.hide();
+//                }
 //
-//                Toast toast = Toast.makeText(context, toastText, duration);
-//                toast.show();
+//                AlertDialog.Builder builder = new AlertDialog.Builder(com.prestoncinema.app.FirmwareUpdateActivity.this);
+//                builder.setTitle("Upload complete")
+//                        .setMessage("Firmware loaded successfully.")
+//                        .setPositiveButton("Done", new DialogInterface.OnClickListener() {
+//                            @Override
+//                            public void onClick(DialogInterface dialog, int which) {
+//                                // send the user back to the main activity
+//                                Intent intent = new Intent(FirmwareUpdateActivity.this, MainActivity.class);
+//                                startActivity(intent);
+//                            }
+//                        })
+//                        .show();
             }
         });
     }
 
-    private void getFirmwareVersions(ArrayList<String> productArray) {
+    private void getFirmwareVersions(List<String> productArray) {
 //        List<Map<String, String>> new_arr = new List<Map<String, String>>();
         for (String prod : productArray) {
 //            Map<String, String> prod_row = createFirmwareMapRow(prod);
@@ -1208,12 +1214,12 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         switch (trimmedString) {
             case "Hand3":
                 return "HU3";
-            case "DM3":
-                return "DMF 2";
-            case "F_I":
-                return "Focus/Iris";
-            case "Tr4":
-                return "G4 Radio";
+//            case "DM3":
+//                return "DMF 2";
+//            case "F_I":
+//                return "Focus/Iris";
+//            case "Tr4":
+//                return "G4 Radio";
             case "MDR":
                 return "MDR-2";
             case "MDR3":
@@ -1221,17 +1227,20 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             case "MDR4":
                 return "MDR-4";
             case "MLink":
-                return "Video Interface";
-            case "LightR":
-                return "LR2";
+                return "VI";
+//            case "LightR":
+//                return "LR2";
             default:
                 return trimmedString;
         }
     }
 
+    private String trimString(String str) {
+        return str.replaceAll("[^A-Za-z0-9_]", "");
+    }
+
     private String getS19Path(String product) {
         Timber.d("getS19Path: " + product + "$$");
-        // TODO: tell kevin about the bug with this replaceAll (need to add underscore for F/I to work properly
         String trimmedString = product.replaceAll("[^A-Za-z0-9_]", "");
         Timber.d("trimmedString: " + trimmedString + "$$");
         SharedPreferences sharedPref = this.getBaseContext().getSharedPreferences("firmwareURLs", Context.MODE_PRIVATE);
@@ -1348,10 +1357,9 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         baudRateWait = 0;                           // packet wait index
         lastDataSent = "";
         responseExpected = "Hand3\n";
+        productDetected = "";
 //        productRxString = "";
         Timber.d("ALL VALUES RESTORED TO DEFAULTS");
-//        resetModule("data");
-//        mBleManager.clearExecutor();
 
     }
 
@@ -1380,461 +1388,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private void showFirmwareAlertDialog(List<Map<String, String>> firmwareMap) {
 
     }
-
-
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////// ++++          ++++++++++++  +++++++      ++++   +++++++++  //////////
-    ////////// ++++          ++++++++++++  ++++++++     ++++  ++++++++++  //////////
-    ////////// ++++          ++++          ++++ ++++    ++++   +++++      //////////
-    ////////// ++++          ++++++++      ++++  ++++   ++++     ++++     //////////
-    ////////// ++++          ++++++++      ++++   ++++  ++++      ++++    //////////
-    ////////// ++++          ++++          ++++    ++++ ++++      +++++   //////////
-    ////////// ++++++++++++  ++++++++++++  ++++     ++++++++  ++++++++++  //////////
-    ////////// ++++++++++++  ++++++++++++  ++++      +++++++  +++++++++   //////////
-    ////////////////////////////////////////////////////////////////////////////////
-
-//    private String buildLensPacket(byte[] bytes) {
-//        String text = bytesToText(bytes, false);
-//        if (text.contains(EOTStr)) {
-//            Timber.d("EOT detected. Returning EOT");
-//            lensSBuilder.setLength(0);
-//            return EOTStr;
-//        }
-//        else {
-//            lensSBuilder.append(text);
-//            if (text.contains("\r")) {
-//                String lensString = lensSBuilder.toString();
-//                lensSBuilder.setLength(0);
-//                return lensString;
-//            } else {
-//                return "";
-//            }
-//        }
-//    }
-//
-//    private void receiveLensData(String text) {
-//        if (!startLensTransfer) {
-//            if (text.contains("Hand")) {
-//                Timber.d("Hand detected");
-//                lensModeConnected = true;
-//                byte[] new_byte = {0x11, 0x05};
-//                uartSendData(new_byte, false);
-//            } else {
-//                uartSendData(ACK, false);
-//                startLensTransfer = true;
-//                String trimmedString = text.replaceAll("[^\\w]", "");
-//                numLenses = Integer.valueOf(trimmedString, 16);
-//                Timber.d("Number of lenses detected: " + numLenses);
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        activateLensTransferProgress("RX");
-//                    }
-//                });
-//            }
-//        }
-//        else {          // lens transfer in progress, so need to add responses to a buffer
-//            if (text.contains(EOTStr)) {
-//                Timber.d("EOT detected");
-//                uartSendData(ACK_SYN, false);
-//                lensModeConnected = false;
-//                lensMode = false;
-//                startLensTransfer = false;
-//                askToSaveLenses();
-//            }
-//            else {
-//                Timber.d("Lens string: " + text);
-//                lensArray.add(text);
-//                currentLens += 1;
-//                uartSendData(ACK, false);
-//            }
-//
-//        }
-//    }
-//
-//    private void transmitLensData(String text) {
-//        if (lensSendMode) {
-//            if (text.contains(ACKStr)) {
-//                if (!lensDone) {
-//                    if (numLensesSent) {
-//                        Timber.d("ACK. Index: " + currentLens + " of " + numLenses);
-//                        if (currentLens < numLenses) {
-//                            byte[] STX = {0x02};
-//                            byte[] ETX = {0x0A, 0x0D};
-//                            String lensInfo = lensArray.get(currentLens);
-//                            Timber.d("LENS INFO: " + lensInfo);
-//                            uartSendData(STX, false);
-//                            uartSendData(lensArray.get(currentLens), false);
-//                            uartSendData(ETX, false);
-//                            currentLens += 1;
-//                        } else if (currentLens == numLenses) {
-//                            Timber.d("Done sending lenses. Sending EOT");
-//                            uartSendData(EOT, false);
-//                            lensDone = true;
-//                            currentLens = 0;
-//                            numLensesSent = false;
-//                        }
-//                    }
-//                    else {
-//                        String numLensesHexString = Integer.toHexString(numLenses);
-//                        Timber.d("Sending number of lenses: " + numLensesHexString);
-//                        byte[] STX = {0x0E};
-//                        byte[] ETX = {0x0A, 0x0D};
-//                        uartSendData(STX, false);
-//                        uartSendData(numLensesHexString, false);
-//                        uartSendData(ETX, false);
-//
-//                        numLensesSent = true;
-//                    }
-//                }
-//                else {
-//                    Timber.d("HU3 successfully received lenses");
-//                    lensSendMode = false;
-//                    lensDone = false;
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            mProgressDialog.hide();
-////                            lensProgress.setVisibility(View.INVISIBLE);
-//                        }
-//                    });
-//                }
-//            }
-//            else if (text.contains(NAKStr)) {
-//                Timber.d("NAK received from HU3. Re-sending lens " + currentLens);
-//                uartSendData(ACK, false);
-//                uartSendData(lensArray.get(currentLens), false);
-//            }
-//        }
-//    }
-
-//    public void confirmLensTransmit(View view) {
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                new AlertDialog.Builder(FirmwareUpdateActivity.this)
-//                        .setMessage("Would you like to select the file to upload?")
-//                        .setPositiveButton("For sure!", new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                            selectLensFile();
-//                            }
-//                        })
-//                        .setNegativeButton("Nope.", new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                            }
-//                        })
-//                        .setCancelable(false)
-//                        .show();
-//            }
-//        });
-//    }
-
-//    public void selectLensFile(View view) {
-//        File path = new File(getExternalFilesDir(null), "");                       // the external files directory is where the lens files are stored
-//        final File[] savedLensFiles = path.listFiles();
-//
-//        if (savedLensFiles.length > 0) {
-//            final String[] fileStrings = new String[savedLensFiles.length];
-//            for (int i = 0; i < savedLensFiles.length; i++) {
-//                String[] splitArray = savedLensFiles[i].toString().split("/");
-//                fileStrings[i] = splitArray[splitArray.length - 1];
-//            }
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    AlertDialog.Builder builder = new AlertDialog.Builder(com.prestoncinema.app.FirmwareUpdateActivity.this);
-//                    builder.setTitle("Select the lens file to upload")
-//                            .setItems(fileStrings, new DialogInterface.OnClickListener() {
-//                                @Override
-//                                public void onClick(DialogInterface dialog, int which) {
-//                                    importLensFile(savedLensFiles[which]);
-//                                }
-//                            })
-//                            .show();
-//                }
-//
-//            });
-//        }
-//    }
-//
-//    private void importLensFile(File lensFile) {
-//        Timber.d("Customer selected lens file: " + lensFile.toString());
-//        BufferedReader reader = null;
-//        lensArray.clear();
-//
-//        try {
-//            FileInputStream lensIn = new FileInputStream(lensFile);
-//            reader = new BufferedReader(
-//                    new InputStreamReader(lensIn));
-//            String line;
-//            while ((line = reader.readLine()) != null) {
-//                if (line.length() > 0) {
-//                    Timber.d("Reading lens file: " + line);
-//                    lensArray.add(line);
-//                }
-//            }
-//            if (lensArray.size() > 0) {
-//                lensFileLoaded = true;
-//                numLenses = lensArray.size();
-//                currentLens = 0;
-//            }
-//
-//            Timber.d("lensArray loaded successfully. NumLenses: " + numLenses);
-//
-//            lensSendMode = true;
-//            lensDone = false;
-//            byte[] start_byte = {01, 05};
-//            uartSendData(start_byte, false);
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    activateLensTransferProgress("TX");
-//                }
-//            });
-//        } catch (Exception ex) {
-//            Timber.d("importLensFile()", ex);
-//        } finally {
-//            if (reader != null) {
-//                try {
-//                    reader.close();
-//                }   catch (Exception e) {
-//                    Timber.d("reader exception", e);
-//                }
-//            }
-//        }
-//    }
-
-//    private void askToSaveLenses() {
-////        String currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date());
-////        final String lensFileName = currentDateTimeString;
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                mProgressDialog.hide();
-////                lensProgress.setVisibility(View.INVISIBLE);
-//                final EditText input = new EditText(com.prestoncinema.app.FirmwareUpdateActivity.this);
-//                input.setSelectAllOnFocus(true);
-//                input.setInputType(InputType.TYPE_CLASS_TEXT);
-////                input.setText(lensFileName);
-//
-//                new AlertDialog.Builder(com.prestoncinema.app.FirmwareUpdateActivity.this)
-//                        .setMessage("Import successful. Please enter a file name to save the lenses.")
-//                        .setView(input)
-//                        .setPositiveButton("Save", new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                                saveLensList(lensArray, input.getText().toString());
-//                            }
-//                        })
-////                    .setNegativeButton("Just Import", new DialogInterface.OnClickListener() {
-////                        @Override
-////                        public void onClick(DialogInterface dialog, int which) {
-////                        }
-////                    })
-//                        .setCancelable(false)
-//                        .show();
-//            }
-//        });
-//    }
-//
-//    private void saveLensList(ArrayList<String> lensArray, String fileName) {
-//        if (isExternalStorageWritable()) {
-//            Timber.d("Number of lenses in array: " + lensArray.size());
-//
-//            String lensFileName = "";
-//            if (fileName.length() > 0) {
-//                lensFileName = fileName + ".pcl";
-//            }
-//            else {
-//                String currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date());
-//                lensFileName = currentDateTimeString + ".pcl";
-//            }
-//            File lensFile = getLensStorageDir(lensFileName);
-//            try {
-//                FileOutputStream fos = new FileOutputStream(lensFile);
-//                for (String lens : lensArray) {
-//                    try {
-//                        fos.write(lens.getBytes());
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//                try {
-//                    fos.close();
-//                    currentLens = 0;
-//                    Timber.d("File created successfully");
-//
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            } catch (FileNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    public File getLensStorageDir(String lens) {
-//        // Create the directory for the saved lens files
-//        File file = new File(getExternalFilesDir(null), lens);
-//        Timber.d("File: " + file);
-//        return file;
-//    }
-//
-//    private void activateLensTransferProgress(String direction) {
-//        mProgressDialog = new ProgressDialog(this);
-//        if (direction.equals("RX")) {
-//            mProgressDialog.setMessage("Importing lenses from HU3...");
-//        }
-//        else {      // direction = "TX"
-//            mProgressDialog.setMessage("Sending lenses to HU3...");
-//        }
-//        mProgressDialog.setCancelable(false);
-//        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-//        mProgressDialog.setIndeterminate(false);
-//        mProgressDialog.setMax(numLenses);
-//        mProgressDialog.show();
-////        lensProgress.setMax(numLenses);
-////        lensProgress.setVisibility(View.VISIBLE);
-//
-//        new Thread(new Runnable() {
-//            public void run() {
-//                while (currentLens <= numLenses) {
-//                    // Update the progress bar
-//                    handler.post(new Runnable() {
-//                        public void run() {
-////                        lensProgress.setProgress(currentLens);
-//                            mProgressDialog.setProgress(currentLens);
-//                        }
-//                    });
-//                    try {
-//                        // Sleep for 200 milliseconds.
-//                        //Just to display the progress slowly
-//                        Thread.sleep(200);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        }).start();
-//    }
-//
-//
-//
-//
-//
-//
-//    public void enableLensMode(View view) {
-//        lensMode = true;
-//        lensArray.clear();
-//        byte[] syn_byte = {0x16};
-//        uartSendData(syn_byte, false);
-//    }
-
-//    public void enableSendLenses(View view) {
-//        lensSendMode = true;
-//        lensDone = false;
-//        byte[] start_byte = {01, 05};
-//        uartSendData(start_byte, false);
-//    }
-
-//    public void manageLenses(View view) {
-//        File path = new File(getExternalFilesDir(null), "");    // the external files directory is where the lens files are stored
-//        final File[] savedLensFiles = path.listFiles();
-//        final ArrayList<String> filesToDelete = new ArrayList<String>();
-//
-//        if (savedLensFiles.length > 0) {
-//            final String[] fileStrings = new String[savedLensFiles.length];
-//            for (int i = 0; i < savedLensFiles.length; i++) {
-//                String[] splitArray = savedLensFiles[i].toString().split("/");
-//                fileStrings[i] = splitArray[splitArray.length - 1];
-//            }
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    AlertDialog.Builder builder = new AlertDialog.Builder(com.prestoncinema.app.FirmwareUpdateActivity.this);
-//                    builder.setTitle("Select files for deletion")
-//                            .setMultiChoiceItems(fileStrings, null, new DialogInterface.OnMultiChoiceClickListener() {
-//                                @Override
-//                                public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-//                                    if (isChecked) {
-//                                        filesToDelete.add(savedLensFiles[which].toString());
-//                                        Timber.d("Items to delete: ");
-//                                        for (String file : filesToDelete) {
-//                                            Timber.d(file);
-//                                        }
-//                                    }
-//                                    else {
-//                                        filesToDelete.remove(filesToDelete.indexOf(savedLensFiles[which].toString()));
-//                                        Timber.d("Items to delete: ");
-//                                        for (String file : filesToDelete) {
-//                                            Timber.d(file);
-//                                        }
-//                                    }
-//                                }
-//                            })
-//                            .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-//                                @Override
-//                                public void onClick(DialogInterface dialog, int id) {
-//                                    deleteLensFiles(filesToDelete);
-//                                }
-//                            })
-//                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-//                                @Override
-//                                public void onClick(DialogInterface dialog, int id) {
-//                                    filesToDelete.clear();
-//                                }
-//                            })
-//                            .show();
-//
-//                }
-//
-//            });
-//        }
-//    }
-//
-//    private void deleteLensFiles(ArrayList<String> files) {
-//        int numToDelete = files.size();
-//        int numDeleted = 0;
-//        for (String file : files) {
-//            File lensFile = new File(file);
-//            boolean deleted = lensFile.delete();
-//            Timber.d("Deleted file: " + deleted);
-//            if (deleted) {
-//                numDeleted += 1;
-//            }
-//        }
-//        if (numDeleted == numToDelete) {
-//            final int numDel = numDeleted;
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    Timber.d("Delete successful");
-//                    new AlertDialog.Builder(com.prestoncinema.app.FirmwareUpdateActivity.this)
-//                            .setMessage(numDel + " files deleted")
-//                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//                                @Override
-//                                public void onClick(DialogInterface dialog, int which) {
-//                                }
-//                            })
-////                    .setNegativeButton("No, I like bugs.", new DialogInterface.OnClickListener() {
-////                        @Override
-////                        public void onClick(DialogInterface dialog, int which) {
-////                        programMode = false;
-////                        programLoaded = false;
-////                        isConnectionReady = false;
-////                        updateConfirmed = false;
-////                        }
-////                    })
-//                            .setCancelable(false)
-//                            .show();
-//                }
-//            });
-//        }
-//    }
-
-
 
     private String bytesToText(byte[] bytes, boolean simplifyNewLine) {
         String text = new String(bytes, Charset.forName("UTF-8"));

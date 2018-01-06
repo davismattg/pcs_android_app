@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#EEEEEE"
+    android:layout_marginBottom="1px"
+    android:background="@color/lightestGray"
     android:padding="10dp">
 
     <LinearLayout
@@ -23,14 +24,6 @@
             android:layout_marginTop="4dp"
             android:src="@drawable/signalstrength0"
             tools:ignore="ContentDescription" />
-
-        <!--<TextView-->
-            <!--android:id="@+id/rssiTextView"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_gravity="center_horizontal"-->
-            <!--android:textSize="12sp" />-->
-
     </LinearLayout>
 
     <LinearLayout

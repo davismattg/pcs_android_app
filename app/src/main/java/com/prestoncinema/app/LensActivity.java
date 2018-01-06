@@ -1528,7 +1528,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
                 while ((line = reader.readLine()) != null) {                                                            // read the file one line at a time
                     if (line.length() > 0) {
 //                        line += "\n";
-                        lensArray.add(line);                                                                            // add the read lens into the array
+                        lensArray.add(SharedHelper.checkLensChars(line));                                                                            // add the read lens into the array
                     }
                 }
 

@@ -47,49 +47,40 @@
         android:text=""
         android:textColor="@drawable/default_textcolor" />
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentBottom="true"
         android:orientation="vertical">
-
-        <TextView
-            android:text="Scanning for Preston Bluetooth devices..."
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/devicesFoundTextView"
-            android:textColor="#FFFFFF"
-            android:visibility="gone"
-            android:gravity="center_horizontal"/>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp">
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:text="@string/scanning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/devicesFoundTextView"
+                android:textColor="#FFFFFF"
+                android:visibility="visible"
+                android:gravity="center_horizontal"/>
 
             <android.support.v4.widget.SwipeRefreshLayout
                 android:id="@+id/swipeRefreshLayout"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
                 android:visibility="visible">
 
-                <ScrollView
-                    android:id="@+id/devicesScrollView"
+                <ListView
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true">
+                    android:layout_height="wrap_content"
+                    android:id="@+id/scannedDevicesListView"
+                    android:divider="@color/newRed">
 
-                        <com.prestoncinema.ui.utils.ExpandableHeightExpandableListView
-                            android:id="@+id/scannedDevicesListView"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#111111"
-                            android:layout_marginBottom="20dp"
-                            android:childDivider="#000000"
-                            android:groupIndicator="@null" />
-                    <!--</LinearLayout>-->
-                </ScrollView>
+                </ListView>
             </android.support.v4.widget.SwipeRefreshLayout>
         </LinearLayout>
 
@@ -98,17 +89,21 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:layout_marginEnd="10dp"
+            android:layout_marginBottom="60dp"
+            android:id="@+id/mainButtonsLinearLayout"
+            android:layout_alignParentBottom="true"
             android:orientation="vertical">
 
             <Button
-                android:text="Firmware Updates"
+                android:text="@string/firmware_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="0dp"
                 android:id="@+id/FirmwareUpdateActivityButton"
                 android:textColor="#FFFFFF"
-                android:background="@drawable/button_bg"
+                android:background="@drawable/button_bg_red"
                 android:textSize="16sp"
+                android:padding="10dp"
                 android:onClick="goToFirmwareUpdateActivity" />
 
             <!--<Button-->
@@ -123,17 +118,17 @@
                 <!--android:onClick="goToFirmwareCheckActivity"/>-->
 
             <Button
-                android:text="Import/Export Lenses"
+                android:text="@string/lenses_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:id="@+id/LensActivityButton"
                 android:textColor="#FFFFFF"
-                android:background="@drawable/button_bg"
+                android:background="@drawable/button_bg_red"
                 android:textSize="16sp"
                 android:onClick="goToLensTransferActivity"/>
         </LinearLayout>
-    </LinearLayout>
+    </RelativeLayout>
 
     <!--<Button-->
         <!--android:text="Not Connected"-->

@@ -104,6 +104,10 @@
         <item>Eddystone</item>
     </string-array>
 
+    <!-- Main Activity -->
+    <string name="firmware_button">Firmware Updates</string>
+    <string name="lenses_button">Lens Management</string>
+    <string name="scanning">Scanning for PCS Bluetooth Modules...</string>
     <!-- Scan Help Activity -->
     <string name="title_activity_mainhelp">Help</string>
 
@@ -124,6 +128,14 @@
         Click \"Firmware Updates\" button.\n\n
         The app will detect your device and display the currently installed version. Press \"Confirm\" to program the device.
     </string>
+
+    <string-array name="product_names">
+        <item>"Hand3\n"</item>
+        <item>"MDR4\n"</item>
+        <item>"MDR3\n"</item>
+        <item>"MDR\n"</item>
+        <item>"MLink\n"</item>
+    </string-array>
 
     <!-- Lens Activity -->
     <string name="title_activity_lens"><font fgcolor="white">Manage </font><font fgcolor="#FF533D">Lenses</font></string>
@@ -458,10 +470,13 @@
     <string name="settingsaction_confirmenablewifi_title">Wifi status</string>
     <string name="settingsaction_confirmenablewifi_message">Wifi was previously disabled to improve Bluetooth connections. Would you like to enable it again?</string>
     <string name="settings_category_update">Firmware updates</string>
-    <string name="settings_subscribe_to_firmware_updates_summary">Notify me when a new firmware version is released</string>
+    <string name="settings_category_general">General</string>
+    <string name="settings_remember_device_title">Remember connected devices</string>
+    <string name="settings_remember_device_summary">Remember Bluetooth modules I\'ve connected to for auto-connect</string>
+    <string name="settings_subscribe_to_firmware_updates_summary">Notify me when a new firmware version is available</string>
     <string name="settings_subscribe_to_firmware_updates_title">Firmware update notifications</string>
-    <string name="settings_remember_and_autoconnect">Auto-connect to remembered modules</string>
-    <string name="settings_remember_title">Remember bluetooth modules</string>
+    <string name="settings_remember_and_autoconnect">Auto-connect to my remembered Bluetooth modules</string>
+    <string name="settings_remember_title">Automatically reconnect</string>
     <string name="settings_updateenabled_title">Updates check enabled</string>
     <string name="settings_updatesenabled_summary">Check for firmware updates when connecting to a device</string>
     <string name="settings_updateserver_title">Update server</string>

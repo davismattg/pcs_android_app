@@ -38,12 +38,14 @@ import android.text.Spanned;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -51,6 +53,7 @@ import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -116,14 +119,15 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private static final int kDownloadOperation_Software_Hex = 1;
 
     // UI
-    private ExpandableHeightExpandableListView mScannedDevicesListView;
-    private ExpandableListAdapter mScannedDevicesAdapter;
-    private Button mScanButton;
+    private ListView mScannedDevicesListView;
+    private BLEModuleListViewAdapter mScannedDevicesAdapter;
+//    private ArrayAdapter mScannedDevicesAdapter;
+//    private Button mScanButton;
     private TextView mConnectedTextView;
     private long mLastUpdateMillis;
     private TextView mNoDevicesTextView;
     private TextView mDevicesFoundTextView;
-    private ScrollView mDevicesScrollView;
+//    private ScrollView mDevicesScrollView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private ProgressDialog pDialog;
     public static final int progress_bar_type = 0;
@@ -164,6 +168,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private boolean isConnected = false;
 
     private boolean autoConnect;
+    private boolean notifyFirmwareUpdate;
+    private boolean rememberDevice;
 
     private String connectedModuleName;
 
@@ -172,20 +178,10 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        // special logging shit to work with Huawei Phones
-//        if (BuildConfig.DEBUG) {
-//            String deviceManufacturer = android.os.Build.MANUFACTURER;
-//            if (deviceManufacturer.toLowerCase().contains("huawei")) {
-//                Timber.plant(new HuaweiTree());
-//            } else {
-//                Timber.plant(new Timber.DebugTree());
-//            }
-//        }
-
         // Get the intent that started the activity (to go to firmwareUpdate activity in case user clicked on notification to launch app
         Intent intent = getIntent();
         String intentType = intent.getStringExtra("type");
-        Log.d(TAG, "intent type: " + intentType);
+        Timber.d("intent type: " + intentType);
         if (intentType != null) {
             Intent newIntent = new Intent();
             switch(intentType) {
@@ -195,36 +191,32 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
         }
 //        if (data.toString().length() > 0) {
-//            Log.d(TAG, data.toString());
+//            Timber.d(data.toString());
 //        }
 //        intent.setClass(MainActivity.this, FirmwareUpdateActivity.class);
 //        startActivity(intent); //, kActivityRequestCode_Settings);
 //        return true;
 
-        Log.d(TAG, "onCreate called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         // Init variables
         mBleManager = BleManager.getInstance(this);
-
         isConnected = (mBleManager.getState() == 2);
-
-//        Log.d(TAG, "onCreate - isConnected = " + isConnected);
 
         restoreRetainedDataFragment();
         mPeripheralList = new PeripheralList();
 
         // UI
-        mScannedDevicesListView = (ExpandableHeightExpandableListView) findViewById(R.id.scannedDevicesListView);
-        mScannedDevicesAdapter = new ExpandableListAdapter();
+        mScannedDevicesListView = (ListView) findViewById(R.id.scannedDevicesListView);
+        mScannedDevicesAdapter = new BLEModuleListViewAdapter(getApplicationContext(), R.layout.layout_scan_item_title, mScannedDevices); //getApplicationContext(), mScannedDevices);
         mScannedDevicesListView.setAdapter(mScannedDevicesAdapter);
-        mScannedDevicesListView.setExpanded(true);
+//        mScannedDevicesListView.setExpanded(true);
 
-        mScannedDevicesListView.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
-            @Override
-            public void onGroupExpand(int groupPosition) {
-            }
-        });
+//        mScannedDevicesListView.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
+//            @Override
+//            public void onGroupExpand(int groupPosition) {
+//            }
+//        });
 
-        mScanButton = (Button) findViewById(R.id.scanButton);
+//        mScanButton = (Button) findViewById(R.id.scanButton);
         mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
         registerForContextMenu(mConnectedTextView);
 
@@ -238,8 +230,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
         mNoDevicesTextView = (TextView) findViewById(R.id.nodevicesTextView);
         mDevicesFoundTextView = (TextView) findViewById(R.id.devicesFoundTextView);
-        mDevicesScrollView = (ScrollView) findViewById(R.id.devicesScrollView);
-        mDevicesScrollView.setVisibility(View.GONE);
+//        mDevicesScrollView = (ScrollView) findViewById(R.id.devicesScrollView);
+//        mDevicesScrollView.setVisibility(View.GONE);
 
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
@@ -270,54 +262,65 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         }
 
 
-        // Filters
-        SharedPreferences preferences = getSharedPreferences(kPreferences, MODE_PRIVATE);
-        autoConnect = preferences.getBoolean("remember_and_autoconnect", true);
+//        SharedPreferences preferences = getSharedPreferences(kPreferences, MODE_PRIVATE);
 
-        Log.d(TAG, "autoConnect: " + autoConnect);
-
-        // subscribe the app to the "firmware" topic by default_lenses. TODO: make this settable by user in preferences
-        FirebaseMessaging.getInstance().subscribeToTopic("firmware");
-
-        Log.d(TAG, "savedInstanceState: " + savedInstanceState);
         // Setup when activity is created for the first time
         if (savedInstanceState == null) {
-            // Read preferences
+            // Read preferences from default settings
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-            Log.d(TAG, "sharedPref - " + sharedPreferences.toString());
-            boolean autoResetBluetoothOnStart = sharedPreferences.getBoolean("pref_resetble", false);
-            boolean disableWifi = sharedPreferences.getBoolean("pref_disableWifi", false);
-            boolean updatesEnabled = sharedPreferences.getBoolean("pref_updatesenabled", true);
 
-            // Update SoftwareUpdateManager
-            if (updatesEnabled) {
-                mFirmwareUpdater = new FirmwareUpdater(this, this);
-                mFirmwareUpdater.refreshSoftwareUpdatesDatabase();
+            // Setting to autoconnect to remembered devices
+            autoConnect = sharedPreferences.getBoolean("pref_remember_and_autoconnect", true);
+
+            // Setting to remember devices upon connection
+            rememberDevice = sharedPreferences.getBoolean("pref_remember_device", true);
+
+            // Subscribe the app to the "firmware" topic by default_lenses. TODO: make this settable by user in preferences
+            notifyFirmwareUpdate = sharedPreferences.getBoolean("pref_subscribe_to_firmware_updates", true);
+
+            if (notifyFirmwareUpdate) {
+                Timber.d("subscribe to firmware updates");
+                FirebaseMessaging.getInstance().subscribeToTopic("firmware");
+            }
+            else {
+                Timber.d("unsubscribe from firmware updates");
+                FirebaseMessaging.getInstance().unsubscribeFromTopic("firmware");
             }
 
-            // Turn off wifi
-            if (disableWifi) {
-                final boolean isWifiEnabled = BleUtils.isWifiEnabled(this);
-                if (isWifiEnabled) {
-                    BleUtils.enableWifi(false, this);
-                    mShouldEnableWifiOnQuit = true;
-                }
-            }
+
+//            boolean autoResetBluetoothOnStart = sharedPreferences.getBoolean("pref_resetble", false);
+//            boolean disableWifi = sharedPreferences.getBoolean("pref_disableWifi", false);
+//            boolean updatesEnabled = sharedPreferences.getBoolean("pref_updatesenabled", true);
+//
+//            // Update SoftwareUpdateManager
+//            if (updatesEnabled) {
+//                mFirmwareUpdater = new FirmwareUpdater(this, this);
+//                mFirmwareUpdater.refreshSoftwareUpdatesDatabase();
+//            }
+//
+//            // Turn off wifi
+//            if (disableWifi) {
+//                final boolean isWifiEnabled = BleUtils.isWifiEnabled(this);
+//                if (isWifiEnabled) {
+//                    BleUtils.enableWifi(false, this);
+//                    mShouldEnableWifiOnQuit = true;
+//                }
+//            }
 
             // Check if bluetooth adapter is available
-            final boolean wasBluetoothEnabled = manageBluetoothAvailability();
-            final boolean areLocationServicesReadyForScanning = manageLocationServiceAvailabilityForScanning();
+//            final boolean wasBluetoothEnabled = manageBluetoothAvailability();
+//            final boolean areLocationServicesReadyForScanning = manageLocationServiceAvailabilityForScanning();
 
-            // Reset bluetooth
-            if (autoResetBluetoothOnStart && wasBluetoothEnabled && areLocationServicesReadyForScanning) {
-                BleUtils.resetBluetoothAdapter(this, this);
-            }
+//            // Reset bluetooth
+//            if (autoResetBluetoothOnStart && wasBluetoothEnabled && areLocationServicesReadyForScanning) {
+//                BleUtils.resetBluetoothAdapter(this, this);
+//            }
         }
 
 //        else {
-//            Log.d(TAG, "savedInstanceState detected SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
+//            Timber.d("savedInstanceState detected SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
 //            isConnected = savedInstanceState.getBoolean("Connected");
-//            Log.d(TAG, "savedInstance - isConnected: " + isConnected);
+//            Timber.d("savedInstance - isConnected: " + isConnected);
 //        }
 
         // Request Bluetooth scanning permissions
@@ -407,12 +410,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onResume() {
-        Log.d(TAG, "onResume called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        Timber.d("onResume called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         super.onResume();
 
         isConnected = (mBleManager.getState() == 2);
 //        isConnected = getSharedPreferences("connectedStatus", MODE_PRIVATE).getBoolean("connected", false);
-        Log.d(TAG, "onResume - connected: " + isConnected);
+        Timber.d("onResume - connected: " + isConnected);
 
         BluetoothDevice device = mBleManager.getConnectedDevice();
         if (device != null) {
@@ -438,7 +441,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
 
     private void autostartScan() {
-        Log.d(TAG, "autoStartScan() called -------------------");
+        Timber.d("autoStartScan() called -------------------");
         isConnected = false;
         updateConnectedTextView(isConnected, "");
         if (BleUtils.getBleStatus(this) == BleUtils.STATUS_BLE_ENABLED) {
@@ -455,7 +458,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 public void run() {
                     mSwipeRefreshLayout.setVisibility(View.VISIBLE);
                     mDevicesFoundTextView.setVisibility(View.VISIBLE);
-                    mDevicesScrollView.setVisibility(View.VISIBLE);
+//                    mDevicesScrollView.setVisibility(View.VISIBLE);
                 }
             });
             startScan(null);
@@ -464,7 +467,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onPause() {
-        Log.d(TAG, "onPause called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        Timber.d("onPause called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         // Stop scanning
         if (mScanner != null && mScanner.isScanning()) {
             mIsScanPaused = true;
@@ -474,22 +477,22 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         SharedPreferences.Editor sharedPrefEditor = getSharedPreferences("connectedStatus", MODE_PRIVATE).edit();
         sharedPrefEditor.putBoolean("connected", true);
         sharedPrefEditor.apply();
-        Log.d(TAG, "sharedPref - connected = " + getSharedPreferences("connectedStatus", MODE_PRIVATE).getBoolean("connected", false));
+        Timber.d("sharedPref - connected = " + getSharedPreferences("connectedStatus", MODE_PRIVATE).getBoolean("connected", false));
 
         super.onPause();
     }
 
 //    @Override
 //    public void onSaveInstanceState(Bundle savedInstanceState) {
-//        Log.d(TAG, "onSaveInstanceState called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+//        Timber.d("onSaveInstanceState called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 //        savedInstanceState.putBoolean("Connected", isConnected);
 ////        savedInstanceState.putString("Address",)
-//        Log.d(TAG, "savedInstaceState Connected: " + savedInstanceState.getBoolean("Connected"));
+//        Timber.d("savedInstaceState Connected: " + savedInstanceState.getBoolean("Connected"));
 //        super.onSaveInstanceState(savedInstanceState);
 //    }
 
     public void onStop() {
-        Log.d(TAG, "onStop called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        Timber.d("onStop called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         if (mConnectingDialog != null) {
             mConnectingDialog.cancel();
             mConnectingDialog = null;
@@ -500,7 +503,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onBackPressed() {
-        Log.d(TAG, "onBackPressed called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        Timber.d("onBackPressed called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         if (mShouldEnableWifiOnQuit) {
             mShouldEnableWifiOnQuit = false;
             new AlertDialog.Builder(this)
@@ -509,7 +512,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d(TAG, "enableNotification wifi");
+                            Timber.d("enableNotification wifi");
                             BleUtils.enableWifi(true, MainActivity.this);
                             MainActivity.super.onBackPressed();
                         }
@@ -530,7 +533,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG, "onDestroy called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        Timber.d("onDestroy called @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         // Stop ble adapter reset if in progress
         BleUtils.cancelBluetoothAdapterReset(this);
 
@@ -589,7 +592,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         switch (requestCode) {
             case PERMISSION_REQUEST_FINE_LOCATION: {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG, "Location permission granted");
+                    Timber.d("Location permission granted");
                     if (!isConnected) {
                         // Autostart scan
                         autostartScan();
@@ -618,7 +621,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
             case PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE: {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG, "External storage permission granted");
+                    Timber.d("External storage permission granted");
                     if (!isConnected) {
                     // Autostart scan
                     autostartScan();
@@ -859,7 +862,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
 
     private void connect(BluetoothDevice device, boolean knownDevice) {
-        Log.d(TAG, "connect above clicked");
+        Timber.d("connect above clicked");
         boolean isConnecting = mBleManager.connect(this, device.getAddress(), knownDevice);
 //        if (isConnecting) {
 //            showConnectionStatus(true);
@@ -949,32 +952,36 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     // region Actions
     public void onClickScannedDevice(final View view) {
-        Log.d(TAG, "scanned device click");
+        Timber.d("scanned device click");
         final int groupPosition = (Integer) view.getTag();
 
-        if (mScannedDevicesListView.isGroupExpanded(groupPosition)) {
-            mScannedDevicesListView.collapseGroup(groupPosition);
-        } else {
-            mScannedDevicesListView.expandGroup(groupPosition, true);
-
-            // Force scrolling to view the children
-            mDevicesScrollView.post(new Runnable() {
-                @Override
-                public void run() {
-                    mScannedDevicesListView.scrollToGroup(groupPosition, view, mDevicesScrollView);
-                }
-            });
-        }
+//        if (mScannedDevicesListView.isGroupExpanded(groupPosition)) {
+//            mScannedDevicesListView.collapseGroup(groupPosition);
+//        } else {
+//            mScannedDevicesListView.expandGroup(groupPosition, true);
+//
+////            // Force scrolling to view the children
+////            mDevicesScrollView.post(new Runnable() {
+////                @Override
+////                public void run() {
+////                    mScannedDevicesListView.scrollToGroup(groupPosition, view, mDevicesScrollView);
+////                }
+////            });
+//        }
     }
 
     // function called when you click "Connect" next to device name
     public void onClickDeviceConnect(int scannedDeviceIndex) {
         stopScanning();
 
-        Log.d(TAG, "device clicked");
-        ArrayList<BluetoothDeviceData> filteredPeripherals = mPeripheralList.filteredPeripherals(false);
+        Timber.d("device clicked at index " + scannedDeviceIndex);
+        ArrayList<BluetoothDeviceData> filteredPeripherals = mScannedDevices; //mPeripheralList.filteredPeripherals(false);
+        Timber.d("filteredPeripherals: " + filteredPeripherals.toString());
+
         if (scannedDeviceIndex < filteredPeripherals.size()) {
-            mSelectedDeviceData = filteredPeripherals.get(scannedDeviceIndex);
+//            mSelectedDeviceData = filteredPeripherals.get(scannedDeviceIndex);
+            mSelectedDeviceData = mScannedDevices.get(scannedDeviceIndex);
+            Timber.d("filteredPeripherals device: " + mSelectedDeviceData.getName());
             BluetoothDevice device = mSelectedDeviceData.device;
             mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
             connect(device, false);
@@ -1004,10 +1011,10 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     //   ######     ##    ##     ## ##     ##    ##     ######   ######  ##     ## ##    ##
     ////////////////////////////////////////////////////////////////////////////////////////////////
     private void startScan(final UUID[] servicesToScan) {
-        Log.d(TAG, "startScan");
+        Timber.d("startScan");
 
 //        UUID[] UARTService =
-        mScannedDevicesListView.setExpanded(false);
+//        mScannedDevicesListView.setExpanded(false);
 
         // Stop current scanning (if needed)
         stopScanning();
@@ -1025,56 +1032,56 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     final String deviceName = device.getName();                                                                 // get scanned device name
                     if (deviceName != null && deviceName.contains("PCS_Updater_")) {                                            // check for the PCS string to only show applicable devices
-                        Log.d(TAG, "Preston device detected-----------------------------------------------------");
-                        if (autoConnect) {                                                                                      // user preferences to autoconnect or not
+//                        Timber.d("Preston device detected: " + deviceName);
+//                        if (autoConnect) {                                                                                      // user preferences to autoconnect or not
                             boolean knownDevice = checkForDeviceInPreferences(device.getAddress(), deviceName);                 // check if the device address is already stored in SharedPreferences
-                            if (knownDevice) {                                                                                  // if remembered, connect to it
+                            if (knownDevice && autoConnect) {                                                                                  // if remembered, connect to it
                                 stopScanning();
-                                Log.d(TAG, "Remembered device detected, connecting");
+                                Timber.d("Remembered device detected, connecting");
                                 mBleManager.setBleListener(MainActivity.this);                                                  // Force set listener (could be still checking for updates...)
                                 connect(device, true);                                                                          // connect. TODO: Utilize device priority index from prefs (or whatever other system we decide on)
                                 return;
                             }
-                        }
-                    }
+//                        }
 
-                    BluetoothDeviceData previouslyScannedDeviceData = null;
-                    if (mScannedDevices == null)
-                        mScannedDevices = new ArrayList<>();       // Safeguard
+                        BluetoothDeviceData previouslyScannedDeviceData = null;
+                        if (mScannedDevices == null)
+                            mScannedDevices = new ArrayList<>();       // Safeguard
 
-                    // Check that the device was not previously found
-                    for (BluetoothDeviceData deviceData : mScannedDevices) {
-                        if (deviceData.device.getAddress().equals(device.getAddress())) {
-                            previouslyScannedDeviceData = deviceData;
-                            break;
-                        }
-                    }
-
-                    BluetoothDeviceData deviceData;
-                    if (previouslyScannedDeviceData == null) {
-                        // Add it to the mScannedDevice list
-                        deviceData = new BluetoothDeviceData();
-                        mScannedDevices.add(deviceData);
-                    } else {
-                        deviceData = previouslyScannedDeviceData;
-                    }
-
-                    deviceData.device = device;
-                    deviceData.rssi = rssi;
-                    deviceData.scanRecord = scanRecord;
-                    decodeScanRecords(deviceData);
-
-                    // Update device data
-                    long currentMillis = SystemClock.uptimeMillis();
-                    if (previouslyScannedDeviceData == null || currentMillis - mLastUpdateMillis > kMinDelayToUpdateUI) {          // Avoid updating when not a new device has been found and the time from the last update is really short to avoid updating UI so fast that it will become unresponsive
-                        mLastUpdateMillis = currentMillis;
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                updateUI();
+                        // Check that the device was not previously found
+                        for (BluetoothDeviceData deviceData : mScannedDevices) {
+                            if (deviceData.device.getAddress().equals(device.getAddress())) {
+                                previouslyScannedDeviceData = deviceData;
+                                break;
                             }
-                        });
+                        }
+
+                        BluetoothDeviceData deviceData;
+                        if (previouslyScannedDeviceData == null) {
+                            // Add it to the mScannedDevice list
+                            deviceData = new BluetoothDeviceData();
+                            mScannedDevices.add(deviceData);
+                        } else {
+                            deviceData = previouslyScannedDeviceData;
+                        }
+
+                        deviceData.device = device;
+                        deviceData.rssi = rssi;
+                        deviceData.scanRecord = scanRecord;
+                        decodeScanRecords(deviceData);
+
+                        // Update device data
+                        long currentMillis = SystemClock.uptimeMillis();
+                        if (previouslyScannedDeviceData == null || currentMillis - mLastUpdateMillis > kMinDelayToUpdateUI) {          // Avoid updating when not a new device has been found and the time from the last update is really short to avoid updating UI so fast that it will become unresponsive
+                            mLastUpdateMillis = currentMillis;
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    updateUI();
+                                }
+                            });
+                        }
                     }
 
                 }
@@ -1159,7 +1166,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 if (type == 0) break;
 
                 // Data
-//            Log.d(TAG, "record -> lenght: " + length + " type:" + type + " data" + data);
+//            Timber.d("record -> lenght: " + length + " type:" + type + " data" + data);
 
                 switch (type) {
                     case 0x02:          // Partial list of 16-bit UUIDs
@@ -1245,11 +1252,11 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //        runOnUiThread(new Runnable() {
 //            @Override
 //            public void run() {
-                mScanButton.setText(getString(isScanning ? R.string.scan_scanbutton_scanning : R.string.scan_scanbutton_scan));
+//                mScanButton.setText(getString(isScanning ? R.string.scan_scanbutton_scanning : R.string.scan_scanbutton_scan));
 
                 // Show list and hide "no menu_devices" label
                 mNoDevicesTextView.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
-                mDevicesScrollView.setVisibility(isListEmpty ? View.GONE : View.VISIBLE);
+//                mDevicesScrollView.setVisibility(isListEmpty ? View.GONE : View.VISIBLE);
 //            }
 //        });
 
@@ -1260,7 +1267,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     // region ResetBluetoothAdapterListener
     @Override
     public void resetBluetoothCompleted() {
-        Log.d(TAG, "Reset completed -> Resume scanning");
+        Timber.d("Reset completed -> Resume scanning");
         resumeScanning();
     }
     // endregion
@@ -1270,18 +1277,18 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         // Enable generic attribute service
         final BluetoothGattService genericAttributeService = mBleManager.getGattService(kGenericAttributeService);
         if (genericAttributeService != null) {
-            Log.d(TAG, "kGenericAttributeService found. Check if kServiceChangedCharacteristic exists");
+            Timber.d("kGenericAttributeService found. Check if kServiceChangedCharacteristic exists");
 
             final UUID characteristicUuid = UUID.fromString(kServiceChangedCharacteristic);
             final BluetoothGattCharacteristic dataCharacteristic = genericAttributeService.getCharacteristic(characteristicUuid);
             if (dataCharacteristic != null) {
-                Log.d(TAG, "kServiceChangedCharacteristic exists. Enable indication");
+                Timber.d("kServiceChangedCharacteristic exists. Enable indication");
                 mBleManager.enableIndication(genericAttributeService, kServiceChangedCharacteristic, true);
             } else {
-                Log.d(TAG, "Skip enable indications for kServiceChangedCharacteristic. Characteristic not found");
+                Timber.d("Skip enable indications for kServiceChangedCharacteristic. Characteristic not found");
             }
         } else {
-            Log.d(TAG, "Skip enable indications for kServiceChangedCharacteristic. kGenericAttributeService not found");
+            Timber.d("Skip enable indications for kServiceChangedCharacteristic. kGenericAttributeService not found");
         }
 
         // Launch activity
@@ -1291,8 +1298,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     // region BleManagerListener
     @Override
     public void onConnected() {
-        Log.d(TAG, "onConnected BleManagerListener reached");
-//        stopScanning();
+        Timber.d("onConnected BleManagerListener reached");
+
         isConnected = true;
         runOnUiThread(new Runnable() {
               @Override
@@ -1301,9 +1308,20 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                   mDevicesFoundTextView.setVisibility(View.GONE);
               }
           });
-        SharedPreferences deviceHistoryPreferences = getSharedPreferences("deviceHistory", MODE_PRIVATE);
-        SharedPreferences deviceNamePreferences = getSharedPreferences("deviceNameHistory", MODE_PRIVATE);
-        saveDeviceToPreferences(mBleManager.getConnectedDevice(), deviceHistoryPreferences, deviceNamePreferences);
+
+        boolean isScanning = mScanner != null && mScanner.isScanning();
+
+        if (isScanning) {
+            stopScanning();
+        }
+
+        if (rememberDevice) {
+            Timber.d("rememberDevice true, add to prefs");
+            SharedPreferences deviceHistoryPreferences = getSharedPreferences("deviceHistory", MODE_PRIVATE);
+            SharedPreferences deviceNamePreferences = getSharedPreferences("deviceNameHistory", MODE_PRIVATE);
+            saveDeviceToPreferences(mBleManager.getConnectedDevice(), deviceHistoryPreferences, deviceNamePreferences);
+        }
+
         updateConnectedTextView(isConnected, mBleManager.getConnectedDevice().getName());
     }
 
@@ -1313,7 +1331,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onDisconnected() {
-        Log.d(TAG, "MainActivity onDisconnected called --------------------");
+        Timber.d("MainActivity onDisconnected called --------------------");
 
         isConnected = false;
         updateConnectedTextView(isConnected, "");
@@ -1324,7 +1342,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //        private static final int STATE_CONNECTING = 1;
 //        private static final int STATE_CONNECTED = 2;
 
-        Log.d(TAG, "connection status: " + connStat);
+        Timber.d("connection status: " + connStat);
 
         // if we're truly disconnected, start scanning again for new modules
         if (connStat == 0) {
@@ -1347,7 +1365,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onServicesDiscovered() {
-        Log.d(TAG, "services discovered");
+        Timber.d("services discovered");
 
         // Check if there is a failed installation that was stored to retry
         boolean isFailedInstallationDetected = FirmwareUpdater.isFailedInstallationRecoveryAvailable(this, mBleManager.getConnectedDeviceAddress());
@@ -1355,7 +1373,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.d(TAG, "Failed installation detected");
+                    Timber.d("Failed installation detected");
                     // Ask user if should update
                     new AlertDialog.Builder(MainActivity.this)
                             .setTitle(R.string.scan_failedupdatedetected_title)
@@ -1399,7 +1417,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 ////                    mFirmwareUpdater.checkFirmwareUpdatesForTheCurrentConnectedDevice();        // continues asynchronously in onFirmwareUpdatesChecked
 ////                    isCheckingFirmware = true;
 //                } else {
-//                    Log.d(TAG, "Updates: Device already checked previously. Skipping...");
+//                    Timber.d("Updates: Device already checked previously. Skipping...");
 //                }
 //            }
 //
@@ -1424,9 +1442,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     // endregion
 
     private void updateConnectedTextView(boolean status, final String deviceName) {
-        Log.d(TAG, "updateConnectedTextView: status = " + status);
+        Timber.d("updateConnectedTextView: status = " + status);
         if (status) {
-            Log.d(TAG, "updateConnectedTextView true");
+            Timber.d("updateConnectedTextView true");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -1437,7 +1455,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             });
         }
         else {
-            Log.d(TAG, "updateConnectedTextView false");
+            Timber.d("updateConnectedTextView false");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -1490,14 +1508,14 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 }
             });
         } else {
-            Log.d(TAG, "onFirmwareUpdatesChecked: No software update available");
+            Timber.d("onFirmwareUpdatesChecked: No software update available");
             launchComponentActivity();
         }
     }
 
     @Override
     public void onUpdateCancelled() {
-        Log.d(TAG, "Software version installation cancelled");
+        Timber.d("Software version installation cancelled");
 
         mLatestCheckedDeviceAddress = null;
 
@@ -1507,7 +1525,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onUpdateCompleted() {
-        Log.d(TAG, "Software version installation completed successfully");
+        Timber.d("Software version installation completed successfully");
 
         Toast.makeText(this, R.string.scan_softwareupdate_completed, Toast.LENGTH_LONG).show();
 
@@ -1517,7 +1535,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onUpdateFailed(boolean isDownloadError) {
-        Log.d(TAG, "Software version installation failed");
+        Timber.d("Software version installation failed");
         Toast.makeText(this, isDownloadError ? R.string.scan_softwareupdate_downloaderror : R.string.scan_softwareupdate_updateerror, Toast.LENGTH_LONG).show();
 
         mLatestCheckedDeviceAddress = null;
@@ -1528,7 +1546,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onUpdateDeviceDisconnected() {
-        Log.d(TAG, "onUpdateDeviceDisconnected() called -------------------");
+        Timber.d("onUpdateDeviceDisconnected() called -------------------");
         // Update UI
         runOnUiThread(new Runnable() {
             @Override
@@ -1546,12 +1564,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
 
     private boolean checkForDeviceInPreferences(String address, String name) {
-        Log.d(TAG, "Checking for device in preferences: " + address + " & " + name);
+//        Timber.d("Checking for device in preferences: " + address + " & " + name);
         SharedPreferences preferences = getSharedPreferences("deviceHistory", MODE_PRIVATE);
         String deviceName = preferences.getString(address, "none");
         boolean productFound = (deviceName.equals(name));
-        Log.d(TAG, "looked @ preferences, found address: " + deviceName + "$$");
-        Log.d(TAG, "looked @ preferences, productFound: " + productFound);
+//        Timber.d("looked @ preferences, found address: " + deviceName + "$$");
+//        Timber.d("looked @ preferences, productFound: " + productFound);
 
         return productFound;
 //        if (!productFound) {                    // 1 = check after connection
@@ -1577,11 +1595,11 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
 //            nameEditor.putString()
 
-            Log.d(TAG, "Device address written to preferences");
+            Timber.d("Device address written to preferences");
         }
         // if it is found, no need to add it again
         else {
-            Log.d(TAG, "Device already in preferences");
+            Timber.d("Device already in preferences");
         }
     }
 
@@ -1617,7 +1635,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
 //    public void downloadLatestFirmwareVersions(Activity activity, int type, String hexUri) {
 //    public void downloadLatestFirmwareVersions() {
-//        Log.d(TAG, "----------------- downloading firmware versions -------------------------");
+//        Timber.d("----------------- downloading firmware versions -------------------------");
 ////        if (isNetworkAvailable()) {
 ////        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
 ////        String releasesXml = sharedPreferences.getString("updatemanager_releasesxml", null);
@@ -1673,7 +1691,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //                }
 //            });
 //
-//            Log.d(TAG, "Downloading " + release.hexFileUrl);
+//            Timber.d("Downloading " + release.hexFileUrl);
 //            mDownloadTask = new DownloadTask(mContext, this, kDownloadOperation_Software_Hex);
 //            mDownloadTask.setTag(release);
 //            mDownloadTask.execute(release.hexFileUrl);          // calls onDownloadCompleted when finished
@@ -1971,6 +1989,101 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     // endregion
 
     // region adapters
+    private class BLEModuleListViewAdapter extends ArrayAdapter {
+        private ArrayList<BluetoothDeviceData> devices;
+//        private Context context;
+
+//        private class GroupViewHolder {
+//            TextView nameTextView;
+//            ImageView rssiImageView;
+//            Button connectButton;
+//        }
+
+//        public BLEModuleListViewAdapter(Context context, ArrayList<BluetoothDeviceData> devices) {
+//            super(context, -1, devices);
+//            this.devices = devices;
+//            this.context = context;
+//        }
+
+//        private final int resId;
+
+        public BLEModuleListViewAdapter(Context context, int resource, ArrayList<BluetoothDeviceData> BLEDevices) {
+            super(context, -1, BLEDevices);
+//            resId = resource;
+            this.devices = BLEDevices;
+//            Timber.d("resource id: " + resId);
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return devices.get(position);
+        }
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+            // Check if an existing view is being reused, otherwise inflate the view
+            if (convertView == null) {
+                convertView = getLayoutInflater().inflate(R.layout.layout_scan_item_title, parent, false);
+            }
+
+            TextView nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
+            ImageView rssiImageView = (ImageView) convertView.findViewById(R.id.rssiImageView);
+            final Button connectButton = (Button) convertView.findViewById(R.id.connectButton);
+
+            convertView.setTag(position);
+            connectButton.setTag(position);
+
+            // Get the Bluetooth Device data from the list
+            final BluetoothDeviceData data = (BluetoothDeviceData) getItem(position);
+
+            final String deviceName = data.getNiceName();
+            nameTextView.setText(deviceName);
+
+            int rrsiDrawableResource = getDrawableIdForRssi(data.rssi);
+            rssiImageView.setImageResource(rrsiDrawableResource);
+
+            connectButton.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View view, MotionEvent motionEvent) {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        Timber.d("onTouch: Device name = " + deviceName);
+                        onClickDeviceConnect((int) connectButton.getTag());
+                        view.performClick();
+                        return true;
+                    }
+
+                    return false;
+                }
+            });
+
+            return convertView;
+        }
+
+        private int getDrawableIdForRssi(int rssi) {
+            int index;
+            if (rssi == 127 || rssi <= -84) {       // 127 reserved for RSSI not available
+                index = 0;
+            } else if (rssi <= -72) {
+                index = 1;
+            } else if (rssi <= -60) {
+                index = 2;
+            } else if (rssi <= -48) {
+                index = 3;
+            } else {
+                index = 4;
+            }
+
+            final int kSignalDrawables[] = {
+                    R.drawable.signalstrength0,
+                    R.drawable.signalstrength1,
+                    R.drawable.signalstrength2,
+                    R.drawable.signalstrength3,
+                    R.drawable.signalstrength4};
+
+            return kSignalDrawables[index];
+        }
+    }
+
     private class ExpandableListAdapter extends BaseExpandableListAdapter {
         // Data
         private ArrayList<BluetoothDeviceData> mFilteredPeripherals;

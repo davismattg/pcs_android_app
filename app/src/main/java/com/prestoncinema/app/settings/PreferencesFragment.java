@@ -46,7 +46,7 @@ public class PreferencesFragment extends PreferenceFragment implements SharedPre
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.d(TAG, "Pref changed: " + key);
-        updatePrefSummary(findPreference(key));
+//        updatePrefSummary(findPreference(key));
     }
 
     private void setupSpecialPreferences() {
@@ -57,12 +57,12 @@ public class PreferencesFragment extends PreferenceFragment implements SharedPre
 //        updateEditTextPreferenceSummary("pref_updateserver");
 
         // Set ignored version
-        {
-            String ignoredVersion = sharedPreferences.getString("pref_ignoredversion", null);
-            EditTextPreference etp = (EditTextPreference) findPreference("pref_ignoredversion");
-            etp.setSummary(ignoredVersion);
-            etp.setText(ignoredVersion);
-        }
+//        {
+//            String ignoredVersion = sharedPreferences.getString("pref_ignoredversion", null);
+//            EditTextPreference etp = (EditTextPreference) findPreference("pref_ignoredversion");
+//            etp.setSummary(ignoredVersion);
+//            etp.setText(ignoredVersion);
+//        }
 
         // Set reset button
         Preference button = findPreference("pref_reset");
@@ -89,15 +89,15 @@ public class PreferencesFragment extends PreferenceFragment implements SharedPre
             }
         });
 
-        // Hide advanced options (if not debug)
-        if (!BuildConfig.DEBUG) {
-            PreferenceCategory category = (PreferenceCategory) findPreference("pref_key_update_settings");
-            Preference updateServerPreference = findPreference("pref_updateserver");
-            category.removePreference(updateServerPreference);
-
-            Preference versionCheckPreference = findPreference("pref_updatesversioncheck");
-            category.removePreference(versionCheckPreference);
-        }
+//        // Hide advanced options (if not debug)
+//        if (!BuildConfig.DEBUG) {
+//            PreferenceCategory category = (PreferenceCategory) findPreference("pref_key_update_settings");
+//            Preference updateServerPreference = findPreference("pref_updateserver");
+//            category.removePreference(updateServerPreference);
+//
+//            Preference versionCheckPreference = findPreference("pref_updatesversioncheck");
+//            category.removePreference(versionCheckPreference);
+//        }
     }
 
     private void initSummary(Preference p) {
@@ -107,58 +107,58 @@ public class PreferencesFragment extends PreferenceFragment implements SharedPre
                 initSummary(pGrp.getPreference(i));
             }
         } else {
-            updatePrefSummary(p);
+//            updatePrefSummary(p);
         }
     }
 
-    private void updatePrefSummary(Preference p) {
-        if (p instanceof ListPreference) {
-            ListPreference listPref = (ListPreference) p;
-            p.setSummary(listPref.getEntry());
-        } else if (p instanceof EditTextPreference) {
-            updateEditTextPreferenceSummary(p.getKey());
-        } else if (p instanceof MultiSelectListPreference) {
-            EditTextPreference editTextPref = (EditTextPreference) p;
-            p.setSummary(editTextPref.getText());
-        }
-    }
+//    private void updatePrefSummary(Preference p) {
+//        if (p instanceof ListPreference) {
+//            ListPreference listPref = (ListPreference) p;
+//            p.setSummary(listPref.getEntry());
+//        } else if (p instanceof EditTextPreference) {
+//            updateEditTextPreferenceSummary(p.getKey());
+//        } else if (p instanceof MultiSelectListPreference) {
+//            EditTextPreference editTextPref = (EditTextPreference) p;
+//            p.setSummary(editTextPref.getText());
+//        }
+//    }
 
-    private void updateEditTextPreferenceSummary(String key)
-    {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+//    private void updateEditTextPreferenceSummary(String key)
+//    {
+//        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+//
+//        if (key.equals("pref_uarttextmaxpackets"))
+//        {
+//            // Set pref_uarttextmaxpackets
+//            final int uartTextMaxPackets = getUartTextMaxPackets(getActivity());
+//
+//            EditTextPreference etp = (EditTextPreference) findPreference("pref_uarttextmaxpackets");
+//            String summary = String.format(getString(R.string.settings_uarttextmaxpackets_summary_format), uartTextMaxPackets);
+//            etp.setSummary(summary);
+//            etp.setText("" + uartTextMaxPackets);
+//        }
+//        else if (key.equals("pref_updateserver"))
+//        {
+//            // Set updateserver
+//            String updateServer = sharedPreferences.getString("pref_updateserver", com.prestoncinema.app.update.FirmwareUpdater.kDefaultUpdateServerUrl);
+//            EditTextPreference etp = (EditTextPreference) findPreference("pref_updateserver");
+//            etp.setSummary(updateServer);
+//            etp.setText(updateServer);
+//        }
+//    }
 
-        if (key.equals("pref_uarttextmaxpackets"))
-        {
-            // Set pref_uarttextmaxpackets
-            final int uartTextMaxPackets = getUartTextMaxPackets(getActivity());
-
-            EditTextPreference etp = (EditTextPreference) findPreference("pref_uarttextmaxpackets");
-            String summary = String.format(getString(R.string.settings_uarttextmaxpackets_summary_format), uartTextMaxPackets);
-            etp.setSummary(summary);
-            etp.setText("" + uartTextMaxPackets);
-        }
-        else if (key.equals("pref_updateserver"))
-        {
-            // Set updateserver
-            String updateServer = sharedPreferences.getString("pref_updateserver", com.prestoncinema.app.update.FirmwareUpdater.kDefaultUpdateServerUrl);
-            EditTextPreference etp = (EditTextPreference) findPreference("pref_updateserver");
-            etp.setSummary(updateServer);
-            etp.setText(updateServer);
-        }
-    }
-
-    public static int getUartTextMaxPackets(Context context) {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        String uartTextMaxPacketsString = sharedPreferences.getString("pref_uarttextmaxpackets", "" + UartActivity.kDefaultMaxPacketsToPaintAsText);
-
-        // Extract integer (and check for exceptions)
-        int uartTextMaxPackets = UartActivity.kDefaultMaxPacketsToPaintAsText;
-        try {
-            uartTextMaxPackets = Integer.parseInt(uartTextMaxPacketsString);
-        } catch (NumberFormatException ignored) {
-        }
-        if (uartTextMaxPackets<1) uartTextMaxPackets = 1;       // Mininum value is 1
-
-        return uartTextMaxPackets;
-    }
+//    public static int getUartTextMaxPackets(Context context) {
+//        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+//        String uartTextMaxPacketsString = sharedPreferences.getString("pref_uarttextmaxpackets", "" + UartActivity.kDefaultMaxPacketsToPaintAsText);
+//
+//        // Extract integer (and check for exceptions)
+//        int uartTextMaxPackets = UartActivity.kDefaultMaxPacketsToPaintAsText;
+//        try {
+//            uartTextMaxPackets = Integer.parseInt(uartTextMaxPacketsString);
+//        } catch (NumberFormatException ignored) {
+//        }
+//        if (uartTextMaxPackets<1) uartTextMaxPackets = 1;       // Mininum value is 1
+//
+//        return uartTextMaxPackets;
+//    }
 }

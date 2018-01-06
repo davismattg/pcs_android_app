@@ -1,6 +1,8 @@
 package com.prestoncinema.app;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Timer;
 
 import timber.log.Timber;
@@ -51,19 +53,64 @@ public class SharedHelper {
         }
     }
 
+    /** This method checks the lens data coming from either the HU3 or stored via text file and makes sure it's OK for import.
+     * It checks the first character to see if it's STX (0x2), and removes it if so. It also looks at the final two characters to
+     * see if they are LF (0xA) and CR (0xD). If those aren't present, it adds them and returns a new array. Otherwise, it returns
+     * the existing byte[].
+     * @param lensChars
+     * @return
+     */
     public static byte[] checkLensChars(byte[] lensChars) {
         int begin = 0;
+        boolean addCR = false;
+        boolean addLF = false;
+
+        /* Create a new array in case we need to append \r or \n */
+        byte[] newChars = Arrays.copyOf(lensChars, lensChars.length + 2);
 
         if (lensChars[0] == 0x2) {
             Timber.d("STX found. Removing");
             begin += 1;
         }
+
+        /* Check the second-to-last character for LF */
+        if (!(lensChars[lensChars.length - 2] == 0xA)) {
+            Timber.d("LF not found on end. Append LF.");
+            addLF = true;
+        }
+
+        /* Check the last character for CR */
+        if (!(lensChars[lensChars.length - 1] == 0xD)) {
+            Timber.d("CR not found on end. Append CR.");
+            addCR = true;
+        }
+
+        /* Set the second-to-last character to LF in the new array */
+        if (addLF) {
+            newChars[newChars.length - 2] = 0xA;
+        }
+
+        /* Set the last character to CR in the new array */
+        if (addCR) {
+            newChars[newChars.length - 1] = 0xD;
+        }
+
+        /* Return the new array if we needed to change it */
+        if (addLF || addCR) {
+            return Arrays.copyOfRange(newChars, begin, newChars.length);
+        }
+
+        /* Otherwise, return the original array */
         return Arrays.copyOfRange(lensChars, begin, lensChars.length);
     }
 
+    /** Same method as above, but for handling string inputs
+     *
+     * @param lensString
+     * @return
+     */
     public static String checkLensChars(String lensString) {
         byte[] bytesIn = lensString.getBytes();
-
         return new String(checkLensChars(bytesIn));
     }
 }

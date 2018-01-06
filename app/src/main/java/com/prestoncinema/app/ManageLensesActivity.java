@@ -865,7 +865,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
             String line;                                                                            // read the file one line at a time
             while ((line = reader.readLine()) != null) {
                 if (line.length() > 0) {
-                    lensArray.add(line);                                                            // add the read lens into the array
+                    lensArray.add(SharedHelper.checkLensChars(line));                                                            // add the read lens into the array
                 }
             }
             if (lensArray.size() > 0) {                                                             // make sure something was actually imported
@@ -1578,7 +1578,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
                 FileOutputStream fos = new FileOutputStream(lensFile);
                 for (String lens : lensArray) {
 //                    Timber.d("current lens: " + lens);
-                    String lensOut = lens + "\n";
+                    String lensOut = SharedHelper.checkLensChars(lens);
                     try {
                         fos.write(lensOut.getBytes());
                     } catch (IOException e) {
@@ -1635,28 +1635,6 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         lensArray.remove(id);
         lensObjectArray.remove(id);
         updateLensList();
-    }
-
-    public void addNewLens(View view) {
-        Timber.d("add new lens");
-    }
-
-    // hide or show the add new lens section of the UI
-    public void toggleAddNewLens(View view) {
-        final View layout = findViewById(R.id.NewLensLayout);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (layout.getVisibility() == View.VISIBLE) {
-                    layout.setVisibility(View.GONE);
-//                    mAddLensButton.setText("Add Lens");
-                }
-                else {
-                    layout.setVisibility(View.VISIBLE);
-//                    mAddLensButton.setText("Close");
-                }
-            }
-        });
     }
 
     // function called when the user enters a new lens through the alert dialog and presses "save"
