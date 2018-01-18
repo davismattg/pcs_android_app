@@ -138,7 +138,7 @@
     </string-array>
 
     <!-- Lens Activity -->
-    <string name="title_activity_lens"><font fgcolor="white">Manage </font><font fgcolor="#FF533D">Lenses</font></string>
+    <string name="title_activity_lens"><font fgcolor="white">Lens </font><font fgcolor="#FF533D">Management</font></string>
 
     <!-- Manage Lenses Activity -->
     <string name="title_activity_manage_lenses"><font fgcolor="white">Edit </font><font fgcolor="#FF533D">Lenses</font></string>

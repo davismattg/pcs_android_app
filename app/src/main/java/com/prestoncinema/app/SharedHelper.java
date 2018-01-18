@@ -40,6 +40,23 @@ public class SharedHelper {
         return completeStringLength <= 14;
     }
 
+    public static boolean checkIfLensExists(ArrayList<Lens> lenses, int focal1, int focal2, String serial, String note) {
+        Timber.d("check if lens exists");
+        boolean exists = false;
+            for (Lens lens : lenses) {
+                if (lens.getFocalLength1() == focal1) {
+                    if (lens.getFocalLength2() == focal2) {
+                        if (lens.getSerial().equals(serial)) {
+                            if (lens.getNote().equals(note)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        return exists;
+    }
+
     // if Prime lens, just show ___ mm. If zoom lens, show ____-____ mm
     public static boolean isPrime(String type) {
         switch (type) {
@@ -69,19 +86,19 @@ public class SharedHelper {
         byte[] newChars = Arrays.copyOf(lensChars, lensChars.length + 2);
 
         if (lensChars[0] == 0x2) {
-            Timber.d("STX found. Removing");
+//            Timber.d("STX found. Removing");
             begin += 1;
         }
 
         /* Check the second-to-last character for LF */
         if (!(lensChars[lensChars.length - 2] == 0xA)) {
-            Timber.d("LF not found on end. Append LF.");
+//            Timber.d("LF not found on end. Append LF.");
             addLF = true;
         }
 
         /* Check the last character for CR */
         if (!(lensChars[lensChars.length - 1] == 0xD)) {
-            Timber.d("CR not found on end. Append CR.");
+//            Timber.d("CR not found on end. Append CR.");
             addCR = true;
         }
 

@@ -4,15 +4,15 @@
     tools:context="com.prestoncinema.app.LensActivity">
     <group android:id="@+id/lensMenuGroup">
         <item
-            android:id="@+id/lensModeToggle"
+            android:id="@+id/importLensesMenuItem"
             android:icon="@drawable/ic_settings_white_24dp"
-            android:title="Change Mode"
+            android:title="Import..."
             app:showAsAction="never" />
 
-        <!--<item-->
-        <!--android:id="@+id/action_refreshcache"-->
-        <!--android:title="@string/action_refreshcache"-->
-        <!--app:showAsAction="never" />-->
-
+        <item
+            android:id="@+id/exportLensesMenuItem"
+            android:icon="@drawable/ic_settings_white_24dp"
+            android:title="Export..."
+            app:showAsAction="never" />
     </group>
 </menu>

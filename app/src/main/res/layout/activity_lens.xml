@@ -32,7 +32,7 @@
                 android:layout_marginEnd="7dp"
                 android:id="@+id/ImportLensesButton"
                 android:textColor="#FFFFFF"
-                android:background="@drawable/button_bg"
+                android:background="@drawable/button_bg_red"
                 android:textSize="16sp"
                 android:onClick="enableLensImport" />
 
@@ -44,7 +44,7 @@
                 android:layout_marginStart="7dp"
                 android:id="@+id/ExportLensesButton"
                 android:textColor="#FFFFFF"
-                android:background="@drawable/button_bg"
+                android:background="@drawable/button_bg_red"
                 android:textSize="16sp"
                 android:onClick="selectLensFile" />
         </LinearLayout>
@@ -63,19 +63,17 @@
                 android:layout_height="wrap_content"
                 android:textColor="#FFFFFF"
                 android:textSize="16dp"
-                android:text="Lens Files On This Device: "
-                android:layout_alignBottom="@+id/importLensFileButton" />
+                android:text="Lens Files On This Device: "/>
 
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Import"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/button_bg"
-                android:id="@+id/importLensFileButton"
-                android:onClick="importLensFile"
-                android:layout_alignParentRight="true" />
+            <!--<Button-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:text="Import"-->
+                <!--android:textSize="16sp"-->
+                <!--android:textColor="#FFFFFF"-->
+                <!--android:background="@drawable/button_bg"-->
+                <!--android:id="@+id/importLensFileButton"-->
+                <!--android:layout_alignParentRight="true" />-->
         </RelativeLayout>
 
         <ListView

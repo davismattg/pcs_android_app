@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="300dp"
+    android:layout_height="300dp"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ready To Send 5 Lenses"
+        android:textColor="@color/darkestGray"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:id="@+id/readyToSendTextView"/>
+
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add lenses to HU3"
+            android:textSize="16sp"
+            android:textColor="@color/darkestGray"
+            android:id="@+id/addLensesRadioButton"
+            android:checked="true" />
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Replace all lenses in HU3"
+            android:textSize="16sp"
+            android:textColor="@color/darkestGray"
+            android:id="@+id/replaceLensesRadioButton"
+            android:checked="false"/>
+    </RadioGroup>
+
+    <!--<CheckBox-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Add lenses to HU3"-->
+        <!--android:id="@+id/addLensesCheckBox"-->
+        <!--android:checked="true"/>-->
+    <!--<CheckBox-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Replace lenses on HU3"-->
+        <!--android:checked="false"-->
+        <!--android:id="@+id/replaceLensesCheckBox"/>-->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="20dp"
+            android:layout_marginEnd="10dp"
+            android:id="@+id/cancelLensSendButton"
+            android:background="@color/cancelRed"
+            android:textColor="@color/white"
+            android:text="Cancel" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="20dp"
+            android:layout_marginStart="10dp"
+            android:id="@+id/sendLensesButton"
+            android:background="@color/acceptGreen"
+            android:textColor="@color/white"
+            android:text="Send" />
+
+    </LinearLayout>
+
+
+</LinearLayout>

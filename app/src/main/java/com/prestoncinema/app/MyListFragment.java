@@ -55,6 +55,8 @@ public class MyListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceStace) {
         super.onCreate(savedInstanceStace);
+
+        setRetainInstance(true);
         mPage = getArguments().getInt(ARG_PAGE);
     }
 

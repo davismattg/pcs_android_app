@@ -21,7 +21,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.OpenableColumns;
 import android.support.v4.content.FileProvider;
-import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.util.TypedValue;
@@ -31,7 +30,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -39,6 +37,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,7 +50,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -64,14 +62,10 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 
 import timber.log.Timber;
 
-import static android.R.id.input;
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
 import static android.util.Log.d;
 
 /**
@@ -106,7 +100,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     };
     private boolean isUITimerRunning = false;
 
-    private boolean lensMode = false;
+    private boolean lensReceiveMode = false;
     private boolean lensSendMode = false;
     private boolean lensModeConnected = false;
     private boolean startLensTransfer = false;
@@ -120,7 +114,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     private boolean isConnected = false;
     private boolean needToImportDefaultLenses = true;
 
-    private int progressStatus = 0;
+    private boolean addToExistingLenses = true;
     private ArrayList<String> lensArray = new ArrayList<String>();
     private ArrayList<String> lensFileImportArray = new ArrayList<String>();
     private int baudRate = 19200;
@@ -136,6 +130,8 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     private byte[] NAK = {15};
     private byte[] EOT = {04};
     private byte[] ACK_SYN = {06, 16};
+    private byte[] STX = {0x0E};
+    private byte[] ETX = {0x0A, 0x0D};
     private String EOTStr = new String(EOT);
     private String ACKStr = new String(ACK);
     private String NAKStr = new String(NAK);
@@ -153,13 +149,35 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
 
     private TextView mConnectedTextView;
 
+    private boolean transmitDataAfterSetup = false;
+    private boolean transmitAfterReceive = false;
+
     public LensActivity() throws MalformedURLException {
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Timber.d("onCreate called ----------");
+
+        if (savedInstanceState != null) {
+            Timber.d("bundle is present");
+            baudRateSet = savedInstanceState.getBoolean("baudRateSet");
+            baudRate = savedInstanceState.getInt("baudRate");
+            if (baudRateSet) {
+                Timber.d("baudRateSet remembered as true");
+            }
+            else {
+                Timber.d("baudRateSet still false");
+            }
+
+            Timber.d("baudRate: " + baudRate);
+        }
+        else {
+            Timber.d("savedInstanceState = null");
+        }
         setContentView(R.layout.activity_lens);
+
         lensProgress = (ProgressBar) findViewById(R.id.lensProgress);
         mImportLensesButton = (Button) findViewById(R.id.ImportLensesButton);
         mExportLensesButton = (Button) findViewById(R.id.ExportLensesButton);
@@ -187,6 +205,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
 
         mBleManager = BleManager.getInstance(this);
         isConnected = (mBleManager.getState() == 2);
+        Timber.d("isConnected = " + isConnected);
         mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
         registerForContextMenu(mConnectedTextView);
 
@@ -214,21 +233,62 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
             mMqttManager.connectFromSavedSettings(this);
         }
 
+        /* Handle Intent to send lenses from ManageLensesActivity */
+        Intent intent = getIntent();
+        Timber.d("intent: " + intent);
+
+        if (intent.hasExtra("lensTransferInfo")) {
+            Timber.d("lensTransferInfo detected");
+            Bundle bundle = intent.getBundleExtra("lensTransferInfo");
+            if (bundle != null) {
+                addToExistingLenses = bundle.getBoolean("addToExisting");
+                lensArray = bundle.getStringArrayList("lensArray");
+
+                if (lensArray.size() > 0) {
+                    lensFileLoaded = true;
+                    numLenses = lensArray.size();
+                    currentLens = 0;
+                }
+
+                Timber.d("lensArray loaded from intent. NumLenses: " + numLenses);
+
+                if (addToExistingLenses) {
+                    startLensTransfer = false;
+                    transmitAfterReceive = true;
+                }
+                else {
+                    lensSendMode = true;
+                    lensDone = false;
+                }
+
+                if (!baudRateSet) {
+                    setBaudRate();
+                }
+
+                transmitDataAfterSetup = true;
+            }
+        }
+        else {
+            Timber.d("populate lensArray normally");
+        }
+
         // Set up an Intent to send back to apps that request a file
         mResultIntent = new Intent("com.prestoncinema.app.ACTION_SEND");
 
         // Set the Activity's result to null to begin with
         setResult(Activity.RESULT_CANCELED, null);
+        Timber.d("onCreate finished --------------");
     }
 
     @Override
     public void onResume() {
         super.onResume();
 
+        Timber.d("onResume called ------");
         // set the BLE module's baudrate to 19200 for connecting to the HU3
-        if (!baudRateSet) {
-            setBaudRate(baudRate);
-        }
+//        if (!baudRateSet) {
+//            setBaudRate();
+//        }
 
         // Setup listeners
         mBleManager.setBleListener(this);
@@ -249,6 +309,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     public void onPause() {
         super.onPause();
 
+        Timber.d("onPause called ----------");
         //Timber.d("remove ui timer");
         isUITimerRunning = false;
         mUIRefreshTimerHandler.removeCallbacksAndMessages(mUIRefreshTimerRunnable);
@@ -263,6 +324,26 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
 //
 //        editor.apply();
     }
+
+    /* Method called when the activity begins to stop. We can use this to save certain variables */
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        Timber.d("onSaveInstanceState called --------------------------");
+        savedInstanceState.putBoolean("baudRateSet", baudRateSet);
+        savedInstanceState.putInt("baudRate", baudRate);
+        // Call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+//    /* Method called when restoring an activity with a Bundle saved */
+//    @Override
+//    public void onRestoreInstanceState(Bundle savedInstanceState) {
+//        Timber.d("onRestoreInstanceState called --------------");
+//        super.onRestoreInstanceState(savedInstanceState);
+//
+//        baudRateSet = savedInstanceState.getBoolean("baudRateSet");
+//        baudRate = savedInstanceState.getInt("baudRate");
+//    }
 
     @Override
     public void onDestroy() {
@@ -697,7 +778,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
         }
     }
 
-    public void importLensFile(View view) {
+    public void importLensFile() {
         Timber.d("open file explorer to select and import lens file");
         // create the intent to launch the system's file explorer window
         Intent importLensFileIntent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -705,11 +786,44 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
         // limit the search to plain text files
         importLensFileIntent.setType("*/*");
 
-        // only show files that can be opened (expluding things like a list of contacts or timezones)
+        // only show files that can be opened (excluding things like a list of contacts or timezones)
         importLensFileIntent.addCategory(Intent.CATEGORY_OPENABLE);
 
         // start the activity. After user selects a file, onActivityResult action fires. Read the request_code there and import the file
         startActivityForResult(importLensFileIntent, LENS_IMPORT_CODE);
+    }
+
+    private void exportLensFile() {
+        Timber.d("Select the lens file to export/share");
+
+        File path = new File(getExternalFilesDir(null), "");                       // the external files directory is where the lens files are stored
+        final File[] savedLensFiles = path.listFiles();
+
+        if (savedLensFiles.length > 0) {
+            final String[] fileStrings = new String[savedLensFiles.length];
+            for (int i = 0; i < savedLensFiles.length; i++) {
+                String[] splitArray = savedLensFiles[i].toString().split("/");
+                fileStrings[i] = splitArray[splitArray.length - 1];
+            }
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(LensActivity.this);
+                    builder.setTitle("Select the lens file to export")
+                            .setItems(fileStrings, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    shareLensFile(savedLensFiles[which], fileStrings[which]);
+                                }
+                            })
+                            .show();
+                }
+
+            });
+        }
+
+//        shareLensFile(getLensFileAtIndex(id), lensFilesLocal.get(id));
     }
 
     // function to import a lens file not received from the HU3. This retrieves a file URI obtained by the file explorer
@@ -892,7 +1006,6 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     private void uartSendData(String data, boolean wasReceivedFromMqtt) {
         lastDataSent = data;
         Timber.d("lastDataSent: " + lastDataSent + "--");
-        Timber.d("in bytes: " + Arrays.toString(lastDataSent.getBytes()));
 
         // MQTT publish to TX
         MqttSettings settings = MqttSettings.getInstance(LensActivity.this);
@@ -939,6 +1052,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
 
     private void uartSendData(byte[] data, boolean wasReceivedFromMqtt) {
 //        lastDataSentByte = data;
+//        Timber.d("s: " + data + "--");
         // MQTT publish to TX
         MqttSettings settings = MqttSettings.getInstance(LensActivity.this);
         if (!wasReceivedFromMqtt) {
@@ -1009,6 +1123,13 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_lens, menu);
+
+        return true;
+    }
 //     region Menu
 //    @Override
 //    public boolean onCreateOptionsMenu(Menu menu) {
@@ -1094,9 +1215,11 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
         final int id = item.getItemId();
 
         switch (id) {
-            case R.id.lensModeToggle:
-                uartSendData("+++", false);
-                responseExpected = "1\nOK\n";
+            case R.id.importLensesMenuItem:
+                importLensFile();
+                return true;
+            case R.id.exportLensesMenuItem:
+                exportLensFile();
                 return true;
 //            case R.id.action_help:
 //                startHelp();
@@ -1231,15 +1354,23 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
             if (characteristic.getUuid().toString().equalsIgnoreCase(UUID_RX)) {
                 final byte[] bytes = characteristic.getValue();
 
+                String dataReceived = new String(bytes);
+
+                Timber.d("onDataAvailable: " + dataReceived + "$$");
+                Timber.d("onDataAvailable bytes: " + Arrays.toString(bytes));
+                Timber.d("booleans: ");
+                Timber.d("startConnectionSetup: " + startConnectionSetup);
+                Timber.d("lensReceiveMode: " + lensReceiveMode);
+                Timber.d("lensSendMode: " + lensSendMode);
+
                 // startConnectionSetup flag is true if the connection isn't ready
                 if (startConnectionSetup) {
                     String lensString = buildLensPacket(bytes);     // buffering the input data
                     processRxData(lensString);                      // analyze the buffered data
                 }
 
-                // lensMode is always true, this boolean check is left over from old code. this is the
-                // main situation to handle incoming lens data from the HU3
-                if (lensMode) {
+                // this is the main situation to handle incoming lens data from the HU3
+                if (lensReceiveMode) {
                     String lensString = buildLensPacket(bytes);
                     if (lensString.length() > 0 && isConnectionReady) {
                         receiveLensData(lensString);
@@ -1355,6 +1486,15 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
                                 startConnectionSetup = false;
                                 isConnectionReady = true;
                                 baudRateSet = true;
+
+                                if (transmitDataAfterSetup) {
+                                    if (transmitAfterReceive) {
+                                        startReceiveFromIntent();
+                                    }
+                                    else {
+                                        startTransmitFromIntent();
+                                    }
+                                }
                             }
                         } else {                                                // text.contains("ERROR")
                             Timber.d("error detected");
@@ -1391,59 +1531,67 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     // function to receive lens transfer data from HU3. activates a popup to display progress.
     // this just follows mirko's lens transfer protocol
     private void receiveLensData(String text) {
-            if (!startLensTransfer) {
-                if (text.contains("Hand")) {
-                    Timber.d("Hand detected");
-                    lensModeConnected = true;
-                    byte[] new_byte = {0x11, 0x05};
-                    uartSendData(new_byte, false);
-                } else {
-                    uartSendData(ACK, false);
-                    startLensTransfer = true;
-                    String trimmedString = text.replaceAll("[^\\w]", "");
-                    numLenses = Integer.valueOf(trimmedString, 16);
-                    Timber.d("Number of lenses detected: " + numLenses);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            activateLensTransferProgress("RX");
-                        }
-                    });
+        if (!startLensTransfer) {
+            if (text.contains("Hand")) {
+                Timber.d("Hand detected");
+                lensModeConnected = true;
+                byte[] new_byte = {0x11, 0x05};
+                uartSendData(new_byte, false);
+            }
+            else if (text.contains("OK")) {
+                Timber.d("OK detected, not sending anything");
+            }
+            else {
+                uartSendData(ACK, false);
+                startLensTransfer = true;
+                String trimmedString = text.replaceAll("[^\\w]", "");
+                numLenses = Integer.valueOf(trimmedString, 16);
+                Timber.d("Number of lenses detected: " + numLenses);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        activateLensTransferProgress("RX");
+                    }
+                });
+            }
+        } else {
+            if (text.contains(EOTStr)) {
+                Timber.d("EOT detected");
+                uartSendData(ACK_SYN, false);
+                lensModeConnected = false;
+                lensReceiveMode = false;
+                startLensTransfer = false;
+
+                if (transmitAfterReceive) {
+                    startTransmitFromIntent();
+                }
+                else {
+                    askToSaveLenses();
                 }
             } else {
-                if (text.contains(EOTStr)) {
-                    Timber.d("EOT detected");
-                    uartSendData(ACK_SYN, false);
-                    lensModeConnected = false;
-                    lensMode = false;
-                    startLensTransfer = false;
-                    askToSaveLenses();
-                } else {
-                    Timber.d("Lens string: " + text);
-                    lensArray.add(text);
-                    currentLens += 1;
-                    uartSendData(ACK, false);
-                }
-
+                Timber.d("Lens string: " + text);
+                lensArray.add(text);
+                currentLens += 1;
+                uartSendData(ACK, false);
             }
-//        }
+
+        }
     }
 
     // function to send the lenses to HU3
     private void transmitLensData(String text) {
+        Timber.d("transmitLensData: " + text);
         if (lensSendMode) {
             if (text.contains(ACKStr)) {
                 if (!lensDone) {
                     if (numLensesSent) {
                         Timber.d("ACK. Index: " + currentLens + " of " + numLenses);
                         if (currentLens < numLenses) {
-                            byte[] STX = {0x02};
-                            byte[] ETX = {0x0A, 0x0D};
-                            String lensInfo = lensArray.get(currentLens);
-                            Timber.d("lensInfo: " + Arrays.toString(lensInfo.getBytes()));
-                            uartSendData(STX, false);
+                            byte[] startByte = {0x02};
+
+                            uartSendData(startByte, false);
                             uartSendData(SharedHelper.checkLensChars(lensArray.get(currentLens)), false);
-                            uartSendData(ETX, false);
+
                             currentLens += 1;
                         } else if (currentLens == numLenses) {
                             Timber.d("Done sending lenses. Sending EOT");
@@ -1456,8 +1604,6 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
                     else {
                         String numLensesHexString = Integer.toHexString(numLenses);
                         Timber.d("Sending number of lenses: " + numLensesHexString);
-                        byte[] STX = {0x0E};
-                        byte[] ETX = {0x0A, 0x0D};
                         uartSendData(STX, false);
                         uartSendData(numLensesHexString, false);
                         uartSendData(ETX, false);
@@ -1466,14 +1612,24 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
                     }
                 }
                 else {
-                    Timber.d("HU3 successfully received lenses");
+                    Timber.d("HU3 received lenses");
                     lensSendMode = false;
                     lensDone = false;
+
+                    transmitDataAfterSetup = false;
+
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             mProgressDialog.hide();
-//                            lensProgress.setVisibility(View.INVISIBLE);
+                            CharSequence lensPlural = ((numLenses == 1) ? "lens" : "lenses");
+                            // make a toast to inform the user the file was deleted
+                            Context context = getApplicationContext();
+                            CharSequence toastText = "HU3 successfully received " + numLenses + " " + lensPlural;
+                            int duration = Toast.LENGTH_LONG;
+
+                            Toast toast = Toast.makeText(context, toastText, duration);
+                            toast.show();
                         }
                     });
                 }
@@ -1486,36 +1642,91 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
         }
     }
 
-    // select the lens file to be sent to HU3
-    public void selectLensFile(View view) {
-        File path = new File(getExternalFilesDir(null), "");                       // the external files directory is where the lens files are stored
-        final File[] savedLensFiles = path.listFiles();
+    private void startTransmitFromIntent() {
+        Timber.d("starting transmit of lenses from Intent");
+        currentLens = 0;
+        numLenses = lensArray.size();
+        byte[] start_byte = {01, 05};
+        String startString = new String(start_byte);
 
-        if (savedLensFiles.length > 0) {
-            final String[] fileStrings = new String[savedLensFiles.length];
-            for (int i = 0; i < savedLensFiles.length; i++) {
-                String[] splitArray = savedLensFiles[i].toString().split("/");
-                fileStrings[i] = splitArray[splitArray.length - 1];
-            }
+        Timber.d("lensArray: " + lensArray.toString());
+
+        if (isConnectionReady) {
+            lensSendMode = true;
+            uartSendData(startString, false);
+            Timber.d("activating lens transfer progress");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(LensActivity.this);
-                    builder.setTitle("Select the lens file to upload")
-                            .setItems(fileStrings, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    importLensFile(savedLensFiles[which]);
-                                }
-                            })
-                            .show();
+                    activateLensTransferProgress("TX");
                 }
-
             });
         }
     }
 
+    private void startReceiveFromIntent() {
+        Timber.d("starting receive of lenses from Intent");
+        lensReceiveMode = true;
+        byte[] syn_byte = {0x16};
+        String synString = new String(syn_byte);
+        uartSendData(synString, false);
+    }
+
+    // select the lens file to be sent to HU3
+    public void selectLensFile(View view) {
+        if (isConnected) {
+            File path = new File(getExternalFilesDir(null), "");                       // the external files directory is where the lens files are stored
+            final File[] savedLensFiles = path.listFiles();
+
+            if (savedLensFiles.length > 0) {
+                final String[] fileStrings = new String[savedLensFiles.length];
+                for (int i = 0; i < savedLensFiles.length; i++) {
+                    String[] splitArray = savedLensFiles[i].toString().split("/");
+                    fileStrings[i] = splitArray[splitArray.length - 1];
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(LensActivity.this);
+                        builder.setTitle("Select the lens file to upload")
+                                .setItems(fileStrings, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        importLensFile(savedLensFiles[which]);
+                                    }
+                                })
+                                .show();
+                    }
+
+                });
+            }
+        }
+
+        else {
+            makeToast("No Bluetooth module detected. Please connect first.", 0);
+        }
+    }
+
+    /** This method is a helper method to display toasts for various things.
+     *
+     * @param message
+     * @param length
+     */
+    private void makeToast(final CharSequence message, final int length) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Context context = getApplicationContext();
+                int duration = ((length == 0) ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
+                Toast toast = Toast.makeText(context, message, duration);
+                toast.show();
+            }
+        });
+    }
+
     private ArrayList<String> getLensFiles() {
+        needToImportDefaultLenses = checkForDefaultLensFile();
+
         if (needToImportDefaultLenses) {
             Timber.d("we need to import default lenses");
             InputStream defaultLensFileInputStream = getResources().openRawResource(R.raw.default_lenses);              // create an InputStream for the default lens file
@@ -1527,7 +1738,6 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
             try {
                 while ((line = reader.readLine()) != null) {                                                            // read the file one line at a time
                     if (line.length() > 0) {
-//                        line += "\n";
                         lensArray.add(SharedHelper.checkLensChars(line));                                                                            // add the read lens into the array
                     }
                 }
@@ -1547,10 +1757,11 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
             }
         }
 
+        /* Import the rest of the lens files */
         File extPath = new File(getExternalFilesDir(null), "");                                                     // the external files directory is where the lens files are stored
         File[] savedLensFiles = extPath.listFiles();
+        ArrayList<String> fileStrings = new ArrayList<String>();
         if (savedLensFiles.length > 0) {
-            ArrayList<String> fileStrings = new ArrayList<String>();
             for (int i = 0; i < savedLensFiles.length; i++) {
                 String[] splitArray = savedLensFiles[i].toString().split("/");
                 String fString = splitArray[splitArray.length - 1];
@@ -1565,8 +1776,31 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
             Timber.d(fileStrings.toString());
             return fileStrings;
         }
+
         else {
             return new ArrayList<>();
+        }
+    }
+
+    private boolean checkForDefaultLensFile() {
+        Timber.d("checking if default lenses are present");
+        boolean defaultFound = false;
+        File extPath = new File(getExternalFilesDir(null), "");                                                     // the external files directory is where the lens files are stored
+        File[] savedLensFiles = extPath.listFiles();
+
+        if (savedLensFiles.length > 0) {
+            for (File file : savedLensFiles) {
+                String fileString = file.toString();
+                if (file.toString().contains("Default Lenses")) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        else {
+            return true;
         }
     }
 
@@ -1611,6 +1845,8 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
             }
             if (lensArray.size() > 0) {
                 lensFileLoaded = true;
+
+//                askToAddOrReplaceLenses();
                 numLenses = lensArray.size();
                 currentLens = 0;
             }
@@ -1637,6 +1873,60 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
                     Timber.d("reader exception", e);
                 }
             }
+        }
+    }
+
+    private void askToAddOrReplaceLenses() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // building the custom alert dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(LensActivity.this);
+                LayoutInflater inflater = getLayoutInflater();
+
+                // the custom view is defined in dialog_rename_lens.xml, which we'll inflate to the dialog
+                View sendLensView = inflater.inflate(R.layout.dialog_send_lenses, null);
+                final RadioButton addLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.addLensesRadioButton);
+                final RadioButton replaceLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.replaceLensesRadioButton);
+
+                final int numLensesToSend = lensArray.size();
+
+                String lensPluralString = ((lensArray.size() == 1) ? "Lens" : "Lenses");
+
+                final String title = "Ready To Send " + numLensesToSend + " " + lensPluralString;
+
+                // set the custom view to be the view in the alert dialog and add the other params
+                builder.setView(sendLensView)
+                        .setTitle(title)
+                        .setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Timber.d("Start the intent to send these lenses");
+                                boolean addLenses = addLensesRadioButton.isChecked();
+                                sendSelectedLenses(addLenses);
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                lensArray.clear();
+                            }
+                        })
+                        .setCancelable(false);
+
+                // create the alert dialog
+                final AlertDialog alert = builder.create();
+                alert.show();
+            }
+        });
+    }
+
+    private void sendSelectedLenses(boolean add) {
+        if (add) {              // user wants to add to existing lenses, so
+
+        }
+        else {
+
         }
     }
 
@@ -1731,6 +2021,10 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     // TODO: make sure progress dialog is cleared if user cancels the save of an imported lens. Should pop up as fresh dialog box but currently is stuck at 100
     // function to change the lens transfer progress popup box depending on the mode (TX or RX)
     private void activateLensTransferProgress(String direction) {
+        if (mProgressDialog != null) {
+            mProgressDialog.dismiss();
+        }
+
         mProgressDialog = new ProgressDialog(this);
         if (direction.equals("RX")) {
             mProgressDialog.setMessage("Importing lenses from HU3...");
@@ -1767,7 +2061,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
     }
 
     public void enableLensImport(View view) {
-        lensMode = true;
+        lensReceiveMode = true;
         lensArray.clear();
         byte[] syn_byte = {0x16};
         uartSendData(syn_byte, false);
@@ -1870,7 +2164,7 @@ public class LensActivity extends UartInterfaceActivity implements MqttManager.M
         }
     }
 
-    private void setBaudRate(int baudRate) {
+    private void setBaudRate() {
         Timber.d("baud rate being set");
         uartSendData("+++", false);
         responseExpected = "1\nOK\n";

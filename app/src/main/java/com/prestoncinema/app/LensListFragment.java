@@ -28,6 +28,7 @@ public class LensListFragment extends Fragment {
      */
     OnLensAddedListener parentListener;
     OnChildLensChangedListener childListener;
+    OnLensSelectedListener selectedListener;
 
     public interface OnLensAddedListener {
         public void onLensAdded(String manuf, String series, int focal1, int focal2, String serial, String note);
@@ -36,6 +37,10 @@ public class LensListFragment extends Fragment {
     public interface OnChildLensChangedListener {
         public void onChildLensChanged(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
         public void onChildLensDeleted(Lens lens);
+    }
+
+    public interface OnLensSelectedListener {
+        public void onLensSelected(Lens lens);
     }
 
     public static final String ARG_PAGE = "ARG_PAGE";
@@ -73,6 +78,8 @@ public class LensListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceStace) {
         super.onCreate(savedInstanceStace);
+
+        setRetainInstance(true);
         mPage = getArguments().getInt(ARG_PAGE);
     }
 
@@ -106,6 +113,14 @@ public class LensListFragment extends Fragment {
             }
         });
 
+        /* Set the listener for sending/receiving only a selected few lenses */
+        lensListExpAdapter.setSelectedListener(new LensListParentExpListViewAdapter.LensSelectedListener() {
+            @Override
+            public void onSelected(Lens lens) {
+                selectedListener.onLensSelected(lens);
+            }
+        });
+
         return view;
     }
 
@@ -121,6 +136,7 @@ public class LensListFragment extends Fragment {
             try {
                 parentListener = (OnLensAddedListener) activity;
                 childListener = (OnChildLensChangedListener) activity;
+                selectedListener = (OnLensSelectedListener) activity;
             } catch (ClassCastException e) {
                 throw new ClassCastException(activity.toString() + " must implement OnLensAddedListener");
             }
@@ -131,7 +147,14 @@ public class LensListFragment extends Fragment {
         if (lensListExpAdapter != null) {
             Timber.d("updateAdapter");
             lensListExpAdapter.updateChildAdapter();
-//            lensListExpAdapter.notifyDataSetChanged();
         }
+    }
+
+    public void enableLensSelection() {
+        Timber.d("LensListFragment enableLensSelection reached");
+//        if (lensListExpAdapter != null) {
+//            Timber.d("change to checkboxes");
+            lensListExpAdapter.enableCheckboxes();
+//        }
     }
 }

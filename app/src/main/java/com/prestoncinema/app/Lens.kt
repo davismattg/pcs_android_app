@@ -5,23 +5,30 @@ package com.prestoncinema.app
  */
 
 class Lens (
-        var id: Int,
-        var dataString: String,
-        var manufacturer: String,
-        var series: String,
-        var manufacturerPosition: Int,
-        var seriesPosition: Int,
-        var focalLength1: Int,
-        var focalLength2: Int,
-        var isPrime: Boolean,
-        var serial: String,
-        var note: String,
-        var calibratedF: Boolean,
-        var calibratedI: Boolean,
-        var calibratedZ: Boolean,
-        var myListA: Boolean,
-        var myListB: Boolean,
-        var myListC: Boolean
-    )
+    var id: Int,
+    var dataString: String,
+    var manufacturer: String,
+    var series: String,
+    var manufacturerPosition: Int,
+    var seriesPosition: Int,
+    var focalLength1: Int,
+    var focalLength2: Int,
+    var isPrime: Boolean,
+    var serial: String,
+    var note: String,
+    var calibratedF: Boolean,
+    var calibratedI: Boolean,
+    var calibratedZ: Boolean,
+    var myListA: Boolean,
+    var myListB: Boolean,
+    var myListC: Boolean,
+    var checked: Boolean = false ) : Comparable<Lens> {
+
+    override fun compareTo(other: Lens): Int
+        = compareValuesBy(this, other, { it.manufacturer }, { it.series }, { it.focalLength1 })
+//        focalLength1 != other.focalLength1  focalLength1 - other.focalLength1
+
+
+}
 
 

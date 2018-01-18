@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -33,12 +34,10 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
     private ArrayList<Lens> lensObjectArrayList;
     private Map<Integer, Integer> lensListDataHeaderCount;
 
-//    private ParentLensChangedListener parentListener;
-//    private LensListChildExpListViewAdapter.LensChangedListener childListener;
-
     private LensListChildExpListViewAdapter childAdapter;
     private LensAddedListener parentListener;
     private LensChangedListener childListener;
+    private LensSelectedListener selectedListener;
 
     public LensListParentExpListViewAdapter(Context context, List<String> listDataHeader, HashMap<String, List<String>> listChildData,
                                             HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap,
@@ -69,6 +68,14 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
     public void setChildListener(LensChangedListener listener) {
         this.childListener = listener;
     }
+
+    /* Interface and setter method for the listener that handles sending/receiving only selected lenses */
+    public interface LensSelectedListener {
+        void onSelected(Lens lens);
+    }
+
+    public void setSelectedListener(LensSelectedListener listener) { this.selectedListener = listener; }
+
 
     @Override
     public Object getChild(int groupPosition, int childPosition)
@@ -107,7 +114,6 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         LensListChildExpListView lensSecondLevel = new LensListChildExpListView(this.context);
 
         /* Initialize the adapter for the 2nd level of the ExpandableListView */
-//        LensListChildExpListViewAdapter lensSecondLevelAdapter
         childAdapter = new LensListChildExpListViewAdapter(
                 this.context,
                 this.listDataChild.get(parentNode),
@@ -142,12 +148,22 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
             }
         });
 
-//        lensSecondLevelAdapter.setListener(new LensListChildExpListViewAdapter.LensChangedListener() {
-//            @Override
-//            public void onChange(Lens lens, String focalString, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
-//                childListener.onLensChanged(lens, focalString, serial, note, myListA, myListB, myListC);
-//            }
-//        });
+        /* Set the listener for sending/receiving only selected lenses */
+        childAdapter.setSelectedListener(new LensListChildExpListViewAdapter.LensSelectedListener() {
+            @Override
+            public void onSelected(Lens lens) {
+                Timber.d("selected lenses listener");
+                selectedListener.onSelected(lens);
+            }
+        });
+
+        lensSecondLevel.setOnGroupClickListener(new ExpandableListView.OnGroupClickListener() {
+            @Override
+            public boolean onGroupClick(ExpandableListView expandableListView, View view, int groupPosition, long id) {
+                Timber.d("child clicked. gp = " + groupPosition);
+                return false;
+            }
+        });
 
         // TODO: Get onGroupCollapseListener working to prevent group collapse when focus on EditText in Dialog
 //            lensSecondLevel.setOnGroupCollapseListener(new ExpandableListView.OnGroupCollapseListener() {
@@ -233,6 +249,13 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         if (childAdapter != null) {
             Timber.d("updateChildAdapter");
             childAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public void enableCheckboxes() {
+        if (childAdapter != null) {
+            Timber.d("enable checkboxes from parent level");
+            childAdapter.enableCheckboxes();
         }
     }
 }

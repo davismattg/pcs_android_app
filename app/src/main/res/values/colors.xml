@@ -20,4 +20,6 @@
     <item name="bluetoothBlue" type="color">#FF0000CC</item>
     <!--<item name="newGreen" type="color">#FF3DCC3D</item>-->
     <item name="newGreen" type="color">#FF53AA3D</item>
+    <item name="cancelRed" type="color">#FFCC3333</item>
+    <item name="acceptGreen" type="color">#FF339933</item>
 </resources>
