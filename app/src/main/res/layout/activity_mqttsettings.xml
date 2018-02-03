@@ -82,7 +82,7 @@
                     android:textColor="@android:color/white"/>
 
                 <Button
-                    android:id="@+id/qrConfigButton"
+                    andrindexd:idindex@+id/qrConfigButton"
                     android:layout_width="100dp"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"

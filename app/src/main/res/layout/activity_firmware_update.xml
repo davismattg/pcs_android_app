@@ -17,13 +17,13 @@
         <!--android:layout_alignParentTop="true"-->
         <!--android:layout_alignParentStart="true"-->
         <!--android:weightSum="1"-->
-        <!--android:id="@+id/linearLayout">-->
+        <!--andrindexd:idindex@+id/linearLayout">-->
 
         <!--<Button-->
             <!--android:text="Program"-->
             <!--android:layout_width="match_parent"-->
             <!--android:layout_height="wrap_content"-->
-            <!--android:id="@+id/ProgramButton"-->
+            <!--andrindexd:idindex@+id/ProgramButton"-->
             <!--android:onClick="enableProgramMode"-->
             <!--android:textColor="#FFFFFF"-->
             <!--android:background="#CC0000"-->
@@ -44,7 +44,7 @@
             <!--android:textSize="16sp" />-->
 
         <!--<android.support.v4.widget.SwipeRefreshLayout-->
-            <!--android:id="@+id/firmwareSwipeRefreshLayout"-->
+            <!--andrindexd:idindex@+id/firmwareSwipeRefreshLayout"-->
             <!--android:layout_width="match_parent"-->
             <!--android:layout_height="wrap_content"-->
             <!--android:layout_marginTop="10dp"-->
@@ -54,7 +54,7 @@
             <!--<ListView-->
                 <!--android:layout_width="match_parent"-->
                 <!--android:layout_height="wrap_content"-->
-                <!--android:id="@+id/firmwareListView">-->
+                <!--andrindexd:idindex@+id/firmwareListView">-->
             <!--</ListView>-->
 
         <!--</android.support.v4.widget.SwipeRefreshLayout>-->

@@ -3,6 +3,10 @@ package com.prestoncinema.app;
 import android.app.Application;
 import android.content.res.Configuration;
 
+import com.prestoncinema.app.db.AppDatabase;
+import com.prestoncinema.app.db.AppExecutors;
+import com.prestoncinema.app.db.DataRepository;
+
 import timber.log.Timber;
 
 /**
@@ -10,11 +14,15 @@ import timber.log.Timber;
  */
 
 public class PCSApplication extends Application {
+    private AppExecutors appExecutors;
+
     // this onCreate method is called when the application is starting, before any other application
     // objects have been created. Overriding this method is totally optional!
     @Override
     public void onCreate() {
        super.onCreate();
+
+       appExecutors = new AppExecutors();
 
         // special logging shit to work with Huawei Phones
         if (BuildConfig.DEBUG) {
@@ -39,5 +47,13 @@ public class PCSApplication extends Application {
     @Override
     public void onLowMemory() {
         super.onLowMemory();
+    }
+
+    public AppDatabase getDatabase() {
+        return AppDatabase.getInstance(this, appExecutors);
+    }
+
+    public DataRepository getRepository() {
+        return DataRepository.getInstance(getDatabase());
     }
 }

@@ -9,6 +9,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 
+import com.prestoncinema.app.model.Lens;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +23,7 @@ import timber.log.Timber;
  * This Fragment is responsible for displaying the "All Lenses" ExpandableListView
  */
 
-public class LensListFragment extends Fragment {
+public class AllLensesFragment extends Fragment {
     /** Interface for communicating back to the activity.
      * ManageLensesActivity must implement this interface to communicate with the fragment and
      * receive changes made to the lenses/lists
@@ -58,12 +60,12 @@ public class LensListFragment extends Fragment {
     private LensListParentExpListViewAdapter lensListExpAdapter;
     private ExpandableListView lensListExpListView;
 
-    public static LensListFragment newInstance(int page, List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
-                                               Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap, ArrayList<Lens> lensObjectArrayList, Context context) {
+    public static AllLensesFragment newInstance(int page, List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
+                                                Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap, ArrayList<Lens> lensObjectArrayList, Context context) {
         Bundle args = new Bundle();
         args.putInt(ARG_PAGE, page);
 
-        LensListFragment fragment = new LensListFragment();
+        AllLensesFragment fragment = new AllLensesFragment();
         fragment.context = context;
         fragment.lensListManufHeader = lensListManufHeader;
         fragment.lensListDataHeaderCount = lensListDataHeaderCount;
@@ -151,7 +153,7 @@ public class LensListFragment extends Fragment {
     }
 
     public void enableLensSelection() {
-        Timber.d("LensListFragment enableLensSelection reached");
+        Timber.d("AllLensesFragment enableLensSelection reached");
 //        if (lensListExpAdapter != null) {
 //            Timber.d("change to checkboxes");
             lensListExpAdapter.enableCheckboxes();

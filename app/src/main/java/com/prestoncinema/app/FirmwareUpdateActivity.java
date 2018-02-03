@@ -102,6 +102,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private String productRxString = "";
 //    private String pcsPath = "https://prestoncinema.com/Upgrades/src/firmware-new.xml";
     private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=85f014ae-9252-4e69-b1f4-9e3993a57451";
+//    private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=69176ddb-c964-4c39-9543-c21e46743333";
     private String latestVersion = "";
 
 //    private ArrayList<String> firmwareChangesArrayList;
@@ -112,7 +113,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private boolean firmwareFilesDownloaded = false;
 
     private DataFragment mRetainedDataFragment;
-
     private MqttManager mMqttManager;
 
     private AlertDialog updateDialog;
@@ -203,8 +203,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
 
         getFirmwareVersions(productNameArray);
-//        mFirmwareListView = (ListView) findViewById(R.id.firmwareListView);
-//        firmwareAdapter = new SimpleAdapter(FirmwareUpdateActivity.this, firmwareMap, R.layout.firmware_list_item, new String[] {"productString", "versionString"}, new int[] {R.id.firmwareProductTextView, R.id.firmwareVersionTextView});
+//        mFirmwareListView = (ListView) findViewById(R.index.firmwareListView);
+//        firmwareAdapter = new SimpleAdapter(FirmwareUpdateActivity.this, firmwareMap, R.layout.firmware_list_item, new String[] {"productString", "versionString"}, new int[] {R.tag.firmwareProductTextView, R.tag.firmwareVersionTextView});
 //        mFirmwareListView.setAdapter(firmwareAdapter);
 //        firmwareAdapter.notifyDataSetChanged();
     }
@@ -390,41 +390,41 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         getMenuInflater().inflate(R.menu.menu_firmware, menu);
 
         // Mqtt
-//        mMqttMenuItem = menu.findItem(R.id.action_mqttsettings);
+//        mMqttMenuItem = menu.findItem(R.index.action_mqttsettings);
 //        mMqttMenuItemAnimationHandler = new Handler();
 //        mMqttMenuItemAnimationRunnable.run();
 
         // DisplayMode
-//        MenuItem displayModeMenuItem = menu.findItem(R.id.action_displaymode);
+//        MenuItem displayModeMenuItem = menu.findItem(R.index.action_displaymode);
 //        displayModeMenuItem.setTitle(String.format(getString(R.string.uart_action_displaymode_format), getString(mIsTimestampDisplayMode ? R.string.uart_displaymode_timestamp : R.string.uart_displaymode_text)));
 //        SubMenu displayModeSubMenu = displayModeMenuItem.getSubMenu();
 //        if (mIsTimestampDisplayMode) {
-//            MenuItem displayModeTimestampMenuItem = displayModeSubMenu.findItem(R.id.action_displaymode_timestamp);
+//            MenuItem displayModeTimestampMenuItem = displayModeSubMenu.findItem(R.index.action_displaymode_timestamp);
 //            displayModeTimestampMenuItem.setChecked(true);
 //        } else {
-//            MenuItem displayModeTextMenuItem = displayModeSubMenu.findItem(R.id.action_displaymode_text);
+//            MenuItem displayModeTextMenuItem = displayModeSubMenu.findItem(R.index.action_displaymode_text);
 //            displayModeTextMenuItem.setChecked(true);
 //        }
 
         // DataMode
-//        MenuItem dataModeMenuItem = menu.findItem(R.id.action_datamode);
+//        MenuItem dataModeMenuItem = menu.findItem(R.index.action_datamode);
 //        dataModeMenuItem.setTitle(String.format(getString(R.string.uart_action_datamode_format), getString(mShowDataInHexFormat ? R.string.uart_format_hexadecimal : R.string.uart_format_ascii)));
 //        SubMenu dataModeSubMenu = dataModeMenuItem.getSubMenu();
 //        if (mShowDataInHexFormat) {
-//            MenuItem dataModeHexMenuItem = dataModeSubMenu.findItem(R.id.action_datamode_hex);
+//            MenuItem dataModeHexMenuItem = dataModeSubMenu.findItem(R.index.action_datamode_hex);
 //            dataModeHexMenuItem.setChecked(true);
 //        } else {
-//            MenuItem dataModeAsciiMenuItem = dataModeSubMenu.findItem(R.id.action_datamode_ascii);
+//            MenuItem dataModeAsciiMenuItem = dataModeSubMenu.findItem(R.index.action_datamode_ascii);
 //            dataModeAsciiMenuItem.setChecked(true);
 //        }
 
         // Echo
-//        MenuItem echoMenuItem = menu.findItem(R.id.action_echo);
+//        MenuItem echoMenuItem = menu.findItem(R.index.action_echo);
 //        echoMenuItem.setTitle(R.string.uart_action_echo);
 //        echoMenuItem.setChecked(mIsEchoEnabled);
 
         // Eol
-//        MenuItem eolMenuItem = menu.findItem(R.id.action_eol);
+//        MenuItem eolMenuItem = menu.findItem(R.index.action_eol);
 //        eolMenuItem.setTitle(R.string.uart_action_eol);
 //        eolMenuItem.setChecked(mIsEolEnabled);
 
@@ -1088,11 +1088,13 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                 id = R.drawable.mdr3_cropped;
                 break;
             case "MDR-2":
-                id = 0;
-//                id = R.drawable.mdr2_cropped;
+                // TODO: Add MDR-2 picture and associated drawable ID
+                id = R.drawable.mdr3_cropped;
                 break;
             case "VI":
+                Timber.d("VI detected");
                 id = R.drawable.vi_cropped;
+                break;
             default:
                 id = R.drawable.unknown_cropped;
                 break;

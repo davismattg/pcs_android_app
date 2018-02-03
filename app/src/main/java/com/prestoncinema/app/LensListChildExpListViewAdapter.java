@@ -16,6 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.prestoncinema.app.model.Lens;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -153,8 +155,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
             myListCImageView.setVisibility(View.GONE);
         }
 
-        /* Set the tag and id for this view */
-        checkLensImageView.setTag(getChildTag(groupPosition, childPosition));                                                            // set the tag, which is the lens' index in the overall array (lensArray var)
+        /* Set the tag and tag for this view */
+        checkLensImageView.setTag(getChildTag(groupPosition, childPosition));                                                            // set the tag, which is the lens' tag in the overall array (lensArray var)
         convertView.setTag(getChildTag(groupPosition, childPosition));
 
         convertView.setId((int) getChildTag(groupPosition, childPosition));
@@ -218,7 +220,7 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 ImageView CalIImageView = (ImageView) editLensView.findViewById(R.id.lensCalIImageView);
                 ImageView CalZImageView = (ImageView) editLensView.findViewById(R.id.lensCalZImageView);
 
-                // the hidden textView where we store the lens index (in the form of the view's tag)
+                // the hidden textView where we store the lens tag (in the form of the view's tag)
                 final TextView lensIndexTextView = (TextView) editLensView.findViewById(R.id.lensIndexTextView);
 
                 // check the status string to see if the lens is part of a list

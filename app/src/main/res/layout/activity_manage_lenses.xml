@@ -1,104 +1,58 @@
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/rootLayout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@drawable/default_background"
-    tools:context="com.prestoncinema.app.ManageLensesActivity">
+    xmlns:tools="http://schemas.android.com/tools">
 
-     <!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
-        <!--android:orientation="vertical"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content">-->
+    <!--<data>-->
+        <!--<import type="android.view.View" />-->
 
-    <android.support.design.widget.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        <!--<variable-->
+            <!--name="handler"-->
+            <!--type="com.prestoncinema.app.ManageLensesActivity" />-->
 
-        <android.support.design.widget.TabLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/LensFileTabLayout"
-            app:tabBackground="@color/darkestGray"
-            app:tabMode="fixed"
-            app:tabGravity="fill"
-            app:tabIndicatorColor="@color/newRed"
-            app:tabTextColor="@color/lightMedGray"
-            app:tabSelectedTextColor="@color/white"
-            app:tabIndicatorHeight="@dimen/tabh"/>
-    </android.support.design.widget.AppBarLayout>
-
-    <android.support.v4.view.ViewPager
-        android:id="@+id/LensFileTabViewPager"
+        <!--<variable-->
+            <!--name="manager"-->
+            <!--type="android.support.v4.app.FragmentManager" />-->
+    <!--</data>-->
+    <android.support.design.widget.CoordinatorLayout
+        android:id="@+id/rootLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+        android:orientation="vertical"
+        android:background="@drawable/default_background"
+        tools:context="com.prestoncinema.app.ManageLensesActivity">
 
-    <android.support.design.widget.FloatingActionButton
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:id="@+id/LensListFab"
-        android:src="@drawable/ic_send_white_24dp"
-        android:layout_margin="20dp"
-        android:visibility="invisible"
-        app:layout_anchor="@+id/LensFileTabViewPager"
-        app:layout_anchorGravity="bottom|right"
-        app:backgroundTint="@color/newRed" />
+        <android.support.design.widget.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <!--<TextView-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:text="My Lists"-->
-        <!--android:paddingStart="15dp"-->
-        <!--android:paddingEnd="15dp"-->
-        <!--android:paddingTop="10dp"-->
-        <!--android:paddingBottom="3dp"-->
-        <!--android:textSize="18sp"-->
-        <!--android:background="@color/lightGray"-->
-        <!--android:textColor="@color/darkGray"/>-->
+            <android.support.design.widget.TabLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/LensFileTabLayout"
+                app:tabBackground="@color/darkestGray"
+                app:tabMode="fixed"
+                app:tabGravity="fill"
+                app:tabIndicatorColor="@color/newRed"
+                app:tabTextColor="@color/lightMedGray"
+                app:tabSelectedTextColor="@color/white"
+                app:tabIndicatorHeight="@dimen/tabh" />
+        </android.support.design.widget.AppBarLayout>
 
-    <!--<ExpandableListView-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:scrollbars="none"-->
-        <!--android:divider="@color/dividerGray"-->
-        <!--android:dividerHeight="1dp"-->
-        <!--android:groupIndicator="@null"-->
-        <!--android:id="@+id/MyListExpListView"-->
-        <!--android:visibility="gone"-->
-        <!--android:focusable="true" />-->
+        <android.support.v4.view.ViewPager
+            android:id="@+id/LensFileTabViewPager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-
-
-    <!--<TextView-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:text="All lenses"-->
-        <!--android:paddingStart="15dp"-->
-        <!--android:paddingEnd="15dp"-->
-        <!--android:paddingTop="10dp"-->
-        <!--android:paddingBottom="3dp"-->
-        <!--android:textSize="18sp"-->
-        <!--android:background="@color/lightGray"-->
-        <!--android:textColor="@color/darkGray"/>-->
-
-    <!--<LinearLayout-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="1dp"-->
-        <!--android:background="@color/dividerGray" />-->
-
-    <!--<ExpandableListView-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:scrollbars="none"-->
-        <!--android:dividerHeight="1dp"-->
-        <!--android:groupIndicator="@null"-->
-        <!--android:divider="@color/dividerGray"-->
-        <!--android:id="@+id/ParentLensLevel"-->
-        <!--android:visibility="gone"-->
-        <!--android:focusable="true">-->
-    <!--</ExpandableListView>-->
-    <!--</LinearLayout>-->
-</android.support.design.widget.CoordinatorLayout>
+        <android.support.design.widget.FloatingActionButton
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:id="@+id/LensListFab"
+            android:src="@drawable/ic_send_white_24dp"
+            android:layout_margin="20dp"
+            android:visibility="invisible"
+            app:layout_anchor="@+id/LensFileTabViewPager"
+            app:layout_anchorGravity="bottom|right"
+            app:backgroundTint="@color/newRed" />
+    </android.support.design.widget.CoordinatorLayout>
+</layout>

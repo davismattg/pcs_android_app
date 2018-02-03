@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <variable
+            name="lensList"
+            type="com.prestoncinema.app.model.LensList" />
+        <variable
+            name="callback"
+            type="com.prestoncinema.app.db.LensListClickCallback" />
+    </data>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="45sp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="@drawable/default_background"
+        android:onClick="@{() -> callback.onClick(lensList)}"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/lensFileTextView"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="24sp"
+            android:text="@{lensList.name}"/>
+    </LinearLayout>
+</layout>

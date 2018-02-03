@@ -1,5 +1,7 @@
 package com.prestoncinema.app;
 
+import com.prestoncinema.app.model.Lens;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +22,16 @@ public class SharedHelper {
             return String.valueOf(fL1) + "-" + String.valueOf(fL2) + "mm";
         }
         return String.valueOf(fL1) + "mm";                                                                          // prime lens, so just return the first FL
+    }
+
+    /* Method to build the correctly formatted Manuf/series string for display in My List */
+    public static String constructManufAndSeriesString(String manuf, String series) {
+        return manuf + " - " + series;
+    }
+
+    /* Method to build the correctly formatted lens serial/note string for display in My List */
+    public static String constructSerialAndNoteString(String serial, String note) {
+        return serial + " " + note;
     }
 
 //    /* Checks if any of the My List assignment states are toggled from the + button on the My List A/B/C header */

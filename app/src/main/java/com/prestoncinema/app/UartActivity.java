@@ -206,17 +206,17 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         theme.resolveAttribute(R.attr.colorControlActivated, typedValue, true);
         mRxColor = typedValue.data;
         // UI
-//        mBufferListView = (ListView) findViewById(R.id.bufferListView);
+//        mBufferListView = (ListView) findViewById(R.tag.bufferListView);
         mBufferListAdapter = new TimestampListAdapter(this, R.layout.layout_uart_datachunkitem);
 //        mBufferListView.setAdapter(mBufferListAdapter);
 //        mBufferListView.setDivider(null);
 
-//        mBufferTextView = (EditText) findViewById(R.id.bufferTextView);
+//        mBufferTextView = (EditText) findViewById(R.tag.bufferTextView);
 //        if (mBufferTextView != null) {
 //            mBufferTextView.setKeyListener(null);     // make it not editable
 //        }
 
-//        mSendEditText = (EditText) findViewById(R.id.sendEditText);
+//        mSendEditText = (EditText) findViewById(R.tag.sendEditText);
 //        mSendEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
 //            @Override
 //            public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
@@ -237,8 +237,8 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
 //            }
 //        });
 
-//        mSentBytesTextView = (TextView) findViewById(R.id.sentBytesTextView);
-//        mReceivedBytesTextView = (TextView) findViewById(R.id.receivedBytesTextView);
+//        mSentBytesTextView = (TextView) findViewById(R.tag.sentBytesTextView);
+//        mReceivedBytesTextView = (TextView) findViewById(R.tag.receivedBytesTextView);
 
         // Read shared preferences
 //        maxPacketsToPaintAsText = PreferencesFragment.getUartTextMaxPackets(this);
@@ -458,41 +458,41 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         getMenuInflater().inflate(R.menu.menu_uart, menu);
 
         // Mqtt
-//        mMqttMenuItem = menu.findItem(R.id.action_mqttsettings);
+//        mMqttMenuItem = menu.findItem(R.tag.action_mqttsettings);
         mMqttMenuItemAnimationHandler = new Handler();
         mMqttMenuItemAnimationRunnable.run();
 
         // DisplayMode
-//        MenuItem displayModeMenuItem = menu.findItem(R.id.action_displaymode);
+//        MenuItem displayModeMenuItem = menu.findItem(R.tag.action_displaymode);
 //        displayModeMenuItem.setTitle(String.format(getString(R.string.uart_action_displaymode_format), getString(mIsTimestampDisplayMode ? R.string.uart_displaymode_timestamp : R.string.uart_displaymode_text)));
 //        SubMenu displayModeSubMenu = displayModeMenuItem.getSubMenu();
 //        if (mIsTimestampDisplayMode) {
-//            MenuItem displayModeTimestampMenuItem = displayModeSubMenu.findItem(R.id.action_displaymode_timestamp);
+//            MenuItem displayModeTimestampMenuItem = displayModeSubMenu.findItem(R.tag.action_displaymode_timestamp);
 //            displayModeTimestampMenuItem.setChecked(true);
 //        } else {
-//            MenuItem displayModeTextMenuItem = displayModeSubMenu.findItem(R.id.action_displaymode_text);
+//            MenuItem displayModeTextMenuItem = displayModeSubMenu.findItem(R.tag.action_displaymode_text);
 //            displayModeTextMenuItem.setChecked(true);
 //        }
 
         // DataMode
-//        MenuItem dataModeMenuItem = menu.findItem(R.id.action_datamode);
+//        MenuItem dataModeMenuItem = menu.findItem(R.tag.action_datamode);
 //        dataModeMenuItem.setTitle(String.format(getString(R.string.uart_action_datamode_format), getString(mShowDataInHexFormat ? R.string.uart_format_hexadecimal : R.string.uart_format_ascii)));
 //        SubMenu dataModeSubMenu = dataModeMenuItem.getSubMenu();
 //        if (mShowDataInHexFormat) {
-//            MenuItem dataModeHexMenuItem = dataModeSubMenu.findItem(R.id.action_datamode_hex);
+//            MenuItem dataModeHexMenuItem = dataModeSubMenu.findItem(R.tag.action_datamode_hex);
 //            dataModeHexMenuItem.setChecked(true);
 //        } else {
-//            MenuItem dataModeAsciiMenuItem = dataModeSubMenu.findItem(R.id.action_datamode_ascii);
+//            MenuItem dataModeAsciiMenuItem = dataModeSubMenu.findItem(R.tag.action_datamode_ascii);
 //            dataModeAsciiMenuItem.setChecked(true);
 //        }
 
         // Echo
-//        MenuItem echoMenuItem = menu.findItem(R.id.action_echo);
+//        MenuItem echoMenuItem = menu.findItem(R.tag.action_echo);
 //        echoMenuItem.setTitle(R.string.uart_action_echo);
 //        echoMenuItem.setChecked(mIsEchoEnabled);
 
         // Eol
-//        MenuItem eolMenuItem = menu.findItem(R.id.action_eol);
+//        MenuItem eolMenuItem = menu.findItem(R.tag.action_eol);
 //        eolMenuItem.setTitle(R.string.uart_action_eol);
 //        eolMenuItem.setChecked(mIsEolEnabled);
 
@@ -548,41 +548,41 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
                 }
                 break;
 
-//            case R.id.action_mqttsettings:
+//            case R.tag.action_mqttsettings:
 //                Intent intent = new Intent(this, MqttUartSettingsActivity.class);
 //                startActivityForResult(intent, kActivityRequestCode_MqttSettingsActivity);
 //                break;
 
-//            case R.id.action_displaymode_timestamp:
+//            case R.tag.action_displaymode_timestamp:
 //                setDisplayFormatToTimestamp(true);
 //                recreateDataView();
 //                invalidateOptionsMenu();
 //                return true;
 
-//            case R.id.action_displaymode_text:
+//            case R.tag.action_displaymode_text:
 //                setDisplayFormatToTimestamp(false);
 //                recreateDataView();
 //                invalidateOptionsMenu();
 //                return true;
 
-//            case R.id.action_datamode_hex:
+//            case R.tag.action_datamode_hex:
 //                mShowDataInHexFormat = true;
 //                recreateDataView();
 //                invalidateOptionsMenu();
 //                return true;
 //
-//            case R.id.action_datamode_ascii:
+//            case R.tag.action_datamode_ascii:
 //                mShowDataInHexFormat = false;
 //                recreateDataView();
 //                invalidateOptionsMenu();
 //                return true;
 //
-//            case R.id.action_echo:
+//            case R.tag.action_echo:
 //                mIsEchoEnabled = !mIsEchoEnabled;
 //                invalidateOptionsMenu();
 //                return true;
 //
-//            case R.id.action_eol:
+//            case R.tag.action_eol:
 //                mIsEolEnabled = !mIsEolEnabled;
 //                invalidateOptionsMenu();
 //                return true;

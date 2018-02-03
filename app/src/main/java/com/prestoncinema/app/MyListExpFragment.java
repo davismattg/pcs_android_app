@@ -8,6 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 
+import com.prestoncinema.app.model.Lens;
+
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,7 +61,7 @@ public class MyListExpFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_my_list, container, false);
 
 //        myListExpListViewAdapter = new MyListExpListViewAdapter(this.context, this.myListDataHeader, this.myListDataChild, false, false, false);
-//        myListExpListView = view.findViewById(R.id.MyListFragmentExpListView);
+//        myListExpListView = view.findViewById(R.tag.MyListFragmentExpListView);
 //        myListExpListView.setAdapter(myListExpListViewAdapter);
 
 //        myListExpListViewAdapter.setListener(new MyListExpListViewAdapter.MyListEnableListener() {

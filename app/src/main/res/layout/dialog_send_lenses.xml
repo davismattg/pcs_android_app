@@ -41,14 +41,14 @@
         <!--android:layout_width="match_parent"-->
         <!--android:layout_height="wrap_content"-->
         <!--android:text="Add lenses to HU3"-->
-        <!--android:id="@+id/addLensesCheckBox"-->
+        <!--andrindexd:idindex@+id/addLensesCheckBox"-->
         <!--android:checked="true"/>-->
     <!--<CheckBox-->
         <!--android:layout_width="match_parent"-->
         <!--android:layout_height="wrap_content"-->
         <!--android:text="Replace lenses on HU3"-->
         <!--android:checked="false"-->
-        <!--android:id="@+id/replaceLensesCheckBox"/>-->
+        <!--andrindexd:idindex@+id/replaceLensesCheckBox"/>-->
 
     <LinearLayout
         android:layout_width="match_parent"

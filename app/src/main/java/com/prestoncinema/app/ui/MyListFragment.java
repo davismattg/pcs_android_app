@@ -1,7 +1,9 @@
-package com.prestoncinema.app;
+package com.prestoncinema.app.ui;
 
 import android.app.Activity;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -9,6 +11,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+
+import com.prestoncinema.app.MyListViewAdapter;
+import com.prestoncinema.app.R;
+import com.prestoncinema.app.databinding.FragmentMyListBinding;
+import com.prestoncinema.app.model.Lens;
+import com.prestoncinema.app.viewmodel.LensListViewModel;
 
 import java.util.HashMap;
 import java.util.List;
@@ -56,40 +64,45 @@ public class MyListFragment extends Fragment {
     public void onCreate(Bundle savedInstanceStace) {
         super.onCreate(savedInstanceStace);
 
+        // TODO: get the viewmodel working for lenses
+//        final LensListViewModel viewModel = ViewModelProviders.of(this).get(LensListViewModel.class);
+
         setRetainInstance(true);
         mPage = getArguments().getInt(ARG_PAGE);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_my_list, container, false);
+//        View view = inflater.inflate(R.layout.fragment_my_list, container, false);
 
         /* Border applied after the ListView so the bottom lens looks finished. Hide if list is empty */
-        LinearLayout bottomBorder = view.findViewById(R.id.myListBottomBorder);
+//        LinearLayout bottomBorder = view.findViewById(R.id.myListBottomBorder);
 
-        List<Lens> lenses = this.myListData.get(this.list);
-        myListViewAdapter = new MyListViewAdapter(this.context, lenses);
-        myListView = view.findViewById(R.id.MyListFragmentListView);
-        myListView.setAdapter(myListViewAdapter);
-
-        myListViewAdapter.setListener(new MyListViewAdapter.LensChangedListener() {
-            @Override
-            public void onChange(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
-                listener.onLensChanged(lens, focal, serial, note, myListA, myListB, myListC);
-            }
-
-            @Override
-            public void onDelete(Lens lens) {
-                listener.onLensDeleted(lens);
-            }
-        });
+//        List<Lens> lenses = this.myListData.get(this.list);
+//        myListViewAdapter = new MyListViewAdapter(this.context, lenses);
+//        myListView = view.findViewById(R.id.MyListFragmentListView);
+//        myListView.setAdapter(myListViewAdapter);
+//
+//        myListViewAdapter.setListener(new MyListViewAdapter.LensChangedListener() {
+//            @Override
+//            public void onChange(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+//                listener.onLensChanged(lens, focal, serial, note, myListA, myListB, myListC);
+//            }
+//
+//            @Override
+//            public void onDelete(Lens lens) {
+//                listener.onLensDeleted(lens);
+//            }
+//        });
 
         /* Hide the bottom gray border if the list is empty */
-        if (lenses.size() == 0) {
-            bottomBorder.setVisibility(View.GONE);
-        }
+//        if (lenses.size() == 0) {
+//            bottomBorder.setVisibility(View.GONE);
+//        }
 
-        return view;
+//        return view;
+        FragmentMyListBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_my_list, container, false);
+        return binding.getRoot();
     }
 
     @Override

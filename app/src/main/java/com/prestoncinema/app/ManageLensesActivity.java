@@ -5,9 +5,10 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.DataSetObserver;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.NavUtils;
@@ -19,21 +20,18 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.BaseExpandableListAdapter;
-import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.RadioButton;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.prestoncinema.ui.tabs.TabFragmentOne;
+import com.prestoncinema.app.db.AppDatabase;
+import com.prestoncinema.app.db.entity.LensEntity;
+import com.prestoncinema.app.model.Lens;
+import com.prestoncinema.app.ui.MyListFragment;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,15 +43,9 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 
 import static android.media.CamcorderProfile.get;
 import static android.util.Log.d;
@@ -69,8 +61,9 @@ import timber.log.Timber;
  */
 
 public class ManageLensesActivity extends UartInterfaceActivity implements AdapterView.OnItemSelectedListener,
-        MyListFragment.OnLensChangedListener, LensListFragment.OnLensAddedListener,
-        LensListFragment.OnChildLensChangedListener, LensListFragment.OnLensSelectedListener { //implements MqttManager.MqttManagerListener
+        MyListFragment.OnLensChangedListener, AllLensesFragment.OnLensAddedListener,
+        AllLensesFragment.OnChildLensChangedListener, AllLensesFragment.OnLensSelectedListener {
+
     // Log
     private final static String TAG = LensActivity.class.getSimpleName();
 
@@ -131,17 +124,25 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     private String STXStr = new String(STX);
     private String ETXStr = new String(ETX);
 
+    private AppDatabase database;
+
     private LensListFragmentAdapter lensListFragmentAdapter;
 
     public ManageLensesActivity() throws MalformedURLException {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_manage_lenses);
 
         Timber.d("onCreate called =====");
+
+        /* Initialize the database used (w/ Room) to store the lenses and include migrations */
+//        database = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "lens-database")
+//                                        .addMigrations(MIGRATION_1_2)
+//                                        .addMigrations(MIGRATION_2_3)
+//                                        .build();
 
         // UI initialization
         mAddLensImageView = findViewById(R.id.lensTypeAddImageView);
@@ -169,8 +170,9 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
             lensFileStringStripped = stripLensFileString();
 
             /* IMPORT THE LENS FILE INTO lensArray and lensObjectArray */
-            lensFile = new File(lensFileString);
-            importLensFile(lensFile);
+//            lensFile = new File(lensFileString);
+//            importLensFile(lensFile);
+            importLensFile(lensFileString);
 
             /* Set the activity title in the top bar */
             updateActivityTitle();
@@ -293,7 +295,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
      * @param lens
      */
     public void onLensDeleted(Lens lens) {
-        deleteLens(lens.getId());
+        deleteLens(lens.getTag());
     }
 
     /** onLensAdded handles new lenses that are added from the "All Lenses" tab by clicking the + button next to a lens series header
@@ -328,7 +330,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
      * @param lens
      */
     public void onChildLensDeleted(Lens lens) {
-        deleteLens(lens.getId());
+        deleteLens(lens.getTag());
     }
 
     /** onLensesSelected handles sending/receiving only selected lenses from the list
@@ -336,7 +338,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
      * @param lens
      */
     public void onLensSelected(Lens lens) {
-        Timber.d("selected lens: " + lens.getId() + ", checked: " + lens.getChecked());
+        Timber.d("selected lens: " + lens.getTag() + ", checked: " + lens.getChecked());
         showOrHideFab(lens.getChecked());
         updateLensChecked(lens);
     }
@@ -378,12 +380,12 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         int viewId = v.getId();
 
 //        Timber.d(v.toString());
-//        Timber.d("view id: ");
-//        Timber.d(String.valueOf(v.getId()));
+//        Timber.d("view tag: ");
+//        Timber.d(String.valueOf(v.getTag()));
 
 //        View targView = info.targetView;
 
-//        long tag = info.id;
+//        long tag = info.tag;
 //        Timber.d("Type: " + type + ", Group: " + group + ", Child: " + child + ", tag: " + tag);
 
         lensId = viewId;
@@ -398,8 +400,8 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 //        Timber.d(v.toString());
 //        menu.setHeaderTitle("Index: " + v.getTag().toString());
 //
-//        for (int id : hideItems) {
-//            menu.findItem(id).setVisible(false);
+//        for (int tag : hideItems) {
+//            menu.findItem(tag).setVisible(false);
 //        }
 
     }
@@ -455,14 +457,14 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
                 Timber.d("export lenses");
 
                 /* Get the Lens List Fragment and call the method enableSelection() */
-//                LensListFragment lensListFragment = (LensListFragment) getSupportFragmentManager().findFragmentById(R.id.LensListFragment);
-//                LensListFragment lensListFragment = (LensListFragment) lensListFragmentAdapter.getItem(3);
-                LensListFragment lensListFragment = (LensListFragment) lensListFragmentAdapter.instantiateItem(null, 3);
-                Timber.d("lensListFragment: " + lensListFragment);
+//                AllLensesFragment allLensesFragment = (AllLensesFragment) getSupportFragmentManager().findFragmentById(R.tag.AllLensesFragment);
+//                AllLensesFragment allLensesFragment = (AllLensesFragment) lensListFragmentAdapter.getItem(3);
+                AllLensesFragment allLensesFragment = (AllLensesFragment) lensListFragmentAdapter.instantiateItem(null, 3);
+                Timber.d("allLensesFragment: " + allLensesFragment);
 
-                if (lensListFragment != null) {
+                if (allLensesFragment != null) {
                     Timber.d("found lens list fragment. Enable checkboxes");
-                    lensListFragment.enableLensSelection();
+                    allLensesFragment.enableLensSelection();
                 }
 
 
@@ -589,7 +591,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 
 //                LayoutInflater dialogInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 //                final View renameLensView = dialogInflater.inflate(R.layout.dialog_rename_lens, null);
-//                final EditText fileNameEditText = (EditText) renameLensView.findViewById(R.id.renameLensEditText);
+//                final EditText fileNameEditText = (EditText) renameLensView.findViewById(R.tag.renameLensEditText);
 //
 //                fileNameEditText.setText(oldName);
 //                fileNameEditText.setSelection(oldName.length());
@@ -664,7 +666,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         Timber.d("item selected: " + type_id);
 
         // create the new adapter based on the lens manuf. selection. this populates the lens type spinner
-//        if (parent.getId() == R.id.LensManufSpinner) {
+//        if (parent.getTag() == R.tag.LensManufSpinner) {
 //            switch (type_id) {
 //                case "Angenieux":
 //                    typeAdapter = ArrayAdapter.createFromResource(this, R.array.lens_type_Angenieux, android.R.layout.simple_spinner_item);
@@ -924,6 +926,12 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         }
     }
 
+    private void importLensFile(String name) {
+        Timber.d("importing lens file with name: " + name);
+
+
+    }
+
     private void populateAllLenses() {
         Timber.d("populating lenses (" + numLenses + ")");
         lensObjectArray.clear();
@@ -933,6 +941,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
             countLensLine(len);
             Lens thisLens = parseLensLine(len, i, true);
             lensObjectArray.add(i, thisLens);
+//            new DatabaseTask().execute(thisLens);
         }
 
         sortLensObjectArray();
@@ -978,7 +987,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     //                             Custom function to sort the lens Array                              //
     // this function looks at each lens data string after truncating the part before it. For example,  //
     // when sorting by manufacturer, the manufacturer ID starts at byte 17 of the overall lens data.   //
-    // so this function gets each string, chops it at the specified index, and then sorts the chopped  //
+    // so this function gets each string, chops it at the specified tag, and then sorts the chopped  //
     // strings. Then it searches the original array for the chopped string to determine the mapping    //
     // from old order to new, sorted order. then it rearranges the original array with the new         //
     // indices.                                                                                        //
@@ -988,10 +997,10 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 //        Timber.d("unsorted: " + lensObjectArray.toString());
 //        ArrayList<Lens> unsorted = lensObjectArray;
 
-        Collections.sort(lensObjectArray);
+//        Collections.sort(lensObjectArray);
 
 //        for (int i = 0; i < lensObjectArray.size(); i++) {
-//            Timber.d("Index: " + i + ". Old ID: " + unsorted.get(i).getId() + ". New ID: " + lensObjectArray.get(i).getId());
+//            Timber.d("Index: " + i + ". Old ID: " + unsorted.get(i).getTag() + ". New ID: " + lensObjectArray.get(i).getTag());
 //        }
 
 //        Timber.d("sorted: ");
@@ -1002,13 +1011,13 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 //
 //        ArrayList<String> sub_arr = new ArrayList<String>(arr.size());                       // initialize the ArrayList that will store the truncated strings
 //        ArrayList<String> new_arr = new ArrayList<String>(arr.size());                  // initialize the ArrayList that will store the rearranged array
-//        int sub_ind = 0;                                                                // the index to chop the lens strings. depends on param
+//        int sub_ind = 0;                                                                // the tag to chop the lens strings. depends on param
 //        switch(param) {
 //            case "manufacturer":
-//                sub_ind = 17;               // lens manuf bytes start at index 17
+//                sub_ind = 17;               // lens manuf bytes start at tag 17
 //                break;
 //            case "fLength":
-//                sub_ind = 19;               // focal length starts at index 19
+//                sub_ind = 19;               // focal length starts at tag 19
 //                break;
 //        }
 //
@@ -1036,9 +1045,9 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     /////////////////////////////////////////////////////////////////////////////////////////////////
     private Lens parseLensLine(String line, int index, boolean isNewLens) {
         /* Initialize the Lens object that will store all the info about this lens */
-        Lens lensObject = new Lens(index, "","", "", 0, 0,
-                0, 0, false, "", "", false,
-                false, false, false, false, false, false);
+        LensEntity lensObject = new LensEntity(); //(index, "","", "", 0, 0,
+//                0, 0, false, "", "", false,
+//                false, false, false, false, false, false, null);
 
         byte[] bytes = line.getBytes();                                                             // get the hex bytes from the ASCII string
 
@@ -1058,7 +1067,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         lensObject.setManufacturer((String) nameAndTypeMap.get("manufacturer"));
         lensObject.setSeries((String) nameAndTypeMap.get("series"));
 
-        // adding the lens' index to the correct position to be retrieved later in the ListView
+        // adding the lens' tag to the correct position to be retrieved later in the ListView
         int manufPos = (int) nameAndTypeMap.get("manufPosition");                                   // position of the manufacturer header in the ListView
         int seriesPos = (int) nameAndTypeMap.get("seriesPosition");                                 // position of the series header within the manufacturer header of the ListView
         lensObject.setManufacturerPosition(manufPos);
@@ -1073,10 +1082,10 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         }
 
         if (isNewLens) {
-            idArrayList.add(index);                                                                 // add the current lens index to the ArrayList for this position combo
+            idArrayList.add(index);                                                                 // add the current lens tag to the ArrayList for this position combo
         }
 
-        currentLensPositionMap.put(seriesPos, idArrayList);                                         // add the id ArrayList to the placeholder HashMap
+        currentLensPositionMap.put(seriesPos, idArrayList);                                         // add the tag ArrayList to the placeholder HashMap
         lensPositionMap.put(manufPos, currentLensPositionMap);                                      // add the ids back into the correct position of the overall lens position map
 
         /* Focal length(s) */
@@ -1095,22 +1104,28 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         int noteBegin;
         String lensNote;
         if (convertedSerial.length() > 0) {                                                         // serial string present, look for it in the lens name
-            noteBegin = lensName.indexOf(convertedSerial) + convertedSerial.length();               // set the index to separate the lens serial and note
+            noteBegin = lensName.indexOf(convertedSerial) + convertedSerial.length();               // set the tag to separate the lens serial and note
         }
         else {
             noteBegin = lensName.indexOf("mm") + 2;                                                 // no serial present, so anything after "mm" is considered the note
         }
 
-        lensNote = lensName.substring(noteBegin).trim();                                            // grab the note using the index determined above
+        lensNote = lensName.substring(noteBegin).trim();                                            // grab the note using the tag determined above
         lensObject.setNote(lensNote);                                                               // set the note property of the lens object
 
         /* Data String (raw String that gets sent to HU3 */
         lensObject.setDataString(line);
 
+        /* isPrime */
+        lensObject.setIsPrime(SharedHelper.isPrime(lensObject.getSeries()));
+
+        /* Checked attribute TODO: make sure this pulls the value from DB correctly */
+        lensObject.setChecked(false);
+
         return lensObject;
     }
 
-    // function to get the index after the last character of the lens name (focal length and serial) //
+    // function to get the tag after the last character of the lens name (focal length and serial) //
     // the lens name is in the format: 24-290mm 123 if they entered a serial number. if they didn't, //
     // the lens name is in the format: 24-290mm. so we look for the spaces //
     private String convertLensName(byte[] bytes) {
@@ -1602,17 +1617,17 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     }
 
     private void updateLensChecked(Lens lens) {
-        Timber.d("Update lens checked status for id: " + lens.getId());
-        lensObjectArray.set(lens.getId(), lens);
+        Timber.d("Update lens checked status for tag: " + lens.getTag());
+        lensObjectArray.set(lens.getTag(), lens);
     }
 
     private void sendLensesFromFab() {
         for (int i=0; i < lensObjectArray.size(); i++) {
             Lens lens = lensObjectArray.get(i);
-            Timber.d("Index: " + i + ", ID: " + lens.getId() + ", Checked: " + lens.getChecked());
+            Timber.d("Index: " + i + ", ID: " + lens.getTag() + ", Checked: " + lens.getChecked());
             if (lens.getChecked() && !(lensObjectArrayToSend.contains(lens))) {
                 lensObjectArrayToSend.add(lens);
-                Timber.d("adding lens " + lens.getId());
+                Timber.d("adding lens " + lens.getTag());
             }
         }
 
@@ -1945,12 +1960,12 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         Timber.d("myListC: " + myListC);
         Timber.d("///////////////////////////////////////////////////////////////");
 
-        int lensInd = lensObject.getId();                                                           // the index of the lens in the overall array
+        int lensInd = lensObject.getTag();                                                           // the tag of the lens in the overall array
         String prevLensString = lensArray.get(lensInd);                                             // the original string that needs to be updated
 
         Timber.d("previous lens string: " + prevLensString);
 
-        // TODO: make sure this index is correct
+        // TODO: make sure this tag is correct
         String toKeep = prevLensString.substring(30);                                               // substring of the stuff we don't care about updating, starting after the serial number
 
         String nameSubString = prevLensString.substring(0, 18);                                     // get the first 19 characters of the lens data. This includes STX, 14 chars for name, and 2 chars for status
@@ -2117,7 +2132,7 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
     }
 
     private void countLensLine(String lens) {
-        int sub_ind = 16;                                                                           // the index to chop the lens strings (16 for manufacturer)
+        int sub_ind = 16;                                                                           // the tag to chop the lens strings (16 for manufacturer)
         int key = 0;
 
         String subLensString = lens.substring(sub_ind, sub_ind + 1).trim();
@@ -2200,9 +2215,9 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
 
     /* Adds a lens to specified "My List" */
     private void editMyList(String list, Lens lens, boolean add) {
-        Timber.d("-- Edit -- List: " + list + ", Lens: " + lens.getId() + ", add: " + add);
+        Timber.d("-- Edit -- List: " + list + ", Lens: " + lens.getTag() + ", add: " + add);
 
-        int lensInd = lens.getId();
+        int lensInd = lens.getTag();
         String originalData = lensArray.get(lensInd);
         Timber.d("original String: " + originalData);
 
@@ -2277,48 +2292,71 @@ public class ManageLensesActivity extends UartInterfaceActivity implements Adapt
         updateLensList();
     }
 
-//    private void setListViewHeight(ExpandableListView listView, int group) {
-//        Timber.d("ListView id: " + listView.getId());
-//        BaseExpandableListAdapter listAdapter;
-//        if (listView.getId() == expListView.getId()) {
-//            listAdapter = (MultiLevelExpListViewAdapter) listView.getExpandableListAdapter();
-//        }
-//        else if (listView.getId() == myListExpListView.getId()) {
-//            listAdapter = (MyListExpListViewAdapter) listView.getExpandableListAdapter();
-//        }
-//        else {
-//            listAdapter = (SecondLevelListViewAdapter) listView.getExpandableListAdapter();
-//        }
+    private class DatabaseTask extends AsyncTask<Lens, Integer, Boolean> {
+//    @Override
+//    protected void onPreExecute() {
+//        super.onPreExecute();
 //
-//        int totalHeight = 0;
-//        int desiredWidth = View.MeasureSpec.makeMeasureSpec(listView.getWidth(), View.MeasureSpec.EXACTLY);
-//        for (int i = 0; i < listAdapter.getGroupCount(); i++) {
-//            View groupItem = listAdapter.getGroupView(i, false, null, listView);
-//            groupItem.measure(desiredWidth, View.MeasureSpec.UNSPECIFIED);
-//
-//            totalHeight += groupItem.getMeasuredHeight();
-//
-//            if (((listView.isGroupExpanded(i)) && (i != group))
-//                    || ((!listView.isGroupExpanded(i)) && (i == group))) {
-//                for (int j = 0; j < listAdapter.getChildrenCount(i); j++) {
-//                    View listItem = listAdapter.getChildView(i, j, false, null,
-//                            listView);
-//                    listItem.measure(desiredWidth, View.MeasureSpec.UNSPECIFIED);
-//
-//                    totalHeight += listItem.getMeasuredHeight();
-//
-//                }
-//            }
-//        }
-//
-//        ViewGroup.LayoutParams params = listView.getLayoutParams();
-//        int height = totalHeight + (listView.getDividerHeight() * (listAdapter.getGroupCount() - 1));
-//        if (height < 10) {
-//            height = 200;
-//        }
-//
-//        params.height = height;
-//        listView.setLayoutParams(params);
-//        listView.requestLayout();
+//        // Perform pre-adding operations here...
 //    }
+
+        @Override
+        protected Boolean doInBackground(Lens... lenses) {
+            int numLenses = lenses.length;
+            for (Lens lens : lenses) {
+//                database.lensDao().insertLenses(lens);
+                Timber.d("Lens ID: " + lens.getId());
+            }
+
+            return true;
+        }
+
+//    @Override
+//    protected void onPostExecute(Object obj) {
+//        super.onPostExecute(obj);
+//    }
+    }
+//
+//    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+//        @Override
+//        public void migrate(SupportSQLiteDatabase db) {
+//            // create the new lens table with the changed column types (PITA, thanks SQLite)
+//            db.execSQL("CREATE TABLE lens_new (tag INTEGER, data_string STRING, manufacturer STRING, series STRING, manufacturer_position INTEGER, " +
+//                        "series_position INTEGER, focal_length_1 INTEGER, focal_length_2 INTEGER, is_prime BOOLEAN, serial STRING, note STRING, " +
+//                        "calibrated_f BOOLEAN, calibrated_i BOOLEAN, calibrated_z BOOLEAN, my_list_a BOOLEAN, my_list_b BOOLEAN, my_list_c BOOLEAN, " +
+//                        "checked BOOLEAN, list_id LONG, lens_id LONG, PRIMARY KEY(lens_id))");
+//            db.execSQL("INSERT INTO lens_new (tag, data_string, manufacturer, series, manufacturer_position, series_position, focal_length_1, " +
+//                    "focal_length_2, is_prime, serial, note, calibrated_f, calibrated_i, calibrated_z, my_list_a, my_list_b, my_list_c, checked, list_id, lens_id) " +
+//                    "SELECT tag, data_string, manufacturer, series, manufacturer_position, series_position, focal_length_1, focal_length_2, is_prime, " +
+//                    "serial, note, calibrated_f, calibrated_i, calibrated_z, my_list_a, my_list_b, my_list_c, checked, list_id, lens_id from lens");
+//            db.execSQL("DROP table lens");
+//            db.execSQL("ALTER TABLE lens_new RENAME TO lens");
+//
+//            // create the new list table with the changed column types
+//            db.execSQL("CREATE TABLE lens_list_new (name STRING, lens_id LONG, list_id LONG, PRIMARY KEY(list_id))");
+//            db.execSQL("INSERT INTO lens_list_new (name, lens_id, list_id) SELECT name, lens_id, list_id from lens_list");
+//            db.execSQL("DROP table lens_list");
+//            db.execSQL("ALTER TABLE lens_list_new RENAME TO lens_list");
+//        }
+//    };
+//
+//    static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+//        @Override
+//        public void migrate(SupportSQLiteDatabase db) {
+//            // create the new lens table with the changed column types (PITA, thanks SQLite)
+//            db.execSQL("DROP table lens");
+//            db.execSQL("CREATE TABLE lens (tag INTEGER, data_string TEXT, manufacturer TEXT, series TEXT, manufacturer_position INTEGER, " +
+//                    "series_position INTEGER, focal_length_1 INTEGER, focal_length_2 INTEGER, is_prime BOOLEAN, serial TEXT, note TEXT, " +
+//                    "calibrated_f BOOLEAN, calibrated_i BOOLEAN, calibrated_z BOOLEAN, my_list_a BOOLEAN, my_list_b BOOLEAN, my_list_c BOOLEAN, " +
+//                    "checked BOOLEAN, list_id LONG NULL, lens_id LONG, PRIMARY KEY(lens_id), FOREIGN KEY(lens_id) REFERENCES lens_list(list_id) ON UPDATE NO ACTION ON DELETE NO ACTION)");
+//
+////            db.execSQL("ALTER TABLE lens_new RENAME TO lens");
+//
+//            // create the new list table with the changed column types
+//            db.execSQL("CREATE TABLE list_new (name TEXT, lens_id LONG NULL, list_id LONG, PRIMARY KEY(list_id), FOREIGN KEY(list_id) REFERENCES lens(lens_id) ON UPDATE NO ACTION ON DELETE NO ACTION)");
+////            db.execSQL("INSERT INTO list_new (name, lens_id, list_id) SELECT name, lens_id, list_id from list");
+//            db.execSQL("DROP table lens_list");
+//            db.execSQL("ALTER TABLE list_new RENAME TO lens_list");
+//        }
+//    };
 }

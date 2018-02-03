@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //            }
 //        });
 
-//        mScanButton = (Button) findViewById(R.id.scanButton);
+//        mScanButton = (Button) findViewById(R.tag.scanButton);
         mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
         registerForContextMenu(mConnectedTextView);
 
@@ -230,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
         mNoDevicesTextView = (TextView) findViewById(R.id.nodevicesTextView);
         mDevicesFoundTextView = (TextView) findViewById(R.id.devicesFoundTextView);
-//        mDevicesScrollView = (ScrollView) findViewById(R.id.devicesScrollView);
+//        mDevicesScrollView = (ScrollView) findViewById(R.tag.devicesScrollView);
 //        mDevicesScrollView.setVisibility(View.GONE);
 
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
@@ -974,7 +974,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     public void onClickDeviceConnect(int scannedDeviceIndex) {
         stopScanning();
 
-        Timber.d("device clicked at index " + scannedDeviceIndex);
+        Timber.d("device clicked at tag " + scannedDeviceIndex);
         ArrayList<BluetoothDeviceData> filteredPeripherals = mScannedDevices; //mPeripheralList.filteredPeripherals(false);
         Timber.d("filteredPeripherals: " + filteredPeripherals.toString());
 
@@ -986,7 +986,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
             connect(device, false);
         } else {
-            Log.w(TAG, "onClickDeviceConnect index does not exist: " + scannedDeviceIndex);
+            Log.w(TAG, "onClickDeviceConnect tag does not exist: " + scannedDeviceIndex);
         }
     }
 
@@ -1031,7 +1031,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 @Override
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     final String deviceName = device.getName();                                                                 // get scanned device name
-                    if (deviceName != null && deviceName.contains("PCS_Updater_")) {                                            // check for the PCS string to only show applicable devices
+                    if (deviceName != null && deviceName.contains("Preston")) {                                            // check for the PCS string to only show applicable devices
 //                        Timber.d("Preston device detected: " + deviceName);
 //                        if (autoConnect) {                                                                                      // user preferences to autoconnect or not
                             boolean knownDevice = checkForDeviceInPreferences(device.getAddress(), deviceName);                 // check if the device address is already stored in SharedPreferences
@@ -1039,7 +1039,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                                 stopScanning();
                                 Timber.d("Remembered device detected, connecting");
                                 mBleManager.setBleListener(MainActivity.this);                                                  // Force set listener (could be still checking for updates...)
-                                connect(device, true);                                                                          // connect. TODO: Utilize device priority index from prefs (or whatever other system we decide on)
+                                connect(device, true);                                                                          // connect. TODO: Utilize device priority tag from prefs (or whatever other system we decide on)
                                 return;
                             }
 //                        }
@@ -2011,7 +2011,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             super(context, -1, BLEDevices);
 //            resId = resource;
             this.devices = BLEDevices;
-//            Timber.d("resource id: " + resId);
+//            Timber.d("resource tag: " + resId);
         }
 
         @Override
@@ -2201,7 +2201,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             final byte[] manufacturerBytes = {deviceData.scanRecord[6], deviceData.scanRecord[5]};      // Little endan
             String manufacturer = BleUtils.bytesToHex(manufacturerBytes);
 
-            // Check if the manufacturer is known, and replace the id for a name
+            // Check if the manufacturer is known, and replace the tag for a name
             String kKnownManufacturers[] = getResources().getStringArray(R.array.beacon_manufacturers_ids);
             int knownIndex = Arrays.asList(kKnownManufacturers).indexOf(manufacturer);
             if (knownIndex >= 0) {
@@ -2258,7 +2258,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
                 holder.nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
 //                holder.nameTextView.setTextColor(0xFFFFFFFF);
-//                holder.descriptionTextView = (TextView) convertView.findViewById(R.id.descriptionTextView);
+//                holder.descriptionTextView = (TextView) convertView.findViewById(R.tag.descriptionTextView);
 //                holder.descriptionTextView.setTextColor(0xFFFFFFFF);
                 holder.rssiImageView = (ImageView) convertView.findViewById(R.id.rssiImageView);
                 holder.connectButton = (Button) convertView.findViewById(R.id.connectButton);

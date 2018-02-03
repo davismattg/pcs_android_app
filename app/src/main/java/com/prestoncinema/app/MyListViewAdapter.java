@@ -1,6 +1,5 @@
 package com.prestoncinema.app;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -14,6 +13,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.prestoncinema.app.model.Lens;
 
 import java.util.List;
 
@@ -63,7 +64,7 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
         ImageView myListZCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalZImageView);
 
         final ImageView myListEditLensImageView = (ImageView) convertView.findViewById(R.id.myListEditLensImageView);
-        myListEditLensImageView.setTag(lensObject.getId());
+        myListEditLensImageView.setTag(lensObject.getTag());
 
         String lensManufAndSeries = lensObject.getManufacturer() + " - " + lensObject.getSeries();
         final String lensFocalString = SharedHelper.constructFocalLengthString(lensObject.getFocalLength1(), lensObject.getFocalLength2());
@@ -105,7 +106,7 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
                 ImageView CalIImageView = (ImageView) editLensView.findViewById(R.id.lensCalIImageView);
                 ImageView CalZImageView = (ImageView) editLensView.findViewById(R.id.lensCalZImageView);
 
-                // the hidden textView where we store the lens index (in the form of the view's tag)
+                // the hidden textView where we store the lens tag (in the form of the view's tag)
                 final TextView lensIndexTextView = (TextView) editLensView.findViewById(R.id.lensIndexTextView);
 
                 // check the status string to see if the lens is part of a list
@@ -228,7 +229,7 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
                         neutralButton.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {
-                                Timber.d("delete lens " + lensObject.getId());
+                                Timber.d("delete lens " + lensObject.getTag());
                                 lensListener.onDelete(lensObject);
                                 dialog.dismiss();
                             }

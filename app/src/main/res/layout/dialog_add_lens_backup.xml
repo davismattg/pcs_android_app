@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-    <!--android:id="@+id/NewLensLayout"-->
+    <!--andrindexd:idindex@+id/NewLensLayout"-->
     <!--android:orientation="vertical"-->
     <!--android:background="#FFFFFF"-->
     <!--android:padding="10dp">-->
@@ -41,13 +41,13 @@
             <!--android:layout_width="0dp"-->
             <!--android:layout_height="40dp"-->
             <!--android:layout_weight="1"-->
-            <!--android:id="@+id/LensManufSpinner"/>-->
+            <!--andrindexd:idindex@+id/LensManufSpinner"/>-->
 
         <!--<Spinner-->
             <!--android:layout_width="0dp"-->
             <!--android:layout_height="40dp"-->
             <!--android:layout_weight="1"-->
-            <!--android:id="@+id/LensTypeSpinner"/>-->
+            <!--andrindexd:idindex@+id/LensTypeSpinner"/>-->
     <!--</LinearLayout>-->
 
     <!--<LinearLayout-->
@@ -94,7 +94,7 @@
                 <!--android:textSize="18sp"-->
                 <!--android:textStyle="bold"-->
                 <!--android:inputType="number"-->
-                <!--android:id="@+id/LensFocal1EditText"/>-->
+                <!--andrindexd:idindex@+id/LensFocal1EditText"/>-->
             <!--<TextView-->
                 <!--android:layout_width="wrap_content"-->
                 <!--android:layout_height="wrap_content"-->
@@ -102,7 +102,7 @@
                 <!--android:text="-"-->
                 <!--android:textStyle="bold"-->
                 <!--android:textColor="#000000"-->
-                <!--android:id="@+id/LensFocalDashTextView"/>-->
+                <!--andrindexd:idindex@+id/LensFocalDashTextView"/>-->
             <!--<EditText-->
                 <!--android:layout_width="0dp"-->
                 <!--android:layout_height="wrap_content"-->
@@ -111,7 +111,7 @@
                 <!--android:textStyle="bold"-->
                 <!--android:textColor="#000000"-->
                 <!--android:inputType="number"-->
-                <!--android:id="@+id/LensFocal2EditText"/>-->
+                <!--andrindexd:idindex@+id/LensFocal2EditText"/>-->
             <!--<TextView-->
                 <!--android:layout_width="wrap_content"-->
                 <!--android:layout_height="wrap_content"-->
@@ -127,7 +127,7 @@
             <!--android:layout_height="wrap_content"-->
             <!--android:layout_weight="2"-->
             <!--android:textSize="18sp"-->
-            <!--android:id="@+id/LensSerialEditText"/>-->
+            <!--andrindexd:idindex@+id/LensSerialEditText"/>-->
     <!--</LinearLayout>-->
 
     <!--<LinearLayout-->
@@ -141,7 +141,7 @@
             <!--android:layout_weight="1"-->
             <!--android:text="My List A"-->
             <!--android:textColor="#000000"-->
-            <!--android:id="@+id/MyListACheckBox"/>-->
+            <!--andrindexd:idindex@+id/MyListACheckBox"/>-->
 
         <!--<CheckBox-->
             <!--android:layout_width="wrap_content"-->
@@ -149,7 +149,7 @@
             <!--android:layout_weight="1"-->
             <!--android:text="My List B"-->
             <!--android:textColor="#000000"-->
-            <!--android:id="@+id/MyListBCheckBox"/>-->
+            <!--andrindexd:idindex@+id/MyListBCheckBox"/>-->
 
         <!--<CheckBox-->
             <!--android:layout_width="wrap_content"-->
@@ -157,7 +157,7 @@
             <!--android:layout_weight="1"-->
             <!--android:text="My List C"-->
             <!--android:textColor="#000000"-->
-            <!--android:id="@+id/MyListCCheckBox"/>-->
+            <!--andrindexd:idindex@+id/MyListCCheckBox"/>-->
     <!--</LinearLayout>-->
 
     <!--<LinearLayout-->
@@ -170,7 +170,7 @@
             <!--android:layout_width="wrap_content"-->
             <!--android:layout_height="wrap_content"-->
             <!--android:text="Save"-->
-            <!--android:id="@+id/SaveLensButton"-->
+            <!--andrindexd:idindex@+id/SaveLensButton"-->
             <!--android:background="#007700"-->
             <!--android:textColor="#FFFFFF"-->
             <!--android:textSize="16sp"-->

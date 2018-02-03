@@ -4,7 +4,7 @@
       tools:context=".MainActivity">
 
     <!--<item-->
-        <!--android:id="@+id/action_help"-->
+        <!--andrindexd:idindex@+id/action_help"-->
         <!--android:icon="@drawable/ic_info_outline_menu"-->
         <!--android:title="@string/action_info"-->
         <!--app:showAsAction="always"/>-->
@@ -28,7 +28,7 @@
         app:showAsAction="never"/>
 
     <!--<item-->
-        <!--android:id="@+id/action_licenses"-->
+        <!--andrindexd:idindex@+id/action_licenses"-->
         <!--android:orderInCategory="102"-->
         <!--android:title="@string/action_licenses"-->
         <!--app:showAsAction="never"/>-->

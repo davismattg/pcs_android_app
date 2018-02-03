@@ -24,7 +24,7 @@
     <!--<TextView-->
         <!--android:layout_width="0dp"-->
         <!--android:layout_height="wrap_content"-->
-        <!--android:id="@+id/firmwareVersionTextView"-->
+        <!--andrindexd:idindex@+id/firmwareVersionTextView"-->
         <!--android:textColor="#FFFFFF"-->
         <!--android:textStyle="bold"-->
         <!--android:textSize="24sp"-->

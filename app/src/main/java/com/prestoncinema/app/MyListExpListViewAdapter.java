@@ -13,6 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.prestoncinema.app.model.Lens;
+
 import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -157,7 +159,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
             convertView = headerInflater.inflate(R.layout.my_list_group, null);
 
 //            GroupViewHolder holder = new GroupViewHolder();
-//            holder.addView(headerTitle, convertView.findViewById(R.id.myListAddLensImageView));
+//            holder.addView(headerTitle, convertView.findViewById(R.tag.myListAddLensImageView));
 //            convertView.setTag(holder);
         }
 
@@ -197,8 +199,8 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 //                            updateMyListImageView(headerTitle, addLensImageView);
 
 //                            updateMyListImageView(headerTitle);
-//                            ImageView myListBImageView = (ImageView) groupViewReferences.get("My List B").findViewById(R.id.myListAddLensImageView);
-//                            ImageView myListCImageView = (ImageView) groupViewReferences.get("My List C").findViewById(R.id.myListAddLensImageView);
+//                            ImageView myListBImageView = (ImageView) groupViewReferences.get("My List B").findViewById(R.tag.myListAddLensImageView);
+//                            ImageView myListCImageView = (ImageView) groupViewReferences.get("My List C").findViewById(R.tag.myListAddLensImageView);
 //
 //                            addLensImageView.setImageResource(R.drawable.ic_done_green_24dp);
 //                            myListBImageView.setImageResource(R.drawable.ic_edit_24dp);
@@ -279,7 +281,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
         ImageView addLensImageView;
         if (listA) {
             Timber.d("listA");
-//            addLensImageView = groupViewList.get(0).findViewById(R.id.myListAddLensImageView);
+//            addLensImageView = groupViewList.get(0).findViewById(R.tag.myListAddLensImageView);
 //            Timber.d("ImageView: " + addLensImageView.toString());
 //            addLensImageView.setImageResource(R.drawable.ic_done_green_24dp);
             groupViewList.get("My List A").setImageResource(R.drawable.ic_done_green_24dp);
@@ -287,7 +289,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 
         if (!listA) {
             Timber.d("!listA");
-//            addLensImageView = groupViewList.get(0).findViewById(R.id.myListAddLensImageView);
+//            addLensImageView = groupViewList.get(0).findViewById(R.tag.myListAddLensImageView);
 //            Timber.d("ImageView: " + addLensImageView.toString());
 //            addLensImageView.setImageResource(R.drawable.ic_edit_24dp);
             groupViewList.get("My List A").setImageResource(R.drawable.ic_edit_24dp);
@@ -295,7 +297,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 
         if (listB) {
             Timber.d("listB");
-//            addLensImageView = groupViewList.get(1).findViewById(R.id.myListAddLensImageView);
+//            addLensImageView = groupViewList.get(1).findViewById(R.tag.myListAddLensImageView);
 //            Timber.d("ImageView: " + addLensImageView.toString());
 //            addLensImageView.setImageResource(R.drawable.ic_done_green_24dp);
             groupViewList.get("My List B").setImageResource(R.drawable.ic_done_green_24dp);
@@ -303,7 +305,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 
         if (!listB) {
             Timber.d("!listB");
-//            addLensImageView = groupViewList.get(1).findViewById(R.id.myListAddLensImageView);
+//            addLensImageView = groupViewList.get(1).findViewById(R.tag.myListAddLensImageView);
 //            Timber.d("ImageView: " + addLensImageView.toString());
 //            addLensImageView.setImageResource(R.drawable.ic_edit_24dp);
             groupViewList.get("My List B").setImageResource(R.drawable.ic_edit_24dp);
@@ -311,7 +313,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 
         if (listC) {
             Timber.d("listC");
-//            addLensImageView = groupViewList.get(2).findViewById(R.id.myListAddLensImageView);
+//            addLensImageView = groupViewList.get(2).findViewById(R.tag.myListAddLensImageView);
 //            Timber.d("ImageView: " + addLensImageView.toString());
 //            addLensImageView.setImageResource(R.drawable.ic_done_green_24dp);
             groupViewList.get("My List C").setImageResource(R.drawable.ic_done_green_24dp);
@@ -319,7 +321,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 
         if (!listC) {
             Timber.d("!listC");
-//            addLensImageView = groupViewList.get(2).findViewById(R.id.myListAddLensImageView);
+//            addLensImageView = groupViewList.get(2).findViewById(R.tag.myListAddLensImageView);
 //            Timber.d("ImageView: " + addLensImageView.toString());
 //            addLensImageView.setImageResource(R.drawable.ic_edit_24dp);
             groupViewList.get("My List C").setImageResource(R.drawable.ic_edit_24dp);
@@ -334,11 +336,11 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 //            Timber.d("list: " + list);
 //            Timber.d("equal? " + list.equals(currentList));
 //
-////            ImageView iv = (ImageView) groupViewReferences.get(list).findViewById(R.id.myListAddLensImageView);
+////            ImageView iv = (ImageView) groupViewReferences.get(list).findViewById(R.tag.myListAddLensImageView);
 ////            ImageView iv = (ImageView) holder.getView(list);
 //
-////            Timber.d("ImageView: " + iv.getId());
-//            Timber.d("current ImageView: " + editView.getId());
+////            Timber.d("ImageView: " + iv.getTag());
+//            Timber.d("current ImageView: " + editView.getTag());
 //
 //            if (list.equals(currentList)) {
 //                Timber.d(list + " - set to green");
@@ -354,7 +356,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 //        private HashMap<String, View> groupViews = new HashMap<String, View>();
 //
 //        public GroupViewHolder addView(String list, View view) {
-//            Timber.d("Adding view id " + view.getId() + " for list: " + list);
+//            Timber.d("Adding view tag " + view.getTag() + " for list: " + list);
 //            groupViews.put(list, view);
 //            return this;
 //        }
