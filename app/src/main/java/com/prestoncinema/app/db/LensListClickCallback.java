@@ -1,5 +1,8 @@
 package com.prestoncinema.app.db;
 
+import android.view.View;
+
+import com.prestoncinema.app.db.entity.LensListEntity;
 import com.prestoncinema.app.model.LensList;
 
 /**
@@ -7,5 +10,6 @@ import com.prestoncinema.app.model.LensList;
  */
 
 public interface LensListClickCallback {
-    void onClick(LensList list);
+    void onClick(LensListEntity list, View v);
+    void onClickDetails(LensListEntity list, View v);
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
         <import type="com.prestoncinema.app.SharedHelper" />
         <import type="android.view.View" />
@@ -10,17 +10,26 @@
             name="callback"
             type="com.prestoncinema.app.db.LensClickCallback" />
     </data>
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/lightestGray">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="45dp"
+            android:id="@+id/checkLensImageView"
+            android:src="@{lens.checked ? @drawable/ic_check_box_gray_checked_24dp : @drawable/ic_check_box_gray_unchecked_24dp}"
+            android:layout_alignParentStart="true"
+            android:paddingEnd="0dp"
+            android:paddingStart="30dp"/>
 
         <TextView xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/lensListLensTextView"
             android:layout_width="wrap_content"
             android:layout_height="45dp"
-            android:layout_alignParentStart="true"
             android:gravity="center_vertical"
+            android:layout_toEndOf="@+id/checkLensImageView"
             android:text="@{SharedHelper.constructFocalLengthString(lens.focalLength1, lens.focalLength2)}"
             android:textColor="@color/newRed"
             android:paddingStart="10dp"
@@ -40,27 +49,15 @@
             android:textSize="16sp"
             android:textColor="#555555" />
 
-        <!--<TextView-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="45dp"-->
-            <!--android:layout_toEndOfindex@+id/lensListSerialTextView"-->
-            <!--android:layout_toStartOfindex@+id/editLensImageView"-->
-            <!--android:background="#EEEEEE"-->
-            <!--android:gravity="center_vertical|end"-->
-            <!--android:text="Cal: F I Z"-->
-            <!--android:textColor="#777777"-->
-            <!--android:textSize="14sp"-->
-            <!--android:paddingStart="0dp"-->
-            <!--android:paddingEnd="20dp"-->
-            <!--andrindexd:idindex@+id/lensListStatusTextView" />-->
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="45dp"
             android:orientation="vertical"
             android:id="@+id/lensStatusImageViewLayout"
             android:gravity="center_vertical"
-            android:layout_toStartOf="@+id/checkLensImageView">
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:layout_alignParentEnd="true">
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -125,14 +122,5 @@
                     android:visibility="@{lens.myListC ? View.VISIBLE : View.INVISIBLE}"/>
             </RelativeLayout>
         </LinearLayout>
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="45dp"
-            android:id="@+id/checkLensImageView"
-            android:src="@drawable/ic_check_box_gray_unchecked_24dp"
-            android:layout_alignParentEnd="true"
-            android:paddingEnd="10dp"
-            android:paddingStart="10dp"/>
     </RelativeLayout>
 </layout>

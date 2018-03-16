@@ -19,17 +19,20 @@ import java.util.List;
 
 @Dao
 public interface LensListDao {
+//    @Insert(onConflict = OnConflictStrategy.REPLACE)
+//    long insert(LensListEntity listEntity);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<LensListEntity> lensLists);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertNew(LensListEntity lensList);
+    long insert(LensListEntity lensList);
 
-    @Update
-    public void updateLensList(LensListEntity... lists);
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    void update(LensListEntity... lists);
 
     @Delete
-    public void deleteLensList(LensListEntity... lists);
+    void delete(LensListEntity... lists);
 
     /* SQL Queries for retrieving Lens Lists from the database. Room checks these SQL queries during compilation,
     so you can be confident the app will work if these SQL queries pass.
@@ -38,17 +41,17 @@ public interface LensListDao {
     List<LensListEntity> loadAllLensLists();
 
     @Query("SELECT * from lens_lists WHERE id = :id")
-    LiveData<LensListEntity> loadLensList(int id);
+    LensListEntity loadLensList(long id);
 
     @Query("SELECT * from lens_lists WHERE id = :id")
     LensListEntity loadLensListSync(int id);
 
     @Query("SELECT * FROM lens_lists WHERE name = :name")
-    LiveData<LensListEntity> loadLensListByName(String name);
+    LensListEntity loadLensListByName(String name);
 
     @Query("SELECT * FROM lens_lists WHERE name = :name")
     LensListEntity loadLensListByNameSync(String name);
 
     @Query("DELETE FROM lens_lists")
-    void deleteAllLensLists();
+    void deleteAll();
 }

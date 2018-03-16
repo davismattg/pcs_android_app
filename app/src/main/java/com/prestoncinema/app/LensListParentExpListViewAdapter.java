@@ -1,14 +1,18 @@
 package com.prestoncinema.app;
 
 import android.content.Context;
+import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.model.Lens;
 
 import java.util.ArrayList;
@@ -33,7 +37,7 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
     private HashMap<String, List<String>> listDataChild;
 
     private HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap;
-    private ArrayList<Lens> lensObjectArrayList;
+    private ArrayList<LensEntity> lensObjectArrayList;
     private Map<Integer, Integer> lensListDataHeaderCount;
 
     private LensListChildExpListViewAdapter childAdapter;
@@ -41,15 +45,26 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
     private LensChangedListener childListener;
     private LensSelectedListener selectedListener;
 
+    private ManufacturerSelectedListener manufacturerSelectedListener;
+    private SeriesSelectedListener seriesSelectedListener;
+
+    private ArrayList<Boolean> manufCheckedStatus = new ArrayList<>(8);
+//    private ArrayList<Integer> seriesExpandedStatus = new ArrayList<>(8);
+//    private SparseIntArray seriesExpandedStatus = new SparseIntArray();
+    private HashMap<String, Integer[]> seriesExpandedStatus = new HashMap<>();
+
     public LensListParentExpListViewAdapter(Context context, List<String> listDataHeader, HashMap<String, List<String>> listChildData,
                                             HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap,
-                                            ArrayList<Lens> lensObjectArray, Map<Integer, Integer> lensListDataHeaderCount) {
+                                            ArrayList<LensEntity> lensObjectArray, Map<Integer, Integer> lensListDataHeaderCount) {
         this.context = context;
         this.listDataHeader = listDataHeader;
         this.listDataChild = listChildData;
         this.lensPositionMap = lensPositionMap;
         this.lensObjectArrayList = lensObjectArray;
         this.lensListDataHeaderCount = lensListDataHeaderCount;
+
+        initializeCheckedList();
+        initializeExpandedStatus();
     }
 
     /* Interface and setter method for the listener for changes to "Parent" level of ExpandableListView */
@@ -63,8 +78,8 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
 
     /* Interface and setter method for the listener for changes to "Parent" level of ExpandableListView */
     public interface LensChangedListener {
-        void onChange(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        void onDelete(Lens lens);
+        void onChange(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onDelete(LensEntity lens);
     }
 
     public void setChildListener(LensChangedListener listener) {
@@ -73,11 +88,91 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
 
     /* Interface and setter method for the listener that handles sending/receiving only selected lenses */
     public interface LensSelectedListener {
-        void onSelected(Lens lens);
+        void onSelected(LensEntity lens);
+    }
+
+    /* Interface for the listener that handles checking/unchecking all lenses for a given manufacturer */
+    public interface ManufacturerSelectedListener {
+        void onSelected(String manufacturer, boolean checked);
+//        void updateChildren(String manufacturer, boolean checked);
+    }
+
+    /* Interface for the listener that handles checking/unchecking all lenses within a given series and manufacturer */
+    public interface SeriesSelectedListener {
+        void onSelected(String manufacturer, String series, boolean checked);
+    }
+
+    public void setLenses(ArrayList<LensEntity> newLenses) {
+        this.lensObjectArrayList = newLenses;
+        notifyDataSetChanged();
     }
 
     public void setSelectedListener(LensSelectedListener listener) { this.selectedListener = listener; }
 
+    public void setManufacturerSelectedListener(ManufacturerSelectedListener listener) {
+        this.manufacturerSelectedListener = listener;
+    }
+
+    public void setSeriesSelectedListener(SeriesSelectedListener listener) {
+        this.seriesSelectedListener = listener;
+    }
+
+    public void initializeCheckedList() {
+        if (this.listDataHeader != null) {
+            for (int i = 0; i < this.listDataHeader.size(); i++) {
+                this.manufCheckedStatus.add(i, checkManufacturerSelectedStatus(i));
+            }
+        }
+    }
+
+    public void initializeExpandedStatus() {
+        if (this.listDataHeader != null) {
+            for (int i = 0; i < this.listDataHeader.size(); i++) {
+                int count = this.listDataChild.get(this.listDataHeader.get(i)).size();
+                Integer[] expanded = new Integer[count];
+                for (int j = 0; j < count; j++) {
+                    expanded[j] = 0;
+                }
+                this.seriesExpandedStatus.put(this.listDataHeader.get(i), expanded);
+            }
+        }
+    }
+
+    private boolean checkManufacturerSelectedStatus(int groupPosition) {
+        Timber.d("checking manuf selected status for groupPos = " + groupPosition);
+
+        String manuf = (String) getGroup(groupPosition);
+        int numInManuf = 0;
+
+        // TODO: make this handle when there are 0 lenses for a manuf
+        boolean allChecked = true;
+        if (this.lensObjectArrayList.size() > 0) {
+            for (LensEntity lens : this.lensObjectArrayList) {
+                if (lens.getManufacturer().equals(manuf)) {
+                    numInManuf += 1;
+                    if (!lens.getChecked()) {
+                        allChecked = false;
+                    }
+                }
+            }
+        }
+
+        else {
+            allChecked = false;
+        }
+
+        if (numInManuf == 0) {
+            allChecked = false;
+        }
+
+        return allChecked;
+    }
+
+//    @Override
+//    public void notifyDataSetChanged() {
+//        super.notifyDataSetChanged();
+//        Timber.d("notify data set changed");
+//    }
 
     @Override
     public Object getChild(int groupPosition, int childPosition)
@@ -92,19 +187,21 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
     }
 
     @Override
-    public View getChildView(int groupPosition, int childPosition,
+    public View getChildView(int groupPosition, final int childPosition,
                              boolean isLastChild, View convertView, ViewGroup parent)
     {
         List<String> lensTypeList = this.listDataChild.get(listDataHeader.get(groupPosition));
-        String parentNode = (String) getGroup(groupPosition);
+        final String parentNode = (String) getGroup(groupPosition);
         HashMap<Integer, ArrayList<Integer>> lensPositionIndicesMap = this.lensPositionMap.get(groupPosition);
 
-        HashMap<String, ArrayList<Lens>> lensChildHash = new HashMap<>();
+        HashMap<String, ArrayList<LensEntity>> lensChildHash = new HashMap<>();
+
+        final Integer[] childExpandedStatus = seriesExpandedStatus.get(parentNode);
 
         for (String series : lensTypeList) {
-            ArrayList<Lens> tempLensList = new ArrayList<>();
+            ArrayList<LensEntity> tempLensList = new ArrayList<>();
             lensChildHash.put(series, tempLensList);
-            for (Lens lens : this.lensObjectArrayList) {
+            for (LensEntity lens : this.lensObjectArrayList) {
                 if (lens.getManufacturer().equals(parentNode) && lens.getSeries().equals(series)) {
                     tempLensList.add(lens);
                 }
@@ -127,6 +224,8 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         lensSecondLevel.setAdapter(childAdapter);
         lensSecondLevel.setGroupIndicator(null);
 
+//        lensSecondLevel.expandGroup(0);
+
         /* Set the listener for changes made to the "Parent" level of the ExpandableListView */
         childAdapter.setParentListener(new LensListChildExpListViewAdapter.ParentLensAddedListener() {
             @Override
@@ -139,13 +238,13 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         /* Set the listener for changes made to the "Child" level of the ExpandableListView (editing an existing lens) */
         childAdapter.setChildListener(new LensListChildExpListViewAdapter.ChildLensChangedListener() {
             @Override
-            public void onChange(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+            public void onChange(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
                 Timber.d("edit the existing lens from All Lenses tab");
-                childListener.onChange(lens, focal, serial, note, myListA, myListB, myListC);
+                childListener.onChange(lens, serial, note, myListA, myListB, myListC);
             }
 
             @Override
-            public void onDelete(Lens lens) {
+            public void onDelete(LensEntity lens) {
                 childListener.onDelete(lens);
             }
         });
@@ -153,9 +252,18 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         /* Set the listener for sending/receiving only selected lenses */
         childAdapter.setSelectedListener(new LensListChildExpListViewAdapter.LensSelectedListener() {
             @Override
-            public void onSelected(Lens lens) {
+            public void onSelected(LensEntity lens) {
                 Timber.d("selected lenses listener");
                 selectedListener.onSelected(lens);
+            }
+        });
+
+        /* Set the listener for checking lenses from the Series level */
+        childAdapter.setSeriesSelectedListener(new LensListChildExpListViewAdapter.SeriesSelectedListener() {
+            @Override
+            public void onSelected(String manuf, String series, boolean checked) {
+                Timber.d("series selected listener");
+                seriesSelectedListener.onSelected(manuf, series, checked);
             }
         });
 
@@ -163,9 +271,33 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
             @Override
             public boolean onGroupClick(ExpandableListView expandableListView, View view, int groupPosition, long id) {
                 Timber.d("child clicked. gp = " + groupPosition);
+                Integer[] currentExpandedStatus = childExpandedStatus;
+                Timber.d("expanded status for groupPos " + groupPosition + ": " + childExpandedStatus.toString());
+
+                if (childExpandedStatus[groupPosition] == 0) {
+                    currentExpandedStatus[groupPosition] = 1;
+                }
+
+                else {
+                    currentExpandedStatus[groupPosition] = 0;
+                }
+
+                seriesExpandedStatus.put(parentNode, currentExpandedStatus);
+
+//                seriesExpandedStatus.put(groupPosition, 1)
+                Timber.d("series expanded status for gp = " + groupPosition + ": " + seriesExpandedStatus.get(parentNode)[groupPosition]);
                 return false;
             }
         });
+
+
+//        lensSecondLevel.setDivider(context.getColor(R.id.));
+
+//        if (seriesExpandedStatus.get(parentNode)[groupPosition] == 1) {
+//            lensSecondLevel.expandGroup(childPosition);
+//        }
+
+//        if (seriesExpandedStatus.get(groupPosition))
 
         // TODO: Get onGroupCollapseListener working to prevent group collapse when focus on EditText in Dialog
 //            lensSecondLevel.setOnGroupCollapseListener(new ExpandableListView.OnGroupCollapseListener() {
@@ -195,6 +327,10 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         return this.listDataHeader.get(groupPosition);
     }
 
+    public boolean getGroupChecked(int groupPosition) {
+        return this.manufCheckedStatus.get(groupPosition);
+    }
+
     @Override
     public int getGroupCount()
     {
@@ -208,17 +344,19 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
     }
 
     @Override
-    public View getGroupView(int groupPosition, boolean isExpanded,
+    public View getGroupView(final int groupPosition, boolean isExpanded,
                              View convertView, ViewGroup parent)
     {
-        String headerTitle = (String) getGroup(groupPosition);
+        final String headerTitle = (String) getGroup(groupPosition);
         String headerCount = String.valueOf(this.lensListDataHeaderCount.get(groupPosition));
+//        final boolean groupChecked = false;
 
         if (convertView == null) {
             LayoutInflater headerInflater = (LayoutInflater) this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = headerInflater.inflate(R.layout.lens_list_group, null);
         }
 
+        final ImageView headerCheckImageView = (ImageView) convertView.findViewById(R.id.checkLensManufacturerImageView);
         ImageView headerImageView = (ImageView) convertView.findViewById(R.id.lensHeaderImageView);
         TextView headerTextView = (TextView) convertView.findViewById(R.id.lensListHeader);
         TextView headerCountTextView = (TextView) convertView.findViewById(R.id.lensHeaderCountTextView);
@@ -227,10 +365,35 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         headerTextView.setText(headerTitle);
         headerCountTextView.setText(headerCount);
 
-        // TODO: make this use newRed color resource
-        headerImageView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF333333);
-        headerTextView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF333333);
-        headerCountTextView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF333333);
+        // TODO: make this use newRed and darkBlue color resources
+        headerCheckImageView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF2E4147);
+        headerImageView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF2E4147);
+        headerTextView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF2E4147);
+        headerCountTextView.setBackgroundColor(isExpanded ? 0xFFFF533D : 0xFF2E4147);
+
+        headerCheckImageView.setImageResource(getGroupChecked(groupPosition) ? R.drawable.ic_check_box_gray_checked_24dp : R.drawable.ic_check_box_gray_unchecked_24dp);
+
+        headerCheckImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                /* If the lens was previously checked, uncheck the box and set the checked attributes to false */
+                if (getGroupChecked(groupPosition)) {
+                    headerCheckImageView.setImageResource(R.drawable.ic_check_box_gray_unchecked_24dp);
+                    manufCheckedStatus.set(groupPosition, false);
+                }
+                /* If the lens was not previously checked, check the box and set the checked attribute to true */
+                else {
+                    headerCheckImageView.setImageResource(R.drawable.ic_check_box_gray_checked_24dp);
+                    manufCheckedStatus.set(groupPosition, true);
+                }
+
+                /* Call the interface callback to notify LensListActivity of the change in "checked" status */
+                manufacturerSelectedListener.onSelected(headerTitle, getGroupChecked(groupPosition));
+//                manufacturerSelectedListener.updateChildren(headerTitle, getGroupChecked(groupPosition));
+
+                updateChildCheckboxes(getGroupChecked(groupPosition));
+            }
+        });
 
         return convertView;
     }
@@ -258,6 +421,13 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         if (childAdapter != null) {
             Timber.d("enable checkboxes from parent level");
             childAdapter.enableCheckboxes();
+        }
+    }
+
+    public void updateChildCheckboxes(boolean checked) {
+        if (childAdapter != null) {
+            Timber.d("update the child textboxes from parent level");
+            childAdapter.updateCheckboxes(checked);
         }
     }
 }

@@ -122,7 +122,6 @@
     <orderEntry type="library" name="android.arch.persistence:db-framework-1.1.0-alpha1" level="project" />
     <orderEntry type="library" name="com.android.support:recyclerview-v7-26.1.0" level="project" />
     <orderEntry type="library" name="com.google.android.gms:play-services-tagmanager-v4-impl-10.2.1" level="project" />
-    <orderEntry type="library" name="com.android.databinding:baseLibrary:3.0.0@jar" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-analytics-impl-10.2.1" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-iid-10.2.1" level="project" />
     <orderEntry type="library" name="com.google.android.gms:play-services-location-10.2.1" level="project" />
@@ -165,6 +164,7 @@
     <orderEntry type="library" name="com.android.support:support-v4-26.1.0" level="project" />
     <orderEntry type="library" name="android.arch.lifecycle:livedata-core-1.1.0" level="project" />
     <orderEntry type="library" name="io.reactivex:rxjava:1.1.0@jar" level="project" />
+    <orderEntry type="library" name="com.android.databinding:baseLibrary:3.0.1@jar" level="project" />
     <orderEntry type="library" name="com.android.support:animated-vector-drawable-26.1.0" level="project" />
     <orderEntry type="library" name="org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.0.2@jar" level="project" />
     <orderEntry type="library" name="com.google.firebase:firebase-messaging-10.2.1" level="project" />

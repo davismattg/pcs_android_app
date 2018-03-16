@@ -7,15 +7,20 @@
 
     <item name="newRed" type="color">#FFFF533D</item>
     <item name="newBlue" type="color">#FF006699</item>
-    <item name="darkGray" type="color">#FF333333</item>
+    <item name="darkBlue" type="color">#FF2E4147</item>
+
+    <item name="darkGray" type="color">#FF414141</item>
+    <!--<item name="darkGray" type="color">#FF333333</item>-->
     <item name="darkestGray" type="color">#FF222222</item>
     <item name="medGray" type="color">#FF555555</item>
-    <item name="dividerGray" type="color">#FF666666</item>
-    <item name="lightMedGray" type="color">#FF888888</item>
+    <item name="dividerGray" type="color">#FF636363</item>
+    <item name="lightMedGray" type="color">#FF919191</item>
     <item name="lightGray" type="color">#FFCCCCCC</item>
-    <item name="lightestGray" type="color">#FFEEEEEE</item>
+    <item name="lightestGray" type="color">#FFEBEBEB</item>
+
     <item name="pcsRed" type="color">#FFFF0000</item>
     <item name="white" type="color">#FFFFFFFF</item>
+    <item name="black" type="color">#FF000000</item>
     <item name="altWhite" type="color">#FFCCFF00</item>
     <item name="bluetoothBlue" type="color">#FF0000CC</item>
     <!--<item name="newGreen" type="color">#FF3DCC3D</item>-->

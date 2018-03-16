@@ -5,7 +5,7 @@ package com.prestoncinema.app.model;
  */
 
 public interface Lens {
-    int getId();
+    long getId();
     int getTag();
     String getDataString();
     String getManufacturer();
@@ -24,9 +24,9 @@ public interface Lens {
     boolean getMyListB();
     boolean getMyListC();
     boolean getChecked();
-    int getLensListId();
+//    int getLensListId();
 
-    void setId(int id);
+    void setId(long id);
     void setTag(int tag);
     void setDataString(String data);
     void setManufacturer(String manuf);
@@ -45,5 +45,5 @@ public interface Lens {
     void setMyListB(boolean myListB);
     void setMyListC(boolean myListC);
     void setChecked(boolean checked);
-    void setLensListId(int id);
+//    void setLensListId(int id);
 }

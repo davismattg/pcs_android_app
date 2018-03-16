@@ -1,16 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/LensListFragment">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--<data>-->
+        <!--<import type="com.prestoncinema.app.db.entity.LensEntity" />-->
+        <!--<import type="java.util.ArrayList" />-->
+        <!--<variable-->
+            <!--name="lenses"-->
+            <!--type="ArrayList<LensEntity>" />-->
+    <!--</data>-->
 
-    <ExpandableListView
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="none"
-        android:dividerHeight="1dp"
-        android:groupIndicator="@null"
-        android:divider="@color/dividerGray"
-        android:id="@+id/LensListFragmentParentExpListView"
-        android:focusable="true" />
-</LinearLayout>
+        tools:context="com.prestoncinema.app.AllLensesFragment"
+        tools:showIn="@layout/activity_all_lenses"
+        android:id="@+id/LensListFragment">
+
+        <ExpandableListView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="none"
+            android:dividerHeight="1dp"
+            android:groupIndicator="@null"
+            android:divider="@color/dividerGray"
+            android:id="@+id/LensListFragmentParentExpListView"
+            android:focusable="true" />
+    </android.support.constraint.ConstraintLayout>
+</layout>

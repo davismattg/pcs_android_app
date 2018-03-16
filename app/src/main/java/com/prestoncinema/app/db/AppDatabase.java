@@ -12,19 +12,18 @@ import android.support.annotation.VisibleForTesting;
 
 import com.prestoncinema.app.db.dao.LensDao;
 import com.prestoncinema.app.db.dao.LensListDao;
+import com.prestoncinema.app.db.dao.LensListLensJoinDao;
 import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.db.entity.LensListEntity;
-import com.prestoncinema.app.model.Lens;
-import com.prestoncinema.app.model.LensList;
+import com.prestoncinema.app.db.entity.LensListLensJoinEntity;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by MATT on 1/18/2018.
  */
 
-@Database(entities = {LensListEntity.class, LensEntity.class}, version = 1)
+@Database(entities = {LensListEntity.class, LensEntity.class, LensListLensJoinEntity.class}, version = 1)
 public abstract class AppDatabase extends RoomDatabase {
     private static AppDatabase INSTANCE;
 
@@ -33,6 +32,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
     public abstract LensDao lensDao();
     public abstract LensListDao lensListDao();
+    public abstract LensListLensJoinDao lensListLensJoinDao();
 
 
     private final MutableLiveData<Boolean> isDatabaseCreated = new MutableLiveData<>();
@@ -61,9 +61,6 @@ public abstract class AppDatabase extends RoomDatabase {
                         executors.diskIO.execute(new Runnable() {
                             @Override
                             public void run() {
-                                // Add a delay to simulate a long-running operation
-                                addDelay();
-
                                 // Generate the data for pre-population
                                 AppDatabase database = AppDatabase.getInstance(context, executors);
                                 LensListEntity list = DataGenerator.generateDefaultLensList();
@@ -97,8 +94,12 @@ public abstract class AppDatabase extends RoomDatabase {
         database.runInTransaction(new Runnable() {
             @Override
             public void run() {
-                database.lensListDao().insertNew(lensList);
-                database.lensDao().insertAll(lenses);
+                long listId = database.lensListDao().insert(lensList);
+                long lensId;
+                for (LensEntity lens : lenses) {
+                    lensId = database.lensDao().insert(lens);
+                    database.lensListLensJoinDao().insert(new LensListLensJoinEntity(listId, lensId));
+                }
             }
         });
     }

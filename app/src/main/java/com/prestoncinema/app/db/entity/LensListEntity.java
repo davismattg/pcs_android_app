@@ -1,6 +1,7 @@
 package com.prestoncinema.app.db.entity;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 
 import com.prestoncinema.app.model.LensList;
@@ -12,17 +13,19 @@ import com.prestoncinema.app.model.LensList;
 
 @Entity(tableName = "lens_lists")
 public class LensListEntity implements LensList {
-    @PrimaryKey
-    private int id;
+    @PrimaryKey(autoGenerate = true)
+    private long id;
     private String name;
     private String location = "";
+    private String note;
+    private int count;
 
     @Override
-    public int getId() {
+    public long getId() {
             return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -43,19 +46,37 @@ public class LensListEntity implements LensList {
         this.location = location;
     }
 
+    @Override
+    public String getNote() { return note; }
+
+    public void setNote(String note) { this.note = note; }
+
+    @Override
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
     public LensListEntity() {
 
     }
 
-    public LensListEntity(int id, String name, String location) {
+    @Ignore
+    public LensListEntity(int id, String name, String location, String note) {
         this.id = id;
         this.name = name;
         this.location = location;
+        this.note = note;
     }
 
+    @Ignore
     public LensListEntity(LensList list) {
         this.id = list.getId();
         this.name = list.getName();
         this.location = list.getLocation();
+        this.note = list.getNote();
     }
 }

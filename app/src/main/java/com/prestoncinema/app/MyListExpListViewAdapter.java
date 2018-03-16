@@ -2,7 +2,6 @@ package com.prestoncinema.app;
 
 import android.content.Context;
 import android.database.DataSetObserver;
-import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,10 +12,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.prestoncinema.app.model.Lens;
+import com.prestoncinema.app.db.entity.LensEntity;
 
-import java.security.acl.Group;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -27,14 +24,14 @@ import timber.log.Timber;
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // Custom adapter class to generate multi-level ExpandableListView for displaying lenses        //
     // currently in My List A/B/C. The parent level is the Header, which should be the list         //
-    // names (My List A, My List B, My List C). The Child level is a list of Lens objects           //
+    // names (My List A, My List B, My List C). The Child level is a list of LensEntity objects.    //
     //////////////////////////////////////////////////////////////////////////////////////////////////
  */
 public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 
     private Context context;
     private List<String> listNames;                                                             // header titles, list names in this case
-    private HashMap<String, List<Lens>> lensesInList;                                           // list of lenses belonging to each list
+    private HashMap<String, List<LensEntity>> lensesInList;                                           // list of lenses belonging to each list
 
     private boolean myListEnabled = false;
 
@@ -46,7 +43,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
 
     private HashMap<String, ImageView> groupViewList;
 
-    public MyListExpListViewAdapter(Context context, List<String> listNames, HashMap<String, List<Lens>> lensesInList, boolean addToMyListA, boolean addToMyListB, boolean addToMyListC) {
+    public MyListExpListViewAdapter(Context context, List<String> listNames, HashMap<String, List<LensEntity>> lensesInList, boolean addToMyListA, boolean addToMyListB, boolean addToMyListC) {
         this.context = context;
         this.listNames = listNames;
         this.lensesInList = lensesInList;
@@ -96,7 +93,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
     public View getChildView(int groupPosition, int childPosition,
                              boolean isLastChild, View convertView, ViewGroup parent)
     {
-        Lens lensObject = (Lens) getChild(groupPosition, childPosition);
+        LensEntity lensObject = (LensEntity) getChild(groupPosition, childPosition);
 
         if (convertView == null) {
             LayoutInflater headerInflater = (LayoutInflater) this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -111,7 +108,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
         ImageView myListICalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalIImageView);
         ImageView myListZCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalZImageView);
 
-        ImageView myListEditLensImageView = (ImageView) convertView.findViewById(R.id.myListEditLensImageView);
+//        ImageView myListEditLensImageView = (ImageView) convertView.findViewById(R.id.myListEditLensImageView);
 
         String lensManufAndSeries = lensObject.getManufacturer() + " - " + lensObject.getSeries();
         String lensFocalString = constructFocalLengthString(lensObject.getFocalLength1(), lensObject.getFocalLength2());

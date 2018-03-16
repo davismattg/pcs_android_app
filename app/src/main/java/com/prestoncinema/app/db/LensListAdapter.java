@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import com.prestoncinema.app.R;
 
 import com.prestoncinema.app.databinding.LensListBinding;
+import com.prestoncinema.app.db.entity.LensListEntity;
 import com.prestoncinema.app.model.LensList;
 
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.List;
 
 public class LensListAdapter extends RecyclerView.Adapter<LensListAdapter.LensListViewHolder> {
 
-    List<? extends LensList> lensLists;
+    List<? extends LensListEntity> lensLists;
 
     @Nullable
     private final LensListClickCallback lensListClickCallback;
@@ -29,7 +30,7 @@ public class LensListAdapter extends RecyclerView.Adapter<LensListAdapter.LensLi
         lensListClickCallback = cb;
     }
 
-    public void setLensLists(final List<? extends LensList> list) {
+    public void setLensLists(final List<? extends LensListEntity> list) {
         if (lensLists == null) {
             lensLists = list;
             notifyDataSetChanged();

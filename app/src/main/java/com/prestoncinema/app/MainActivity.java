@@ -71,6 +71,7 @@ import com.prestoncinema.ui.utils.DialogUtils;
 import com.prestoncinema.ui.utils.ExpandableHeightExpandableListView;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -177,6 +178,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+//        showDebugDBAddressLogToast(getApplicationContext());
 
         // Get the intent that started the activity (to go to firmwareUpdate activity in case user clicked on notification to launch app
         Intent intent = getIntent();
@@ -324,8 +327,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //        }
 
         // Request Bluetooth scanning permissions
-        requestLocationPermissionIfNeeded();
-        requestExternalStoragePermissionIfNeeded();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_FINE_LOCATION);
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE);
+        }
+//        requestLocationPermissionIfNeeded();
+//        requestExternalStoragePermissionIfNeeded();
     }
 
     @Override
@@ -440,6 +447,21 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //        });
     }
 
+    public static void showDebugDBAddressLogToast(Context context) {
+        Timber.d("show DB address -------------------------------------------------");
+
+        if (BuildConfig.DEBUG) {
+            try {
+                Class<?> debugDB = Class.forName("com.amitshekhar.DebugDB");
+                Method getAddressLog = debugDB.getMethod("getAddressLog");
+                Object value = getAddressLog.invoke(null);
+                Toast.makeText(context, (String) value, Toast.LENGTH_LONG).show();
+            } catch (Exception ignore) {
+                Timber.d("exception: " + ignore.getMessage());
+            }
+        }
+    }
+
     private void autostartScan() {
         Timber.d("autoStartScan() called -------------------");
         isConnected = false;
@@ -548,110 +570,110 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         super.onDestroy();
     }
 
-    // region Permissions
-    @TargetApi(Build.VERSION_CODES.M)
-    private void requestLocationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android M Permission check 
-            if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("This app needs location access");
-                builder.setMessage("Please grant location access so this app can scan for Bluetooth peripherals");
-                builder.setPositiveButton(android.R.string.ok, null);
-                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    public void onDismiss(DialogInterface dialog) {
-                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_FINE_LOCATION);
-                    }
-                });
-                builder.show();
-            }
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.M)
-    private void requestExternalStoragePermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android M Permission check 
-            if (this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("This app needs external read/write permission");
-                builder.setMessage("Please grant permission to read/write lens files");
-                builder.setPositiveButton(android.R.string.ok, null);
-                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    public void onDismiss(DialogInterface dialog) {
-                        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE);
-                    }
-                });
-                builder.show();
-            }
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSION_REQUEST_FINE_LOCATION: {
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Timber.d("Location permission granted");
-                    if (!isConnected) {
-                        // Autostart scan
-                        autostartScan();
-                    }
-//                    runOnUiThread(new Runnable() {
+//    // region Permissions
+//    @TargetApi(Build.VERSION_CODES.M)
+//    private void requestLocationPermissionIfNeeded() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            // Android M Permission check 
+//            if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//                builder.setTitle("This app needs location access");
+//                builder.setMessage("Please grant location access so this app can scan for Bluetooth peripherals");
+//                builder.setPositiveButton(android.R.string.ok, null);
+//                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+//                    public void onDismiss(DialogInterface dialog) {
+//                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_FINE_LOCATION);
+//                    }
+//                });
+//                builder.show();
+//            }
+//        }
+//    }
+//
+//    @TargetApi(Build.VERSION_CODES.M)
+//    private void requestExternalStoragePermissionIfNeeded() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            // Android M Permission check 
+//            if (this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+//                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//                builder.setTitle("This app needs external read/write permission");
+//                builder.setMessage("Please grant permission to read/write lens files");
+//                builder.setPositiveButton(android.R.string.ok, null);
+//                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+//                    public void onDismiss(DialogInterface dialog) {
+//                        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE);
+//                    }
+//                });
+//                builder.show();
+//            }
+//        }
+//    }
+//
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+//        switch (requestCode) {
+//            case PERMISSION_REQUEST_FINE_LOCATION: {
+//                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                    Timber.d("Location permission granted");
+//                    if (!isConnected) {
+//                        // Autostart scan
+//                        autostartScan();
+//                    }
+////                    runOnUiThread(new Runnable() {
+////                        @Override
+////                        public void run() {
+////                            updateUI();
+////                        }
+////                    });
+//                } else {
+//                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//                    builder.setTitle("Bluetooth Scanning not available");
+//                    builder.setMessage("Since location access has not been granted, the app will not be able to scan for Bluetooth peripherals");
+//                    builder.setPositiveButton(android.R.string.ok, null);
+//                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+//
 //                        @Override
-//                        public void run() {
-//                            updateUI();
+//                        public void onDismiss(DialogInterface dialog) {
 //                        }
+//
 //                    });
-                } else {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Bluetooth Scanning not available");
-                    builder.setMessage("Since location access has not been granted, the app will not be able to scan for Bluetooth peripherals");
-                    builder.setPositiveButton(android.R.string.ok, null);
-                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-
-                        @Override
-                        public void onDismiss(DialogInterface dialog) {
-                        }
-
-                    });
-                    builder.show();
-                }
-                break;
-            }
-            case PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE: {
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Timber.d("External storage permission granted");
-                    if (!isConnected) {
-                    // Autostart scan
-                    autostartScan();
-                    }
-//                    runOnUiThread(new Runnable() {
+//                    builder.show();
+//                }
+//                break;
+//            }
+//            case PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE: {
+//                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                    Timber.d("External storage permission granted");
+//                    if (!isConnected) {
+//                    // Autostart scan
+//                    autostartScan();
+//                    }
+////                    runOnUiThread(new Runnable() {
+////                        @Override
+////                        public void run() {
+////                            updateUI();
+////                        }
+////                    });
+//                } else {
+//                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//                    builder.setTitle("External storage not available");
+//                    builder.setMessage("Since external storage access has not been granted, the app will not be able to save HU3 lens files");
+//                    builder.setPositiveButton(android.R.string.ok, null);
+//                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+//
 //                        @Override
-//                        public void run() {
-//                            updateUI();
+//                        public void onDismiss(DialogInterface dialog) {
 //                        }
+//
 //                    });
-                } else {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("External storage not available");
-                    builder.setMessage("Since external storage access has not been granted, the app will not be able to save HU3 lens files");
-                    builder.setPositiveButton(android.R.string.ok, null);
-                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-
-                        @Override
-                        public void onDismiss(DialogInterface dialog) {
-                        }
-
-                    });
-                    builder.show();
-                }
-                break;
-            }
-            default:
-                break;
-        }
-    }
+//                    builder.show();
+//                }
+//                break;
+//            }
+//            default:
+//                break;
+//        }
+//    }
 
     // endregion
 
@@ -1319,7 +1341,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             Timber.d("rememberDevice true, add to prefs");
             SharedPreferences deviceHistoryPreferences = getSharedPreferences("deviceHistory", MODE_PRIVATE);
             SharedPreferences deviceNamePreferences = getSharedPreferences("deviceNameHistory", MODE_PRIVATE);
-            saveDeviceToPreferences(mBleManager.getConnectedDevice(), deviceHistoryPreferences, deviceNamePreferences);
+            if (mBleManager.getConnectedDevice() != null) {
+                saveDeviceToPreferences(mBleManager.getConnectedDevice(), deviceHistoryPreferences, deviceNamePreferences);
+            }
         }
 
         updateConnectedTextView(isConnected, mBleManager.getConnectedDevice().getName());

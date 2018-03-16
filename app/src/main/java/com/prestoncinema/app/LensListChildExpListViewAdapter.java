@@ -3,19 +3,16 @@ package com.prestoncinema.app;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.databinding.DataBindingUtil;
+import android.text.Layout;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseExpandableListAdapter;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 
+import com.prestoncinema.app.databinding.LensListLensBinding;
+import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.model.Lens;
 
 import java.util.ArrayList;
@@ -32,8 +29,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 {
     private Context context;
     private List<String> listDataHeader;                                                             // header titles (lens types, per manufacturer)
-    private HashMap<String, ArrayList<Lens>> listDataChild;
-    private ArrayList<Lens> lensObjectList;
+    private HashMap<String, ArrayList<LensEntity>> listDataChild;
+    private ArrayList<LensEntity> lensObjectList;
     private HashMap<Integer, ArrayList<Integer>> listDataChildIndices;
     private String manufName;                                                                      // manufacturer name
     private boolean isPrime;
@@ -42,12 +39,16 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
     private ParentLensAddedListener parentListener;
     private ChildLensChangedListener childListener;
     private LensSelectedListener selectedListener;
+    private SeriesSelectedListener seriesSelectedListener;
+    private ExpandedStateListener expandedStateListener;
+
+    private ArrayList<Boolean> seriesCheckedStatus = new ArrayList<>();
 
     public LensListChildExpListViewAdapter(Context context,
                                       List<String> listDataHeader,
-                                      HashMap<String, ArrayList<Lens>> listDataChild,
+                                      HashMap<String, ArrayList<LensEntity>> listDataChild,
                                       HashMap<Integer, ArrayList<Integer>> listDataChildIndices,
-                                      ArrayList<Lens> lensObjectList,
+                                      ArrayList<LensEntity> lensObjectList,
                                       String manufName) {
         this.context = context;
         this.listDataHeader = listDataHeader;
@@ -55,11 +56,14 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         this.lensObjectList = lensObjectList;
         this.listDataChildIndices = listDataChildIndices;
         this.manufName = manufName;
+
+        initializeCheckedList();
+
     }
 
     public interface ChildLensChangedListener {
-        void onChange(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        void onDelete(Lens lens);
+        void onChange(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onDelete(LensEntity lens);
     }
 
     public void setChildListener(ChildLensChangedListener listener) {
@@ -75,11 +79,58 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
     }
 
     public interface LensSelectedListener {
-        void onSelected(Lens lens);
+        void onSelected(LensEntity lens);
     }
 
     public void setSelectedListener(LensSelectedListener listener) {
         this.selectedListener = listener;
+    }
+
+    public interface SeriesSelectedListener {
+        void onSelected(String manuf, String series, boolean checked);
+    }
+
+    public void setSeriesSelectedListener(SeriesSelectedListener listener) {
+        this.seriesSelectedListener = listener;
+    }
+
+    public interface ExpandedStateListener {
+        void onExpanded(int position);
+    }
+
+    public void setExpandedStateListener(ExpandedStateListener listener) {
+        this.expandedStateListener = listener;
+    }
+
+    public void initializeCheckedList() {
+        for (int i = 0; i < this.listDataHeader.size(); i++) {
+            this.seriesCheckedStatus.add(i, checkLensSelectedStatus(i));
+        }
+    }
+
+    /**
+     * Helper method to determine whether all lenses in a series are selected, and thus whether
+     * the series should show a "checked" or "unchecked" image
+     * @param groupPosition
+     * @return
+     */
+    private boolean checkLensSelectedStatus(int groupPosition) {
+        Timber.d("checking lens checked status for groupPos = " + groupPosition);
+        ArrayList<LensEntity> lensesInSeries = this.listDataChild.get((String) getGroup(groupPosition));
+
+        boolean allChecked = true;
+        if (lensesInSeries.size() > 0) {
+            for (LensEntity lens : lensesInSeries) {
+                if (!lens.getChecked()) {
+                    allChecked = false;
+                }
+            }
+        }
+        else {
+            allChecked = false;
+        }
+
+        return allChecked;
     }
 
     @Override
@@ -103,74 +154,87 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                              boolean isLastChild, View convertView, ViewGroup parent)
     {
         /* The Lens object whose information will populate the view */
-        final Lens childObject = (Lens) getChild(groupPosition, childPosition);
+        final LensEntity childObject = (LensEntity) getChild(groupPosition, childPosition);
+
+//        Timber.d("clicked child, lens id = " + childObject.getId());
 
         /* Get the strings that will be used to populate the lens row */
         final String childText = SharedHelper.constructFocalLengthString(childObject.getFocalLength1(), childObject.getFocalLength2());
-        final String childSerialText = childObject.getSerial();
-        final String childNoteText = childObject.getNote();
+//        final String childSerialText = childObject.getSerial();
+//        final String childNoteText = childObject.getNote();
+
+        LensListLensBinding binding;
 
         /* If this is the first time we're inflating this view */
         if (convertView == null) {
             LayoutInflater headerInflater = (LayoutInflater) this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = headerInflater.inflate(R.layout.lens_list_lens, null);                                                   // inflate the view used to display the lens
+//            convertView = headerInflater.inflate(R.layout.lens_list_lens, null);                                                   // inflate the view used to display the lens
+//            binding = DataBindingUtil.inflate(LayoutInflater.from(context), R.layout.lens_list_lens, parent, false);
+            binding = LensListLensBinding.inflate(headerInflater);
+            convertView = binding.getRoot();
         }
 
+        else {
+            binding = (LensListLensBinding) convertView.getTag();
+        }
+
+        binding.setLens(childObject);
+        convertView.setTag(binding);
+
         /* Initialize the UI components */
-        TextView lensView = (TextView) convertView.findViewById(R.id.lensListLensTextView);                                             // the textView that displays the lens focal length
-        TextView serialView = (TextView) convertView.findViewById(R.id.lensListSerialTextView);                                         // the textView that displays the lens serial number
+//        TextView lensView = (TextView) convertView.findViewById(R.id.lensListLensTextView);                                             // the textView that displays the lens focal length
+//        TextView serialView = (TextView) convertView.findViewById(R.id.lensListSerialTextView);                                         // the textView that displays the lens serial number
 
-        ImageView fCalImageView = (ImageView) convertView.findViewById(R.id.lensCalFImageView);                                         // ImageView that holds the "F" icon
-        ImageView iCalImageView = (ImageView) convertView.findViewById(R.id.lensCalIImageView);                                         // ImageView that holds the "I" icon
-        ImageView zCalImageView = (ImageView) convertView.findViewById(R.id.lensCalZImageView);                                         // ImageView that holds the "Z" icon
+//        ImageView fCalImageView = (ImageView) convertView.findViewById(R.id.lensCalFImageView);                                         // ImageView that holds the "F" icon
+//        ImageView iCalImageView = (ImageView) convertView.findViewById(R.id.lensCalIImageView);                                         // ImageView that holds the "I" icon
+//        ImageView zCalImageView = (ImageView) convertView.findViewById(R.id.lensCalZImageView);                                         // ImageView that holds the "Z" icon
 
-        ImageView myListAImageView = (ImageView) convertView.findViewById(R.id.myListAImageView);                                       // ImageView that holds the "A" icon
-        ImageView myListBImageView = (ImageView) convertView.findViewById(R.id.myListBImageView);                                       // ImageView that holds the "B" icon
-        ImageView myListCImageView = (ImageView) convertView.findViewById(R.id.myListCImageView);                                       // ImageView that holds the "C" icon
+//        ImageView myListAImageView = (ImageView) convertView.findViewById(R.id.myListAImageView);                                       // ImageView that holds the "A" icon
+//        ImageView myListBImageView = (ImageView) convertView.findViewById(R.id.myListBImageView);                                       // ImageView that holds the "B" icon
+//        ImageView myListCImageView = (ImageView) convertView.findViewById(R.id.myListCImageView);                                       // ImageView that holds the "C" icon
 
         final ImageView checkLensImageView = (ImageView) convertView.findViewById(R.id.checkLensImageView);                               // the imageView used to contain the edit icon (pencil)
 
         /* Set the text values within the view */
-        lensView.setText(childText);                                                                                                    // set the focal length string text
-        String serialAndNote = childSerialText + " " + childNoteText;
-        serialView.setText(serialAndNote);                                                                                              // set the serial string text
+//        lensView.setText(childText);                                                                                                    // set the focal length string text
+//        String serialAndNote = childSerialText + " " + childNoteText;
+//        serialView.setText(serialAndNote);                                                                                              // set the serial string text
 
         /* Display the appropriate ImageViews depending on the lens status */
-        if (!childObject.getCalibratedF()) {
-            fCalImageView.setVisibility(View.GONE);
-        }
-        if (!childObject.getCalibratedI()) {
-            iCalImageView.setVisibility(View.GONE);
-        }
-        if (!childObject.getCalibratedZ()) {
-            zCalImageView.setVisibility(View.GONE);
-        }
-        if (!childObject.getMyListA()) {
-            myListAImageView.setVisibility(View.GONE);
-        }
-        if (!childObject.getMyListB()) {
-            myListBImageView.setVisibility(View.GONE);
-        }
-        if (!childObject.getMyListC()) {
-            myListCImageView.setVisibility(View.GONE);
-        }
+//        if (!childObject.getCalibratedF()) {
+//            fCalImageView.setVisibility(View.GONE);
+//        }
+//        if (!childObject.getCalibratedI()) {
+//            iCalImageView.setVisibility(View.GONE);
+//        }
+//        if (!childObject.getCalibratedZ()) {
+//            zCalImageView.setVisibility(View.GONE);
+//        }
+//
+//        if (!childObject.getMyListA()) {
+//            myListAImageView.setVisibility(View.GONE);
+//        }
+//        if (!childObject.getMyListB()) {
+//            myListBImageView.setVisibility(View.GONE);
+//        }
+//        if (!childObject.getMyListC()) {
+//            myListCImageView.setVisibility(View.GONE);
+//        }
 
         /* Set the tag and tag for this view */
-        checkLensImageView.setTag(getChildTag(groupPosition, childPosition));                                                            // set the tag, which is the lens' tag in the overall array (lensArray var)
-        convertView.setTag(getChildTag(groupPosition, childPosition));
+        checkLensImageView.setTag(childObject.getId());
+//        convertView.setTag(childObject.getId());
 
-        convertView.setId((int) getChildTag(groupPosition, childPosition));
+        convertView.setId((int) childObject.getId());
         convertView.setLongClickable(true);                                                                                             // enable longClick on the lens view
 
         /* If checkbox is checked, show the green checked version */
-        if (childObject.getChecked()) {
-            Timber.d("child should be checked");
-            checkLensImageView.setImageResource(R.drawable.ic_check_box_gray_checked_24dp);
-        }
-        else {
-            Timber.d("child should not be checked");
-            checkLensImageView.setImageResource(R.drawable.ic_check_box_gray_unchecked_24dp);
-        }
+//        if (childObject.getChecked()) {
+//            checkLensImageView.setImageResource(R.drawable.ic_check_box_gray_checked_24dp);
+//        }
+//        else {
+//            checkLensImageView.setImageResource(R.drawable.ic_check_box_gray_unchecked_24dp);
+//        }
 
         /* OnClickListener for the checkboxes */
         checkLensImageView.setOnClickListener(new View.OnClickListener() {
@@ -191,7 +255,7 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 
                 if (numChecked < 0) numChecked = 0;
 
-                /* Call the interface callback to notify ManageLensesActivity of the change in "checked" status */
+                /* Call the interface callback to notify LensListActivity of the change in "checked" status */
                 selectedListener.onSelected(childObject);
             }
         });
@@ -260,7 +324,11 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 lensFocalLengthTextView.setText(SharedHelper.constructFocalLengthString(childObject.getFocalLength1(), childObject.getFocalLength2()));
 
                 lensSerialEditText.setText(childObject.getSerial());
-                lensSerialEditText.setSelection(childObject.getSerial().length());             // position the cursor at the end of the serial string
+                if (childObject.getSerial() != null) {
+                    lensSerialEditText.setSelection(childObject.getSerial().length());             // position the cursor at the end of the serial string
+                }
+
+                lensNoteEditText.setText(childObject.getNote());
 
                 // check the myList checkboxes according to whether it's a member of the appropriate list
                 myListACheckBox.setChecked(myListA);
@@ -268,7 +336,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 myListCCheckBox.setChecked(myListC);
 
                 // add the tag from the lens item in the listView to the hidden textView so we can retrieve it later
-                int lensTag = (int) checkLensImageView.getTag();
+//                int lensTag = (int) checkLensImageView.getTag();
+                long lensTag = (long) checkLensImageView.getTag();
                 lensIndexTextView.setText(String.valueOf(lensTag));
 
                 final AlertDialog dialog = new AlertDialog.Builder(context)
@@ -375,7 +444,7 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                                 }
 
                                 if (readyToSave) {
-                                    childListener.onChange(childObject, childText, newSerial, newNote, myListA, myListB, myListC);
+                                    childListener.onChange(childObject, newSerial, newNote, myListA, myListB, myListC);
                                     dialog.dismiss();
                                 } else {
                                     CharSequence toastText;
@@ -458,6 +527,10 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         return this.listDataHeader.get(groupPosition);
     }
 
+    public boolean getGroupChecked(int groupPosition) {
+        return this.seriesCheckedStatus.get(groupPosition);
+    }
+
     @Override
     public int getGroupCount()
     {
@@ -484,7 +557,10 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
             convertView = headerInflater.inflate(R.layout.lens_list_type, null);
         }
 
+//        Timber.d("groupPos: " + groupPosition + ", isExpanded: " + isExpanded);
+
         // initialize the view components
+        final ImageView checkImageView = (ImageView) convertView.findViewById(R.id.checkLensTypeImageView);
         ImageView typeImageView = (ImageView) convertView.findViewById(R.id.lensTypeImageView);
         TextView typeTextView = (TextView) convertView.findViewById(R.id.lensListType);
         ImageView addImageView = (ImageView) convertView.findViewById(R.id.lensTypeAddImageView);
@@ -504,6 +580,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
             typeImageView.setImageResource(isExpanded ? R.drawable.ic_expand_less_white_24dp : R.drawable.ic_expand_more_white_24dp);
         }
 
+        checkImageView.setImageResource(getGroupChecked(groupPosition) ? R.drawable.ic_check_box_gray_checked_24dp : R.drawable.ic_check_box_gray_unchecked_24dp);
+
 //        /* OnClickListener for touches on the Lens Series items. Used to keep track of expanded state */
 //        convertView.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -513,6 +591,28 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 //
 //            }
 //        });
+
+        checkImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                /* If the lens was previously checked, uncheck the box and set the checked attributes to false */
+                if (getGroupChecked(groupPosition)) {
+                    checkImageView.setImageResource(R.drawable.ic_check_box_gray_unchecked_24dp);
+                    seriesCheckedStatus.set(groupPosition, false);
+                }
+                /* If the lens was not previously checked, check the box and set the checked attribute to true */
+                else {
+                    checkImageView.setImageResource(R.drawable.ic_check_box_gray_checked_24dp);
+                    seriesCheckedStatus.set(groupPosition, true);
+                }
+
+                /* Call the interface callback to notify LensListActivity of the change in "checked" status */
+                seriesSelectedListener.onSelected(manufTitle, typeTitle, getGroupChecked(groupPosition));
+//                manufacturerSelectedListener.updateChildren(headerTitle, getGroupChecked(groupPosition));
+
+//                updateChildCheckboxes(getGroupChecked(groupPosition));
+            }
+        });
 
 
         addImageView.setOnClickListener(new View.OnClickListener() {
@@ -661,6 +761,10 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 
     public void enableCheckboxes() {
 //        checkBoxesEnabled = true;
+    }
+
+    public void updateCheckboxes(boolean checked) {
+
     }
 
 //    private void showOrHideFAB() {

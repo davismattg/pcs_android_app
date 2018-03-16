@@ -21,28 +21,28 @@ import java.util.List;
  */
 
 public class LensListViewModel extends AndroidViewModel {
-    private final LiveData<LensListEntity> observableLensList;
+//    private final LiveData<LensListEntity> observableLensList;
 
     public ObservableField<LensListEntity> lensList = new ObservableField<>();
 
     private final int mLensListId;
 
-    private final LiveData<List<LensEntity>> observableLenses;
+//    private final LiveData<List<LensEntity>> observableLenses;
 
     public LensListViewModel(@NonNull Application application, DataRepository repository, final int lensListId) {
         super(application);
         mLensListId = lensListId;
 
-        observableLenses = repository.loadLenses(lensListId);
-        observableLensList = repository.loadLensList(lensListId);
+//        observableLenses = repository.loadLenses(lensListId);
+//        observableLensList = repository.loadLensList(lensListId);
     }
 
     /**
      * Expose the LiveData Lenses query so the UI can observe it.
      */
-    public LiveData<List<LensEntity>> getLenses() { return observableLenses; }
+//    public LiveData<List<LensEntity>> getLenses() { return observableLenses; }
 
-    public LiveData<LensListEntity> getObservableLensList() { return observableLensList; }
+//    public LiveData<LensListEntity> getObservableLensList() { return observableLensList; }
 
     public void setLensList(LensListEntity list) { this.lensList.set(list); }
 

@@ -15,9 +15,12 @@ import android.widget.ListView;
 import com.prestoncinema.app.MyListViewAdapter;
 import com.prestoncinema.app.R;
 import com.prestoncinema.app.databinding.FragmentMyListBinding;
+import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.model.Lens;
 import com.prestoncinema.app.viewmodel.LensListViewModel;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -27,13 +30,13 @@ import java.util.List;
 
 public class MyListFragment extends Fragment {
     /** Interface for communicating back to the activity.
-     * ManageLensesActivity must implement this interface to communicate with the fragment and
+     * LensListActivity must implement this interface to communicate with the fragment and
      * receive changes made to the lenses/lists
      */
     OnLensChangedListener listener;
     public interface OnLensChangedListener {
-        public void onLensChanged(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        public void onLensDeleted(Lens lens);
+        public void onLensChanged(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        public void onLensDeleted(LensEntity lens);
     }
 
     public static final String ARG_PAGE = "ARG_PAGE";
@@ -41,12 +44,12 @@ public class MyListFragment extends Fragment {
     private int mPage;
     private Context context;
 
-    private HashMap<String, List<Lens>> myListData;
+    private HashMap<String, List<LensEntity>> myListData;
     private ListView myListView;
     private MyListViewAdapter myListViewAdapter;
     private String list;
 
-    public static MyListFragment newInstance(int page, String myList, HashMap<String, List<Lens>> myListData, Context context) {
+    public static MyListFragment newInstance(int page, String myList, HashMap<String, List<LensEntity>> myListData, Context context) {
         Bundle args = new Bundle();
         args.putInt(ARG_PAGE, page);
 
@@ -73,36 +76,45 @@ public class MyListFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-//        View view = inflater.inflate(R.layout.fragment_my_list, container, false);
+        View view = inflater.inflate(R.layout.fragment_my_list, container, false);
 
         /* Border applied after the ListView so the bottom lens looks finished. Hide if list is empty */
 //        LinearLayout bottomBorder = view.findViewById(R.id.myListBottomBorder);
 
-//        List<Lens> lenses = this.myListData.get(this.list);
-//        myListViewAdapter = new MyListViewAdapter(this.context, lenses);
-//        myListView = view.findViewById(R.id.MyListFragmentListView);
-//        myListView.setAdapter(myListViewAdapter);
-//
-//        myListViewAdapter.setListener(new MyListViewAdapter.LensChangedListener() {
-//            @Override
-//            public void onChange(Lens lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
-//                listener.onLensChanged(lens, focal, serial, note, myListA, myListB, myListC);
-//            }
-//
-//            @Override
-//            public void onDelete(Lens lens) {
-//                listener.onLensDeleted(lens);
-//            }
-//        });
+        List<LensEntity> lenses = this.myListData.get(this.list);
+
+        Collections.sort(lenses, new Comparator<LensEntity>() {
+            @Override
+            public int compare(LensEntity lensEntity, LensEntity t1) {
+//                return lensEntity.getManufacturer().compareTo(t1.getManufacturer());
+                return lensEntity.getManufacturerPosition() - t1.getManufacturerPosition();
+            }
+        });
+
+        myListViewAdapter = new MyListViewAdapter(this.context, lenses);
+        myListView = view.findViewById(R.id.MyListFragmentListView);
+        myListView.setAdapter(myListViewAdapter);
+
+        myListViewAdapter.setListener(new MyListViewAdapter.LensChangedListener() {
+            @Override
+            public void onChange(LensEntity lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+                listener.onLensChanged(lens, serial, note, myListA, myListB, myListC);
+            }
+
+            @Override
+            public void onDelete(LensEntity lens) {
+                listener.onLensDeleted(lens);
+            }
+        });
 
         /* Hide the bottom gray border if the list is empty */
 //        if (lenses.size() == 0) {
 //            bottomBorder.setVisibility(View.GONE);
 //        }
 
-//        return view;
-        FragmentMyListBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_my_list, container, false);
-        return binding.getRoot();
+        return view;
+//        FragmentMyListBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_my_list, container, false);
+//        return binding.getRoot();
     }
 
     @Override

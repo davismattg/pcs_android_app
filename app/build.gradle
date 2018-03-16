@@ -25,6 +25,9 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+//        debug {
+//            resValue("string", "PORT_NUMBER", "9999")
+//        }
     }
 
     dataBinding {
@@ -90,5 +93,7 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.jakewharton.timber:timber:4.5.1'
 //    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+
+//    debugCompile 'com.amitshekhar.android:debug-db:1.0.3'
 }
 apply plugin: 'com.google.gms.google-services'

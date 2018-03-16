@@ -1,7 +1,10 @@
 package com.prestoncinema.app;
 
+import android.app.Activity;
 import android.app.Application;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.os.Bundle;
 
 import com.prestoncinema.app.db.AppDatabase;
 import com.prestoncinema.app.db.AppExecutors;
@@ -33,6 +36,45 @@ public class PCSApplication extends Application {
                 Timber.plant(new Timber.DebugTree());
             }
         }
+
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle bundle) {
+                // new activity created, force its orientation to portrait
+                activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityPaused(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+
+            }
+        });
+
     }
 
     // called by the system when the device configuration changes while your component is running.

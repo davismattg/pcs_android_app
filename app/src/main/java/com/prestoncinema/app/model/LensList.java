@@ -5,11 +5,15 @@ package com.prestoncinema.app.model;
  */
 
 public interface LensList {
-    int getId();
+    long getId();
     String getName();
     String getLocation();
+    String getNote();
+    int getCount();
 
-    void setId(int id);
+    void setId(long id);
     void setName(String name);
     void setLocation(String location);
+    void setNote(String note);
+    void setCount(int count);
 }

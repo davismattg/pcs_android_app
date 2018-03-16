@@ -6,6 +6,7 @@ import android.content.Context;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
 import com.prestoncinema.app.db.LensClickCallback;
+import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.model.Lens;
 import com.prestoncinema.app.ui.MyListFragment;
 
@@ -23,20 +24,18 @@ import timber.log.Timber;
 
 public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
     final int PAGE_COUNT = 4;
-    private String tabTitles[] = new String[] { "My List A", "My List B", "My List C", "All" };
+    private String tabTitles[] = new String[] { "All", "My List A", "My List B", "My List C" };
 
     /* Initialize the variables used in the 'All Lenses' fragment */
     private List<String> lensListManufHeader;
     private Map<Integer, Integer> lensListDataHeaderCount;
     private HashMap<String, List<String>> lensListTypeHeader;
     private HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap;
-//    private ArrayList<Lens> lensObjectArrayList;
-
-    private ArrayList<Lens> allLensesList;
+    private ArrayList<LensEntity> allLensesList;
 
     /* Initialize the variables used in the 'My Lists' fragments */
     private List<String> myListDataHeader;
-    private HashMap<String, List<Lens>> myListDataChild;
+    private HashMap<String, List<LensEntity>> myListDataChild;
 
 //    private HashMap<String, List<? extends Lens>> myListDataChild;
 
@@ -47,10 +46,10 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
 
     private LensClickCallback lensClickCallback;
 
-    public LensListFragmentAdapter(FragmentManager fm, List<String> myListDataHeader, HashMap<String, List<Lens>> myListDataChild,
+    public LensListFragmentAdapter(FragmentManager fm, List<String> myListDataHeader, HashMap<String, List<LensEntity>> myListDataChild,
                                    List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
                                    Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap,
-                                   ArrayList<Lens> lensObjectArrayList, Context context) {
+                                   ArrayList<LensEntity> lensObjectArrayList, Context context) {
         super(fm);
 
         this.myListDataHeader = myListDataHeader;
@@ -70,7 +69,7 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
-        if (position == 3) {
+        if (position == 0) {
             allLensesFragment = AllLensesFragment.newInstance(position + 1, this.lensListManufHeader, this.lensListTypeHeader, this.lensListDataHeaderCount, this.lensPositionMap, this.allLensesList, this.context);
             return allLensesFragment;
         }
@@ -94,5 +93,17 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
     public String getPageTitle(int position) {
         // Generate title based on item position
         return tabTitles[position];
+    }
+
+    @Override
+    public void notifyDataSetChanged() {
+        Timber.d("fragment adapter notify data set changed");
+        super.notifyDataSetChanged();
+    }
+
+    public void updateAdapter(int currentTab) {
+        Timber.d("notify data set changed but keep tab at position " + currentTab);
+
+
     }
 }

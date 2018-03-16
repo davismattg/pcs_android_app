@@ -2,16 +2,10 @@ package com.prestoncinema.app.db;
 
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MediatorLiveData;
-import android.arch.lifecycle.Observer;
-import android.support.annotation.Nullable;
 
-import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.db.entity.LensListEntity;
-import com.prestoncinema.app.model.Lens;
-import com.prestoncinema.app.model.LensList;
 
 import java.util.List;
-import java.util.Observable;
 
 import timber.log.Timber;
 
@@ -62,7 +56,7 @@ public class DataRepository {
 
     public void insertLensList(LensListEntity list) {
         Timber.d("inserting new list " + list.getName() + " into db");
-        database.lensListDao().insertNew(list);
+        database.lensListDao().insert(list);
     }
 
     /**
@@ -70,11 +64,11 @@ public class DataRepository {
      * @param lensListId
      * @return
      */
-    public LiveData<LensListEntity> loadLensList(final int lensListId) {
-        return database.lensListDao().loadLensList(lensListId);
-    }
-
-    public LiveData<List<LensEntity>> loadLenses(final int listId) {
-        return database.lensDao().loadLenses(listId);
-    }
+//    public LiveData<LensListEntity> loadLensList(final int lensListId) {
+//        return database.lensListDao().loadLensList(lensListId);
+//    }
+//
+//    public LiveData<List<LensEntity>> loadLenses(final int listId) {
+//        return database.lensDao().loadLenses(listId);
+//    }
 }

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fb7cd5614b54a3a44081ad03d904a9e1",
+    "identityHash": "b5966be3463930d837bf1626366e3808",
     "entities": [
       {
         "tableName": "lens_lists",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `name` TEXT, `location` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `location` TEXT, `note` TEXT, `count` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -25,30 +25,36 @@
             "columnName": "location",
             "affinity": "TEXT",
             "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "count",
+            "columnName": "count",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
           "columnNames": [
             "id"
           ],
-          "autoGenerate": false
+          "autoGenerate": true
         },
         "indices": [],
         "foreignKeys": []
       },
       {
         "tableName": "lenses",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `lensListId` INTEGER NOT NULL, `tag` INTEGER NOT NULL, `manufacturerPosition` INTEGER NOT NULL, `seriesPosition` INTEGER NOT NULL, `focalLength1` INTEGER NOT NULL, `focalLength2` INTEGER NOT NULL, `dataString` TEXT, `manufacturer` TEXT, `series` TEXT, `serial` TEXT, `note` TEXT, `isPrime` INTEGER NOT NULL, `calibratedF` INTEGER NOT NULL, `calibratedI` INTEGER NOT NULL, `calibratedZ` INTEGER NOT NULL, `myListA` INTEGER NOT NULL, `myListB` INTEGER NOT NULL, `myListC` INTEGER NOT NULL, `checked` INTEGER NOT NULL, FOREIGN KEY(`lensListId`) REFERENCES `lens_lists`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `tag` INTEGER NOT NULL, `manufacturerPosition` INTEGER NOT NULL, `seriesPosition` INTEGER NOT NULL, `focalLength1` INTEGER NOT NULL, `focalLength2` INTEGER NOT NULL, `dataString` TEXT, `manufacturer` TEXT, `series` TEXT, `serial` TEXT, `note` TEXT, `isPrime` INTEGER NOT NULL, `calibratedF` INTEGER NOT NULL, `calibratedI` INTEGER NOT NULL, `calibratedZ` INTEGER NOT NULL, `myListA` INTEGER NOT NULL, `myListB` INTEGER NOT NULL, `myListC` INTEGER NOT NULL, `checked` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "lensListId",
-            "columnName": "lensListId",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -167,23 +173,52 @@
           ],
           "autoGenerate": true
         },
-        "indices": [
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "lens_list_lens_join",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`listId` INTEGER NOT NULL, `lensId` INTEGER NOT NULL, PRIMARY KEY(`listId`, `lensId`), FOREIGN KEY(`listId`) REFERENCES `lens_lists`(`id`) ON UPDATE CASCADE ON DELETE CASCADE , FOREIGN KEY(`lensId`) REFERENCES `lenses`(`id`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
           {
-            "name": "index_lenses_lensListId",
-            "unique": false,
-            "columnNames": [
-              "lensListId"
-            ],
-            "createSql": "CREATE  INDEX `index_lenses_lensListId` ON `${TABLE_NAME}` (`lensListId`)"
+            "fieldPath": "listId",
+            "columnName": "listId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lensId",
+            "columnName": "lensId",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
+        "primaryKey": {
+          "columnNames": [
+            "listId",
+            "lensId"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
         "foreignKeys": [
           {
             "table": "lens_lists",
-            "onDelete": "SET NULL",
-            "onUpdate": "NO ACTION",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
             "columns": [
-              "lensListId"
+              "listId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "lenses",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "lensId"
             ],
             "referencedColumns": [
               "id"
@@ -194,7 +229,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"fb7cd5614b54a3a44081ad03d904a9e1\")"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"b5966be3463930d837bf1626366e3808\")"
     ]
   }
 }

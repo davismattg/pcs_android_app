@@ -25,11 +25,11 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
     <application
+        android:name=".PCSApplication"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:name=".PCSApplication"
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.google.android.gms.version"
@@ -48,7 +48,7 @@
         -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
-            android:resource="@color/pcsRed" />
+            android:resource="@color/newRed" />
 
         <!-- Mqtt Service -->
         <service android:name="org.eclipse.paho.android.service.MqttService" />
@@ -82,13 +82,14 @@
 
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name"
-            android:screenOrientation="fullUser"
+            android:label="@string/title_activity_main"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme">
 
             <!-- main filter -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -113,7 +114,7 @@
         <activity
             android:name=".FirmwareUpdateActivity"
             android:label="@string/title_activity_firmware_update"
-            android:screenOrientation="fullUser"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme"
             android:windowSoftInputMode="adjustResize">
             <meta-data
@@ -140,12 +141,20 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ManageLensesActivity"
+            android:name=".AllLensesActivity"
+            android:label="@string/title_activity_all_lenses">
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.LensActivity" />
+        </activity>
+        <activity
+            android:name=".LensListActivity"
             android:label="@string/title_activity_manage_lenses"
+            android:parentActivityName=".LensActivity"
             android:screenOrientation="fullUser"
             android:theme="@style/AppTheme"
-            android:windowSoftInputMode="adjustResize"
-            android:parentActivityName="com.prestoncinema.app.LensActivity">
+            android:windowSoftInputMode="adjustResize">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.prestoncinema.app.LensActivity" />
@@ -183,7 +192,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.prestoncinema.app.settings.MqttUartSettingsActivity" />
         </activity>
-
         <activity android:name=".FirmwareInfoActivity">
 
         </activity>

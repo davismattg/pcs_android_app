@@ -116,8 +116,11 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private MqttManager mMqttManager;
 
     private AlertDialog updateDialog;
+    private AlertDialog searchingForUnitDialog;
+    private AlertDialog noUpdaterFoundDialog;
+    private AlertDialog updateCancelledDialog;
 
-    private ProgressDialog mProgressDialog;
+//    private ProgressDialog mProgressDialog;
     private TextView mConnectedTextView;
     private ListView mFirmwareListView;
     private ArrayAdapter<String> firmwareArrayAdapter;
@@ -140,7 +143,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
         mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
 
-        mProgressDialog = new ProgressDialog(FirmwareUpdateActivity.this);
+//        mProgressDialog = new ProgressDialog(FirmwareUpdateActivity.this);
 //        uploadDialog = new AlertDialog(FirmwareUpdateActivity.this);
 
         mBleManager = BleManager.getInstance(this);
@@ -167,26 +170,20 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
         // Product Array Setup
         productNameArray = Arrays.asList(getResources().getStringArray(R.array.product_names));
-//        productNameArray.add("Hand3\n");
-//        productNameArray.add("MDR4\n");
-//        productNameArray.add("MDR3\n");
-////        productNameArray.add("LightR\n");
-//        productNameArray.add("MLink\n");
-//        productNameArray.add("MDR\n");
-//        productNameArray.add("DM3\n");
-//        productNameArray.add("DMF\n");
-//        productNameArray.add("F_I\n");
-//        productNameArray.add("Tr4\n");
-//        productNameArray.add("Tr4\n");
-//        productNameArray.add("VLC\n");
-//        productNameArray.add("WMF\n");
-
         firmwareChangesAdapter = new ArrayAdapter<String>(FirmwareUpdateActivity.this, R.layout.firmware_change_list_item);
 
         // Mqtt init
         mMqttManager = MqttManager.getInstance(this);
         if (MqttSettings.getInstance(this).isConnected()) {
             mMqttManager.connectFromSavedSettings(this);
+        }
+
+        if (isConnected) {
+            showSearchingForUnitDialog();
+        }
+
+        else {
+            showNoUpdaterFoundDialog();
         }
 
         // check if the network is available, and if so, initiate download of latest firmware files
@@ -265,6 +262,44 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 //        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
 //    }
+
+    /**
+     * Show the user a dialog while the system is changing baud rates and looking for unit
+     */
+    private void showSearchingForUnitDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(FirmwareUpdateActivity.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        final View searchingForUnitDialogView = inflater.inflate(R.layout.dialog_searching_for_unit, null);
+        searchingForUnitDialog = builder.setView(searchingForUnitDialogView).create();
+        searchingForUnitDialog.show();
+    }
+
+    private void showNoUpdaterFoundDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(FirmwareUpdateActivity.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        final View showNoUpdaterFoundDialogView = inflater.inflate(R.layout.dialog_no_updater_found, null);
+        noUpdaterFoundDialog = builder.setView(showNoUpdaterFoundDialogView)
+//                .setPositiveButton("Got it", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialogInterface, int i) {
+//                        noUpdaterFoundDialog.dismiss();
+//                    }
+//                })
+//                .setNegativeButton("Scan", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialogInterface, int i) {
+//                        Timber.d("go back to MainActivity to scan for modules");
+//                        noUpdaterFoundDialog.dismiss();
+//                    }
+//                })
+//                .setTitle(getResources().getString(R.string.no_updater_found_title))
+                .create();
+
+        noUpdaterFoundDialog.show();
+    }
+
 
     private void uartSendData(String data, boolean wasReceivedFromMqtt) {
         lastDataSent = data;
@@ -367,9 +402,9 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             @Override
             public void downloadComplete(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareFilesMap) {
                 Timber.d("downloadComplete inner entered");
-                if (mProgressDialog != null) {
-                    mProgressDialog.hide();
-                }
+//                if (mProgressDialog != null) {
+//                    mProgressDialog.dismiss();
+//                }
                 firmwareFilesDownloaded = true;
             }
         }).execute(pcsPath);
@@ -378,9 +413,9 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     @Override
     public void downloadComplete(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareFilesMap) {
         Timber.d("downloadComplete outer entered");
-        if (mProgressDialog != null) {
-            mProgressDialog.hide();
-        }
+//        if (mProgressDialog != null) {
+//            mProgressDialog.dismiss();
+//        }
     }
 
     // region Menu
@@ -480,9 +515,9 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                 Timber.d("check for firmware updates");
                 // check if the network is available, and if so, initiate download of latest firmware files
                 if (isNetworkAvailable()) {
-                    mProgressDialog.setMessage("Checking for the latest firmware...");
-                    mProgressDialog.setCancelable(false);
-                    mProgressDialog.show();
+//                    mProgressDialog.setMessage("Checking for the latest firmware...");
+//                    mProgressDialog.setCancelable(false);
+//                    mProgressDialog.show();
 
                     startDownload();
                 } else {
@@ -793,6 +828,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     final String filePath = getS19Path(productRxString);
                     startConnectionSetup = false;
                     isConnectionReady = true;
+                    searchingForUnitDialog.dismiss();
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -956,6 +992,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
     public void confirmUpdate(String ver) {
         updateConfirmEntered = true;
+        searchingForUnitDialog.dismiss();
         final String currentVersion = ver.replaceAll("\n", " ").split(" ")[1];
         sBuilder.setLength(0);
 
@@ -1264,12 +1301,12 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
     // read in the s19 file so we can send it line-by-line to the UART
     public void loadProgramFile(String filePath) {
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setMessage("Loading firmware file...");
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        mProgressDialog.setIndeterminate(true);
-        mProgressDialog.show();
+//        mProgressDialog = new ProgressDialog(this);
+//        mProgressDialog.setMessage("Loading firmware file...");
+//        mProgressDialog.setCancelable(false);
+//        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+//        mProgressDialog.setIndeterminate(true);
+//        mProgressDialog.show();
         Timber.d("loadProgramFile() entered: " + filePath);
         BufferedReader reader = null;
 
@@ -1295,14 +1332,14 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             }
             if (fileArray.size() > 0) {
                 programLoaded = true;
-                if (mProgressDialog != null) {
-                    mProgressDialog.hide();
-                }
+//                if (mProgressDialog != null) {
+//                    mProgressDialog.dismiss();
+//                }
             }
             else {
-                if (mProgressDialog != null) {
-                    mProgressDialog.hide();
-                }
+//                if (mProgressDialog != null) {
+//                    mProgressDialog.dismiss();
+//                }
             }
         } catch (Exception ex) {
             Timber.d("loadProgramFile()", ex);

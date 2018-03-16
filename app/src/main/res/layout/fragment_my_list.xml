@@ -12,23 +12,5 @@
             android:dividerHeight="1dp"
             android:divider="@color/dividerGray"
             android:id="@+id/MyListFragmentListView" />
-
-        <!--<ExpandableListView-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent"-->
-            <!--android:scrollbars="none"-->
-            <!--android:dividerHeight="1dp"-->
-            <!--android:groupIndicator="@null"-->
-            <!--android:divider="@color/dividerGray"-->
-            <!--andrindexd:idindex@+id/MyListFragmentExpListView"-->
-            <!--android:focusable="true" />-->
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:orientation="horizontal"
-            android:layout_marginBottom="5dp"
-            android:background="@color/dividerGray"
-            android:id="@+id/myListBottomBorder"/>
     </LinearLayout>
 </layout>

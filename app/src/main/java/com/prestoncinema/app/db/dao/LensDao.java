@@ -8,6 +8,7 @@ import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Update;
 
+import com.prestoncinema.app.AllLensesFragment;
 import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.model.Lens;
 
@@ -23,28 +24,40 @@ public interface LensDao {
     void insertAll(List<LensEntity> lenses);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(LensEntity lens);
+    long insert(LensEntity lens);
 
-    @Update
-    void updateLenses(LensEntity... lenses);
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    void update(LensEntity lens);
+
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    int updateAll(LensEntity... lenses);
 
     @Delete
-    void deleteLenses(LensEntity... lenses);
+    void delete(LensEntity... lenses);
 
     /* SQL Queries for retrieving Lenses from the database. Room checks these SQL queries during compilation,
     so you can be confident the app will work if these SQL queries pass.
      */
     @Query("SELECT * FROM lenses")
-    LiveData<List<LensEntity>> loadAllLenses();
+    List<LensEntity> loadAll();
 
-    @Query("SELECT * FROM lenses")
-    List<LensEntity> loadAllLensesSync();
+    @Query("SELECT * FROM lenses WHERE checked")
+    List<LensEntity> loadSelected();
 
-    @Query("SELECT * FROM lenses WHERE lensListId = :lensListId")
-    LiveData<List<LensEntity>> loadLenses(int lensListId);
+//    @Query("SELECT * FROM lenses")
+//    List<LensEntity> loadAllLensesSync();
 
-    @Query("SELECT * FROM lenses WHERE lensListId = :lensListId")
-    List<LensEntity> loadLensesSync(int lensListId);
+//    @Query("SELECT * FROM lenses WHERE lensListId = :lensListId")
+//    LiveData<List<LensEntity>> loadLenses(int lensListId);
+//
+//    @Query("SELECT * FROM lenses WHERE lensListId = :lensListId")
+//    List<LensEntity> loadLensesSync(int lensListId);
+
+    @Query("SELECT COUNT(*) from lenses")
+    int getCount();
+
+    @Query("SELECT COUNT(*) FROM lenses WHERE checked")
+    int getSelectedCount();
 
     @Query("SELECT * from lenses WHERE id = :id")
     LiveData<LensEntity> findLensById(int id);
@@ -63,4 +76,10 @@ public interface LensDao {
 
     @Query("SELECT * FROM lenses WHERE manufacturer = :manufacturer AND series = :series")
     List<LensEntity> loadLensesManufacturerAndSeriesSync(String manufacturer, String series);
+
+//    @Query("DELETE from lenses where id = :id")
+//    void delete(long id);
+
+    @Query("DELETE from lenses")
+    void deleteAll();
 }

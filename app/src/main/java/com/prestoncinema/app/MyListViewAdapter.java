@@ -11,10 +11,12 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.prestoncinema.app.model.Lens;
+import com.prestoncinema.app.databinding.MyListLensBinding;
+import com.prestoncinema.app.db.entity.LensEntity;
 
 import java.util.List;
 
@@ -24,21 +26,21 @@ import timber.log.Timber;
  * Created by MATT on 11/15/2017.
  */
 
-public class MyListViewAdapter extends ArrayAdapter<Lens> {
+public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
     private final Context context;
-    private List<Lens> listChildren;
+    private List<LensEntity> listChildren;
 
     private LensChangedListener listener;
 
-    public MyListViewAdapter(Context context, List<Lens> children) {
+    public MyListViewAdapter(Context context, List<LensEntity> children) {
         super(context, -1, children);
         this.context = context;
         this.listChildren = children;
     }
 
     public interface LensChangedListener {
-        void onChange(Lens lens, String focalString, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        void onDelete(Lens lens);
+        void onChange(LensEntity lens, String focalString, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onDelete(LensEntity lens);
     }
 
     public void setListener(LensChangedListener listener) {
@@ -47,50 +49,63 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        if (convertView == null) {
-            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.my_list_lens, parent, false);
-        }
-
-        final Lens lensObject = this.listChildren.get(position);
+        final LensEntity lensObject = this.listChildren.get(position);
         final LensChangedListener lensListener = this.listener;
 
-        TextView lensManufAndSeriesTextView = convertView.findViewById(R.id.myListLensManufAndSeriesTextView);
-        TextView lensFocalTextView = (TextView) convertView.findViewById(R.id.myListLensFocalTextView);
-        TextView lensSerialAndNoteTextVIew = (TextView) convertView.findViewById(R.id.myListLensSerialTextView);
+        MyListLensBinding binding;
 
-        ImageView myListFCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalFImageView);
-        ImageView myListICalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalIImageView);
-        ImageView myListZCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalZImageView);
-
-        final ImageView myListEditLensImageView = (ImageView) convertView.findViewById(R.id.myListEditLensImageView);
-        myListEditLensImageView.setTag(lensObject.getTag());
-
-        String lensManufAndSeries = lensObject.getManufacturer() + " - " + lensObject.getSeries();
-        final String lensFocalString = SharedHelper.constructFocalLengthString(lensObject.getFocalLength1(), lensObject.getFocalLength2());
-        String lensSerialAndNote = lensObject.getSerial() + " " + lensObject.getNote();
-
-        lensManufAndSeriesTextView.setText(lensManufAndSeries);
-        lensFocalTextView.setText(lensFocalString);
-        lensSerialAndNoteTextVIew.setText(lensSerialAndNote);
-
-        if (!lensObject.getCalibratedF()) {
-            myListFCalImageView.setVisibility(View.GONE);
+        if (convertView == null) {
+            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            binding = MyListLensBinding.inflate(inflater);
+            convertView = binding.getRoot();
+//            convertView = inflater.inflate(R.layout.my_list_lens, parent, false);
         }
 
-        if (!lensObject.getCalibratedI()) {
-            myListICalImageView.setVisibility(View.GONE);
+        else {
+            binding = (MyListLensBinding) convertView.getTag();
         }
 
-        if (!lensObject.getCalibratedZ()) {
-            myListZCalImageView.setVisibility(View.GONE);
-        }
+        binding.setLens(lensObject);
+        convertView.setTag(binding);
 
-        myListEditLensImageView.setOnClickListener(new View.OnClickListener() {
+//        TextView lensManufAndSeriesTextView = convertView.findViewById(R.id.myListLensManufAndSeriesTextView);
+//        TextView lensFocalTextView = (TextView) convertView.findViewById(R.id.myListLensFocalTextView);
+//        TextView lensSerialAndNoteTextVIew = (TextView) convertView.findViewById(R.id.myListLensSerialTextView);
+//
+//        ImageView myListFCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalFImageView);
+//        ImageView myListICalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalIImageView);
+//        ImageView myListZCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalZImageView);
+
+//        final ImageView myListEditLensImageView = (ImageView) convertView.findViewById(R.id.myListEditLensImageView);
+//        myListEditLensImageView.setTag(lensObject.getTag());
+
+//        String lensManufAndSeries = lensObject.getManufacturer() + " - " + lensObject.getSeries();
+//        final String lensFocalString = SharedHelper.constructFocalLengthString(lensObject.getFocalLength1(), lensObject.getFocalLength2());
+//        String lensSerialAndNote = lensObject.getSerial() + " " + lensObject.getNote();
+
+//        lensManufAndSeriesTextView.setText(lensManufAndSeries);
+//        lensFocalTextView.setText(lensFocalString);
+//        lensSerialAndNoteTextVIew.setText(lensSerialAndNote);
+
+//        if (!lensObject.getCalibratedF()) {
+//            myListFCalImageView.setVisibility(View.GONE);
+//        }
+//
+//        if (!lensObject.getCalibratedI()) {
+//            myListICalImageView.setVisibility(View.GONE);
+//        }
+//
+//        if (!lensObject.getCalibratedZ()) {
+//            myListZCalImageView.setVisibility(View.GONE);
+//        }
+
+        convertView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 LayoutInflater dialogInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 final View editLensView = dialogInflater.inflate(R.layout.dialog_edit_lens, null);
+                final LinearLayout editLensMainLayout = editLensView.findViewById(R.id.editLensMainLayout);
+                final LinearLayout confirmLensDeleteLayout = editLensView.findViewById(R.id.confirmLensDeleteLayout);
 
                 // initialize the UI components so we can access their contents when the user presses "Save"
                 TextView lensManufAndSeriesTextView = (TextView) editLensView.findViewById(R.id.lensManufAndSeriesTextView);                       // textView to display the lens manufacturer name
@@ -157,21 +172,15 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
                 myListCCheckBox.setChecked(myListC);
 
                 // add the tag from the lens item in the listView to the hidden textView so we can retrieve it later
-                int lensTag = (int) myListEditLensImageView.getTag();
+                int lensTag = (int) lensObject.getTag();
                 lensIndexTextView.setText(String.valueOf(lensTag));
-
-//                            final Lens thisLens = this.lensObjectList.get(lensTag);
-//                            Timber.d(thisLens.getManufacturer());
-//                            Timber.d(thisLens.getSeries());
-//                            Timber.d(String.valueOf(thisLens.getFocalLength1()));
-//                            Timber.d(String.valueOf(thisLens.getFocalLength2()));
 
                 final AlertDialog dialog = new AlertDialog.Builder(context)
                         //                                    .setTitle("Edit Lens")
                         .setView(editLensView)
                         .setPositiveButton("Save", null)
                         .setNegativeButton("Cancel", null)
-                        .setNeutralButton("Delete", null)
+                        .setNeutralButton("Remove", null)
                         .setCancelable(true)
                         .create();
 
@@ -183,8 +192,7 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
                         Button negButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEGATIVE);
                         Button neutralButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEUTRAL);
 
-                        // perform some housekeeping before closing the dialog. Specifically, make sure the lens serial/note is not more than 14 chars long
-                        posButton.setOnClickListener(new View.OnClickListener() {
+                        final View.OnClickListener posButtonListener = new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {
                                 String newSerial = lensSerialEditText.getText().toString().trim();                                         // serial of the lens
@@ -200,21 +208,21 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
 
                                 if (readyToSave) {
                                     // TODO: pass the new parameters back to the main activity to edit the lens
-                                    boolean editSuccessful = true; //editLens(lensObject, lensFocalString, newSerial, newNote, myListA, myListB, myListC);
                                     lensListener.onChange(lensObject, lensFocalString, newSerial, newNote, myListA, myListB, myListC);
+                                    dialog.dismiss();
 
-                                    if (editSuccessful) {
-                                        Timber.d("edit the lens");
-//                                        lensListener.onChange(myListA, myListB, myListC);
-                                        dialog.dismiss();
-//                                        updateAdapter();
-                                    } else {
-                                        CharSequence toastText = "Error updating lens. Please try again.";
-                                        int duration = Toast.LENGTH_LONG;
-
-                                        Toast toast = Toast.makeText(context, toastText, duration);
-                                        toast.show();
-                                    }
+//                                    if (editSuccessful) {
+//                                        Timber.d("edit the lens");
+////                                        lensListener.onChange(myListA, myListB, myListC);
+//                                        dialog.dismiss();
+////                                        updateAdapter();
+//                                    } else {
+//                                        CharSequence toastText = "Error updating lens. Please try again.";
+//                                        int duration = Toast.LENGTH_LONG;
+//
+//                                        Toast toast = Toast.makeText(context, toastText, duration);
+//                                        toast.show();
+//                                    }
                                 } else {
                                     CharSequence toastText = "Error: Lens name too long.";
                                     int duration = Toast.LENGTH_LONG;
@@ -223,7 +231,10 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
                                     toast.show();
                                 }
                             }
-                        });
+                        };
+
+                        // perform some housekeeping before closing the dialog. Specifically, make sure the lens serial/note is not more than 14 chars long
+                        posButton.setOnClickListener(posButtonListener);
 
                         // handle clicks on the "Delete" button
                         neutralButton.setOnClickListener(new View.OnClickListener() {
@@ -232,6 +243,39 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
                                 Timber.d("delete lens " + lensObject.getTag());
                                 lensListener.onDelete(lensObject);
                                 dialog.dismiss();
+                            }
+                        });
+
+                        // handle clicks on the "Delete" button
+                        neutralButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                editLensMainLayout.setVisibility(View.GONE);
+                                confirmLensDeleteLayout.setVisibility(View.VISIBLE);
+
+                                ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE).setText("Delete");
+                                ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.INVISIBLE);
+
+                                ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        lensListener.onDelete(lensObject);
+                                        dialog.dismiss();
+                                    }
+                                });
+
+                                ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        editLensMainLayout.setVisibility(View.VISIBLE);
+                                        confirmLensDeleteLayout.setVisibility(View.GONE);
+                                        ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.VISIBLE);
+                                        ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE).setText("Save");
+
+                                        ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(posButtonListener);
+                                    }
+                                });
+
                             }
                         });
                     }
@@ -243,10 +287,4 @@ public class MyListViewAdapter extends ArrayAdapter<Lens> {
 
         return convertView;
     }
-
-//    private void updateAdapter() {
-//        Timber.d("updateAdapter");
-//        notifyDataSetChanged();
-//    }
-
 }

@@ -1,29 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
+        <import type="com.prestoncinema.app.SharedHelper" />
         <variable
             name="lensList"
-            type="com.prestoncinema.app.model.LensList" />
+            type="com.prestoncinema.app.db.entity.LensListEntity" />
         <variable
             name="callback"
             type="com.prestoncinema.app.db.LensListClickCallback" />
     </data>
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="45sp"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:background="@drawable/default_background"
-        android:onClick="@{() -> callback.onClick(lensList)}"
-        android:gravity="center_vertical">
+        android:layout_height="70dp"
+        android:background="@color/lightGray"
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/lensFileTextView"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="24sp"
-            android:text="@{lensList.name}"/>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="69dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="0dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:layout_toStartOf="@id/LensListDetailsImageView"
+                android:onClick="@{(v) -> callback.onClick(lensList, v)}">
+
+                <TextView
+                    android:id="@+id/lensListCountTextView"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:text="@{String.valueOf(lensList.count)}"
+                    android:textColor="@color/darkGray"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true" />
+
+                <LinearLayout
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:background="@color/darkGray"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_toEndOf="@id/lensListCountTextView"
+                    android:layout_alignParentBottom="true"
+                    android:id="@+id/lensListCountDivider"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@id/lensListCountDivider"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/lensFileTextView"
+                        android:text="@{lensList.name}"
+                        android:textSize="18sp"
+                        android:textColor="@color/darkGray" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/lensFileNoteTextView"
+                        android:text="@{lensList.note}"
+                        android:textSize="16sp"
+                        android:textColor="@color/lightMedGray"/>
+                </LinearLayout>
+
+            </RelativeLayout>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:src="@drawable/ic_more_dark_gray_24dp"
+                android:layout_alignParentEnd="true"
+                android:id="@+id/LensListDetailsImageView"
+                android:onClick="@{(v) -> callback.onClickDetails(lensList, v)}"
+                android:layout_centerVertical="true"/>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/dividerGray" />
     </LinearLayout>
+
+    <!--<RelativeLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="70dp"-->
+        <!--android:paddingStart="16dp"-->
+        <!--android:paddingEnd="0dp"-->
+        <!--android:background="@drawable/default_background">-->
+
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:layout_alignParentStart="true"-->
+            <!--android:layout_centerInParent="true"-->
+            <!--android:layout_toStartOf="@+id/LensListDetailsImageView"-->
+            <!--android:layout_marginTop="5dp"-->
+            <!--android:layout_marginBottom="5dp"-->
+            <!--android:id="@+id/lensFileTextView"-->
+            <!--android:textColor="@color/white"-->
+            <!--android:textStyle="bold"-->
+            <!--android:textSize="18sp"-->
+            <!--android:text="@{lensList.name}"-->
+            <!--android:onClick="@{(v) -> callback.onClick(lensList, v)}" />-->
+
+        <!--<ImageView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:layout_alignParentEnd="true"-->
+            <!--android:layout_centerInParent="true"-->
+            <!--android:paddingStart="16dp"-->
+            <!--android:paddingEnd="16dp"-->
+            <!--android:layout_marginTop="5dp"-->
+            <!--android:layout_marginBottom="5dp"-->
+            <!--android:src="@drawable/ic_more_white_24dp"-->
+            <!--android:id="@+id/LensListDetailsImageView"-->
+            <!--android:onClick="@{(v) -> callback.onClickDetails(lensList, v)}" />-->
+    <!--</RelativeLayout>-->
 </layout>

@@ -150,11 +150,11 @@
         android:orientation="vertical">
 
         <TextView
-            android:text="Disconnected"
+            android:text="@string/disconnected"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:background="#000000"
-            android:textColor="#666666"
+            android:background="@color/black"
+            android:textColor="@color/medGray"
             android:paddingLeft="60dp"
             android:paddingRight="60dp"
             android:id="@+id/ConnectedTextView"
@@ -162,5 +162,4 @@
             android:drawableEnd = "@drawable/icon_disconnected"
             android:gravity="center" />
     </LinearLayout>
-
 </RelativeLayout>

@@ -4,15 +4,34 @@
     tools:context="com.prestoncinema.app.LensActivity">
     <group android:id="@+id/lensMenuGroup">
         <item
-            android:id="@+id/importLensesMenuItem"
-            android:icon="@drawable/ic_settings_white_24dp"
-            android:title="Import..."
+            android:id="@+id/deviceInfoMenuItem"
+            android:title="@string/all_lenses_menu_device"
+            android:icon="@drawable/ic_bluetooth_disabled_gray_24dp"
+            app:showAsAction="ifRoom" />
+
+        <item
+            android:id="@+id/importFromHu3MenuItem"
+            android:title="@string/all_lenses_menu_import_from_hu3"
+            android:icon="@drawable/ic_download_red_24dp"
+            app:showAsAction="ifRoom" />
+
+        <item
+            android:id="@+id/importFileMenuItem"
+            android:title="@string/all_lenses_menu_import"
             app:showAsAction="never" />
 
         <item
             android:id="@+id/exportLensesMenuItem"
-            android:icon="@drawable/ic_settings_white_24dp"
-            android:title="Export..."
+            android:title="@string/all_lenses_menu_export"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/restoreDefaultLensesMenuItem"
+            android:title="@string/all_lenses_menu_restore"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/deleteAllLensesMenuItem"
+            android:title="@string/all_lenses_menu_delete"
             app:showAsAction="never" />
     </group>
 </menu>
