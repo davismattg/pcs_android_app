@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:title="@string/share"
+        android:title="@string/send_to"
         android:id="@+id/shareSelectedLensesMenuItem" />
     <item
         android:title="@string/clear"
         android:id="@+id/clearSelectedLensesMenuItem" />
+    <item
+        android:title="@string/delete"
+        android:id="@+id/deleteSelectedLensesMenuItem" />
 </menu>

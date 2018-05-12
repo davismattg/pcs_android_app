@@ -8,9 +8,7 @@ import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Update;
 
-import com.prestoncinema.app.AllLensesFragment;
 import com.prestoncinema.app.db.entity.LensEntity;
-import com.prestoncinema.app.model.Lens;
 
 import java.util.List;
 

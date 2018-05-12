@@ -23,12 +23,6 @@ import java.util.Comparator;
  */
 
 @Entity(tableName = "lenses")
-//        foreignKeys = {
-//            @ForeignKey(entity = LensListEntity.class,
-//                        parentColumns = "id",
-//                        childColumns = "lensListId",
-//                        onDelete = ForeignKey.SET_NULL)},
-//        indices = {@Index(value="lensListId")})
 public class LensEntity extends BaseObservable implements Lens, Parcelable, Comparable<LensEntity> {
     @PrimaryKey(autoGenerate = true)
     private long id;

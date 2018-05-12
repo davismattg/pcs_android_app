@@ -122,7 +122,7 @@
                 android:value="com.prestoncinema.app.MainActivity" />
         </activity>
         <activity
-            android:name=".LensActivity"
+            android:name=".AllLensListsActivity"
             android:label="@string/title_activity_lens"
             android:screenOrientation="fullUser"
             android:theme="@style/AppTheme"
@@ -146,18 +146,18 @@
 
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.LensActivity" />
+                android:value="com.prestoncinema.app.AllLensListsActivity" />
         </activity>
         <activity
-            android:name=".LensListActivity"
+            android:name=".LensListDetailsActivity"
             android:label="@string/title_activity_manage_lenses"
-            android:parentActivityName=".LensActivity"
+            android:parentActivityName=".AllLensListsActivity"
             android:screenOrientation="fullUser"
             android:theme="@style/AppTheme"
             android:windowSoftInputMode="adjustResize">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.prestoncinema.app.LensActivity" />
+                android:value="com.prestoncinema.app.AllLensListsActivity" />
         </activity>
         <activity
             android:name=".settings.SettingsActivity"

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/default_background"
-    tools:context="com.prestoncinema.app.LensActivity">
+    tools:context="com.prestoncinema.app.AllLensListsActivity">
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
@@ -58,6 +58,7 @@
                     android:id="@+id/allLensesTextView"
                     android:text="@string/all_lenses"
                     android:textSize="18sp"
+                    android:textStyle="bold"
                     android:textColor="@color/white"
                     android:layout_toEndOf="@id/allLensesCountDivider"
                     android:layout_centerVertical="true"/>
@@ -78,13 +79,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
+            android:layout_marginBottom="3dp"
             android:paddingStart="10dp"
             android:paddingEnd="0dp"
             android:id="@+id/lensListsTextView"
-            android:text="Lens Lists"
+            android:text="@string/lens_files"
             android:textSize="16sp"
-            android:textColor="@color/lightMedGray"
-            android:visibility="gone" />
+            android:textColor="@color/lightGray"
+            android:visibility="visible" />
 
         <android.support.v7.widget.RecyclerView
             android:layout_width="match_parent"

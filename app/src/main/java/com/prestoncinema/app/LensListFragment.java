@@ -13,7 +13,6 @@ import android.widget.ExpandableListAdapter;
 
 import com.prestoncinema.app.databinding.FragmentLensListBinding;
 import com.prestoncinema.app.db.entity.LensEntity;
-import com.prestoncinema.app.model.Lens;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,9 +26,9 @@ import timber.log.Timber;
  * This Fragment is responsible for displaying the "All Lenses" ExpandableListView
  */
 
-public class AllLensesFragment extends Fragment {
+public class LensListFragment extends Fragment {
     /** Interface for communicating back to the activity.
-     * LensListActivity must implement this interface to communicate with the fragment and
+     * LensListDetailsActivity must implement this interface to communicate with the fragment and
      * receive changes made to the lenses/lists
      */
     OnLensAddedListener parentListener;
@@ -57,7 +56,7 @@ public class AllLensesFragment extends Fragment {
     }
 
     public interface OnLensSeriesSelectedListener {
-        void onSeriesSelected(String manuf, String series, boolean checked);
+        void onSeriesSelected(String manuf, String series, boolean seriesChecked, boolean checkParent);
     }
 
     public static final String ARG_PAGE = "ARG_PAGE";
@@ -73,21 +72,29 @@ public class AllLensesFragment extends Fragment {
 
     private LensListParentExpListViewAdapter lensListExpAdapter;
     private ExpandableListView lensListExpListView;
+    private TextView noteTextView;
 
-    public static AllLensesFragment newInstance(int page, List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
-                                                Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap, ArrayList<LensEntity> lensObjectArrayList, Context context) {
-//        Bundle args = new Bundle();
-//        args.putStringArrayList("lensListManufHeader", lensListManufHeader);
-//        args.putInt(ARG_PAGE, page);
+    private boolean fromImport = false;
+    private boolean allLensesChecked = false;
+    private String listNote;
 
-        AllLensesFragment fragment = new AllLensesFragment();
+    private ImageView selectAllLensesImageView;
+
+    public static LensListFragment newInstance(
+            int page, List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
+            Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer,
+            ArrayList<Integer>>> lensPositionMap, ArrayList<LensEntity> lensObjectArrayList,
+            boolean fromImport, String note, Context context) {
+
+        LensListFragment fragment = new LensListFragment();
         fragment.context = context;
         fragment.lensListManufHeader = lensListManufHeader;
         fragment.lensListDataHeaderCount = lensListDataHeaderCount;
         fragment.lensListTypeHeader = lensListTypeHeader;
         fragment.lensPositionMap = lensPositionMap;
         fragment.lensObjectArrayList = lensObjectArrayList;
-//        fragment.setArguments(args);
+        fragment.fromImport = fromImport;
+        fragment.listNote = note;
 
         return fragment;
     }
@@ -95,25 +102,15 @@ public class AllLensesFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceStace) {
         super.onCreate(savedInstanceStace);
-
-//        setRetainInstance(true);
-
-//        if (savedInstanceStace != null) {
-//        mPage = getArguments().getInt(ARG_PAGE);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        FragmentLensListBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_lens_list, container, false);
-
-//        View view = inflater.inflate(R.layout.fragment_lens_list, container, false);
+        final FragmentLensListBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_lens_list, container, false);
 
         /* Initialize the adapter and ExpandableListView to hold the lenses in a multi-level collapsible ExpandableListView */
         lensListExpAdapter = new LensListParentExpListViewAdapter(this.context, this.lensListManufHeader, this.lensListTypeHeader, lensPositionMap, lensObjectArrayList, lensListDataHeaderCount);
         binding.LensListFragmentParentExpListView.setAdapter(lensListExpAdapter);
-
-//        lensListExpListView = view.findViewById(R.id.LensListFragmentParentExpListView);
-//        lensListExpListView.setAdapter(lensListExpAdapter);
 
         /* Set the listener for changes made to the "Parent" level of the ExpandableListView - adding a new lens within a given series */
         lensListExpAdapter.setParentListener(new LensListParentExpListViewAdapter.LensAddedListener() {
@@ -160,8 +157,8 @@ public class AllLensesFragment extends Fragment {
         /* Set the listener for selecting/deselecting lenses at Series level */
         lensListExpAdapter.setSeriesSelectedListener(new LensListParentExpListViewAdapter.SeriesSelectedListener() {
             @Override
-            public void onSelected(String manufacturer, String series, boolean checked) {
-                seriesSelectedListener.onSeriesSelected(manufacturer, series, checked);
+            public void onSelected(String manufacturer, String series, boolean seriesChecked, boolean checkParent) {
+                seriesSelectedListener.onSeriesSelected(manufacturer, series, seriesChecked, checkParent);
             }
 
 //            @Override
@@ -169,6 +166,48 @@ public class AllLensesFragment extends Fragment {
 //                manufacturerSelectedListener.updateChildren(manufacturer, checked);
 //            }
         });
+
+        /* Check if all lenses in the list are checked, and set the "checkbox" ImageView resource to reflect that */
+        allLensesChecked = SharedHelper.areAllLensesChecked(lensObjectArrayList);
+
+        if (allLensesChecked) {
+            binding.selectAllLensesImageView.setImageResource(R.drawable.ic_check_box_green_checked_24dp);
+        }
+
+        /* OnClickListener for the "Select All" checkbox */
+        binding.selectAllLensesImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                allLensesChecked = !allLensesChecked;
+
+//                // if fromImport == true, none of the lenses are in the DB yet, so just update the ArrayList
+//                if (fromImport) {
+//                    lensObjectArrayList = SharedHelper.setChecked(lensObjectArrayList, allLensesChecked);
+//                    updateAdapter();
+//                }
+//
+//                // otherwise, actually update the checked entry for each lens in the DB
+//                else {
+                    manufacturerSelectedListener.onManufacturerSelected(null, allLensesChecked);
+//                }
+
+                // set the correct checked state for the ImageView
+                binding.selectAllLensesImageView.setImageResource(allLensesChecked ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_white_unchecked_24dp );
+            }
+        });
+
+        selectAllLensesImageView = binding.selectAllLensesImageView;
+
+        /* If the fragment is being used to select lenses received from the HU3, make some UI tweaks */
+//        if (fromImport) {
+////            binding.lensListNoteTextView.setVisibility(View.GONE);
+//            binding.selectAllLensesImageView.setImageResource(R.drawable.ic_check_box_green_checked_24dp);
+//        }
+
+//        else {
+////            binding.lensListNoteTextView.setText(listNote);
+//        }
+
         return binding.getRoot();
     }
 
@@ -197,18 +236,24 @@ public class AllLensesFragment extends Fragment {
         if (lensListExpAdapter != null) {
             Timber.d("updateAdapter");
             lensListExpAdapter.notifyDataSetChanged();
+            lensListExpAdapter.initializeCheckedList();
         }
+    }
+
+    public void updateAdapterFromSelectAll(boolean selected) {
+        if (lensListExpAdapter != null) {
+            Timber.d("update adapter from select all");
+            lensListExpAdapter.updateSelected(selected);
+
+            lensListExpAdapter.expandGroups();
+        }
+    }
+
+    public void updateSelectAllImageView(boolean checked) {
+        selectAllLensesImageView.setImageResource(checked ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_white_unchecked_24dp );
     }
 
     public ExpandableListAdapter getAdapter() {
         return lensListExpAdapter;
-    }
-
-    public void enableLensSelection() {
-        Timber.d("AllLensesFragment enableLensSelection reached");
-//        if (lensListExpAdapter != null) {
-//            Timber.d("change to checkboxes");
-            lensListExpAdapter.enableCheckboxes();
-//        }
     }
 }

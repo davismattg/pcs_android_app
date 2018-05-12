@@ -4,8 +4,11 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.prestoncinema.app.databinding.LensListBinding;
 import com.prestoncinema.app.db.AppDatabase;
 import com.prestoncinema.app.db.AppExecutors;
 import com.prestoncinema.app.db.entity.LensEntity;
@@ -16,10 +19,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Callable;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -33,6 +39,8 @@ import timber.log.Timber;
 public class SharedHelper {
     static Subscription lensListsSubscription;
     static int numLensesInList = 0;
+    static int lensStringLength = 112;
+    LensListBinding binding;
 
     /* Method to show a Toast to the user */
     public static void makeToast(Context context,CharSequence text, int duration) {
@@ -47,6 +55,58 @@ public class SharedHelper {
             p.setMargins(left, top, right, bottom);
             v.requestLayout();
         }
+    }
+
+    /**
+     * Helper method to get an array of long lens IDs from an array of LensEntitys
+     * @param lenses
+     * @return lensIds, a long[] containing the ID of all the lenses
+     */
+    public static long[] getLensIds(LensEntity... lenses) {
+        long[] lensIds = new long[lenses.length];
+
+        for (int i = 0; i < lenses.length; i++) {
+            lensIds[i] = lenses[i].getId();
+        }
+
+        return lensIds;
+    }
+
+    /**
+     * This method is used to initialize the HashMap used to display firmware update instructions
+     * to the user. It uses the string resources for a given product.
+     * @param context
+     * @return
+     */
+    public static HashMap<String, ArrayList<String>> populateFirmwareUpdateInstructions(Context context) {
+        HashMap<String, ArrayList<String>> instructionsMap = new HashMap<String, ArrayList<String>>();
+
+        String hu3 = context.getResources().getString(R.string.update_hu3);
+        String mdr2 = context.getResources().getString(R.string.update_mdr2);
+        String mdr3 = context.getResources().getString(R.string.update_mdr3);
+        String mdr4 = context.getResources().getString(R.string.update_mdr4);
+        String vi = context.getResources().getString(R.string.update_vi);
+
+//        HashMap<String, String> instructionsMap = new HashMap<String, String>();
+        ArrayList<String> instructions = new ArrayList<String>();
+        ArrayList<String> headers = new ArrayList<String>();
+
+        instructions.add(hu3);
+        instructions.add(mdr4);
+        instructions.add(mdr3);
+        instructions.add(vi);
+        instructions.add(mdr2);
+
+        headers.add("HU3");
+        headers.add("MDR-4");
+        headers.add("MDR-3");
+        headers.add("Video Interface");
+        headers.add("MDR-2");
+
+        instructionsMap.put("headers", headers);
+        instructionsMap.put("instructions", instructions);
+
+        return instructionsMap;
     }
 
     /* Method to show an indeterminate progress dialog during database operations */
@@ -75,6 +135,86 @@ public class SharedHelper {
         }
 
         return builtLenses;
+    }
+
+    /* Method to set the "checked" attribute of each lens to true/false */
+    public static ArrayList<LensEntity> setChecked(ArrayList<LensEntity> lenses, String manufacturer, String series, boolean checked) {
+        for (LensEntity lens : lenses) {
+            if (manufacturer != null) {
+                if (lens.getManufacturer().equals(manufacturer)) {
+                    if (series != null) {
+                        if (lens.getSeries().equals(series)) {
+                            lens.setChecked(checked);
+                        }
+                    }
+                    else {
+                        lens.setChecked(checked);
+                    }
+                }
+            }
+            else {
+                lens.setChecked(checked);
+            }
+        }
+
+        return lenses;
+    }
+
+    /* Method to filter out the lenses which aren't checked */
+    public static ArrayList<LensEntity> getCheckedLenses(ArrayList<LensEntity> lenses) {
+        ArrayList<LensEntity> checkedLenses = new ArrayList<>();
+        for (LensEntity lens : lenses) {
+            if (lens.getChecked()) {
+                lens.setChecked(false);
+                checkedLenses.add(lens);
+            }
+        }
+
+        return checkedLenses;
+    }
+
+    /* Method to check if all lenses in the list are checked */
+    public static boolean areAllLensesChecked(ArrayList<LensEntity> lenses) {
+        for (LensEntity lens : lenses) {
+            if (!lens.getChecked()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** This method returns the image for whatever product is detected for firmware updates
+     * @param product
+     * @return
+     */
+    public static int getProductImage(String product) {
+        Timber.d("get product image for " + product + "$$");
+        int id;
+        switch (product) {
+            case "HU3":
+                id = R.drawable.hu3_cropped;
+                break;
+            case "MDR-4":
+                id = R.drawable.mdr4_cropped;
+                break;
+            case "MDR-3":
+                id = R.drawable.mdr3_cropped;
+                break;
+            case "MDR-2":
+                // TODO: Add MDR-2 picture and associated drawable ID
+                id = R.drawable.mdr3_cropped;
+                break;
+            case "VI":
+                Timber.d("VI detected");
+                id = R.drawable.vi_cropped;
+                break;
+            default:
+                id = R.drawable.unknown_cropped;
+                break;
+
+        }
+        return id;
     }
 
     /* Method to build a LensEntity from the data string obtained from HU3 or a file */
@@ -654,10 +794,72 @@ public class SharedHelper {
         return new String(checkLensChars(bytesIn));
     }
 
+    /**
+     * This method checks a lens string to make sure it's not corrupted. There are a few different conditions
+     * that must be satisfied during the checks:
+     * 1) Lens string must be all ASCII characters
+     * 2) Lens string must be 110 characters long
+     * 3) Lens manufacturer number invalid -- TODO
+     * 4) Lens series invalid for manufacturer -- TODO
+     * 5) Lens focal length invalid (must be 1-9999mm) -- TODO
+     * @param lensString
+     * @return
+     */
+    public static boolean isLensOK(String lensString) {
+        Timber.d("is lens ok? " + lensString);
+
+        // Check that the string contains only ASCII characters
+        if (!isOnlyAscii(lensString)) {
+            return false;
+        }
+
+        // Check that the lens string is 112 characters (110 + \n\r)
+        if (lensString.length() != 112) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Uses regex to determine if the string contains only ASCII characters
+     * @param str the string to check
+     * @return boolean indicating whether the string is only ASCII (true) or has other chars (false)
+     */
+    private static boolean isOnlyAscii(String str) {
+        return str.matches("\\A\\p{ASCII}*\\z");
+    }
+
     // TODO: make this access the database and update the checked attribute there
     public static void updateLensChecked(LensEntity lens) {
         Timber.d("Update lens checked status for tag: " + lens.getTag());
 //        lensObjectArray.set(lens.getTag(), lens);
+    }
+
+    public static int getLensListCount(final Context context, AppExecutors executors, final long listId) {
+        final AppDatabase database = AppDatabase.getInstance(context, executors);
+
+        Single.fromCallable(new Callable<Integer>() {
+            @Override
+            public Integer call() {
+                return database.lensListLensJoinDao().getLensCountForList(listId);
+            }
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<Integer>() {
+                    @Override
+                    public void onSuccess(Integer value) {
+                        
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        CharSequence toastText = "Error getting lens count";
+                        SharedHelper.makeToast(context, toastText, Toast.LENGTH_LONG);
+                    }
+                });
+        return 0;
     }
 
     /**
@@ -1025,7 +1227,8 @@ public class SharedHelper {
         Observable<Integer> lensListsObservable = Observable.fromCallable(new Callable<Integer>() {
             @Override
             public Integer call() {
-                return db.lensListLensJoinDao().getLensesForList(listId).size();
+                return db.lensListLensJoinDao().getLensCountForList(listId);
+//                return db.lensListLensJoinDao().getLensesForList(listId).size();
             }
         });
 

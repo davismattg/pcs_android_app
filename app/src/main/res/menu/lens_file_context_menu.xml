@@ -11,7 +11,8 @@
         android:id="@+id/shareLensFile" />
     <item
         android:title="Duplicate"
-        android:id="@+id/duplicateLensFile" />
+        android:id="@+id/duplicateLensFile"
+        android:visible="false"/>
     <item
         android:title="Delete"
         android:id="@+id/deleteLensFile" />

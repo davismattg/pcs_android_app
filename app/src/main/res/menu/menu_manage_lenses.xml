@@ -1,27 +1,32 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.prestoncinema.app.LensListActivity">
+    tools:context="com.prestoncinema.app.LensListDetailsActivity">
     <group android:id="@+id/manageLensMenuGroup">
-        <item
-            android:id="@+id/importLensMenuItem"
-            android:icon="@drawable/ic_settings_white_24dp"
-            android:title="Import lenses..."
-            app:showAsAction="never" />
-        <item
-            android:id="@+id/exportLensMenuItem"
-            android:icon="@drawable/ic_settings_white_24dp"
-            android:title="Export lenses..."
-            app:showAsAction="never" />
-        <item
-            android:id="@+id/deleteLensMenuItem"
-            android:icon="@drawable/ic_settings_white_24dp"
-            android:title="Delete lenses..."
-            app:showAsAction="never" />
+        <!--<item-->
+            <!--android:id="@+id/importLensMenuItem"-->
+            <!--android:icon="@drawable/ic_settings_white_24dp"-->
+            <!--android:title="Import lenses..."-->
+            <!--app:showAsAction="never" />-->
+        <!--<item-->
+            <!--android:id="@+id/exportLensMenuItem"-->
+            <!--android:icon="@drawable/ic_settings_white_24dp"-->
+            <!--android:title="Export lenses..."-->
+            <!--app:showAsAction="never" />-->
+        <!--<item-->
+            <!--android:id="@+id/deleteLensMenuItem"-->
+            <!--android:icon="@drawable/ic_settings_white_24dp"-->
+            <!--android:title="Delete lenses..."-->
+            <!--app:showAsAction="never" />-->
+        <!--<item-->
+            <!--android:id="@+id/selectAllLensesMenuItem"-->
+            <!--android:title="@string/select_all"-->
+            <!--app:showAsAction="ifRoom"-->
+            <!--android:icon="@drawable/ic_select_all_white_24dp" />-->
         <item
             android:id="@+id/renameLensFileMenuItem"
-            android:icon="@drawable/ic_settings_white_24dp"
-            android:title="Rename file"
-            app:showAsAction="never" />
+            android:icon="@drawable/ic_edit_24dp"
+            android:title="@string/rename"
+            app:showAsAction="ifRoom" />
     </group>
 </menu>

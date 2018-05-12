@@ -7,9 +7,35 @@
     android:background="@drawable/default_background"
     tools:context="com.prestoncinema.app.AllLensesActivity">
 
+    <!--<EditText-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_marginStart="20dp"-->
+        <!--android:layout_marginEnd="20dp"-->
+        <!--android:id="@+id/lensListNameEditText"-->
+        <!--android:textSize="18sp"-->
+        <!--android:hint="@string/lens_list_name_hint"-->
+        <!--android:textColorHint="@color/lightMedGray"-->
+        <!--android:layout_alignParentTop="true"-->
+        <!--android:textColor="@color/white"/>-->
+
+    <!--<EditText-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_marginStart="20dp"-->
+        <!--android:layout_marginEnd="20dp"-->
+        <!--android:id="@+id/lensListNoteEditText"-->
+        <!--android:textSize="18sp"-->
+        <!--android:inputType="text"-->
+        <!--android:hint="@string/lens_list_note_hint"-->
+        <!--android:textColorHint="@color/lightMedGray"-->
+        <!--android:layout_below="@+id/lensListNameEditText"-->
+        <!--android:textColor="@color/white"/>-->
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:id="@+id/allLensesFragmentContainer">
     </FrameLayout>
@@ -24,4 +50,19 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         app:backgroundTint="@color/newRed" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/save_lenses_to_database"
+        android:background="@drawable/button_bg_red"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:padding="10dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="20dp"
+        android:visibility="gone"
+        android:id="@+id/saveLensesToDatabaseButton"
+        android:onClick="saveImportedLensesOnClick"/>
 </RelativeLayout>

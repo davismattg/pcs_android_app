@@ -74,10 +74,7 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
                 PCSReleaseParser.FirmwareInfo latestRelease;
                 PCSReleaseParser.ProductInfo productInfo = productMap.get(entry.getKey());
                 if (productInfo != null) {
-//                    Map<String, File> versionInfo = new HashMap<>();
                     Map<String, PCSReleaseParser.ProductInfo> versionInfo = new HashMap<>();
-//                    Map<String, File> changesAndFile = new HashMap<>();
-
                     List<PCSReleaseParser.FirmwareInfo> modelReleases = productInfo.firmwareReleases;
 
                     latestRelease = modelReleases.get(0);

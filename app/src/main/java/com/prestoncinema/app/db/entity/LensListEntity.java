@@ -3,8 +3,12 @@ package com.prestoncinema.app.db.entity;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import com.prestoncinema.app.model.LensList;
+
+import java.util.List;
 
 /**
 * Created by MATT on 1/31/2018.
@@ -12,13 +16,45 @@ import com.prestoncinema.app.model.LensList;
 */
 
 @Entity(tableName = "lens_lists")
-public class LensListEntity implements LensList {
+public class LensListEntity implements LensList, Parcelable {
     @PrimaryKey(autoGenerate = true)
     private long id;
     private String name;
     private String location = "";
     private String note;
     private int count;
+
+    public int describeContents() { return 0; };
+
+    @Ignore
+    private List<LensEntity> lenses;
+
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeLong(id);
+        out.writeString(name);
+        out.writeString(location);
+        out.writeString(note);
+        out.writeInt(count);
+    }
+
+    public static final Parcelable.Creator<LensListEntity> CREATOR =
+            new Parcelable.Creator<LensListEntity>() {
+                public LensListEntity createFromParcel(Parcel in) {
+                    return new LensListEntity(in);
+                }
+
+                public LensListEntity[] newArray(int size) {
+                    return new LensListEntity[size];
+                }
+            };
+
+    private LensListEntity(Parcel in) {
+        id = in.readLong();
+        name = in.readString();
+        location = in.readString();
+        note = in.readString();
+        count = in.readInt();
+    }
 
     @Override
     public long getId() {
@@ -58,6 +94,23 @@ public class LensListEntity implements LensList {
 
     public void setCount(int count) {
         this.count = count;
+    }
+
+    public void increaseCount() {
+        count++;
+    }
+
+    public void decreaseCount() {
+        count--;
+    }
+
+    @Override
+    public List<LensEntity> getLenses() {
+        return lenses;
+    }
+
+    public void setLenses(List<LensEntity> lenses) {
+        this.lenses = lenses;
     }
 
     public LensListEntity() {

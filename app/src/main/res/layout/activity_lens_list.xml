@@ -7,7 +7,7 @@
 
         <!--<variable-->
             <!--name="handler"-->
-            <!--tycom.prestoncinema.app.LensListActivity" />-->
+            <!--tycom.prestoncinema.LensListDetailsActivityvity" />-->
 
         <!--<variable-->
             <!--name="manager"-->
@@ -19,7 +19,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="@drawable/default_background"
-        tools:context="com.prestoncinema.app.LensListActivity">
+        tools:context="com.prestoncinema.app.LensListDetailsActivity">
 
         <android.support.design.widget.AppBarLayout
             android:layout_width="match_parent"

@@ -30,7 +30,7 @@ import java.util.List;
 
 public class MyListFragment extends Fragment {
     /** Interface for communicating back to the activity.
-     * LensListActivity must implement this interface to communicate with the fragment and
+     * LensListDetailsActivity must implement this interface to communicate with the fragment and
      * receive changes made to the lenses/lists
      */
     OnLensChangedListener listener;

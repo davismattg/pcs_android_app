@@ -1,8 +1,8 @@
 package com.prestoncinema.app;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Context;
@@ -10,15 +10,18 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.provider.OpenableColumns;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.text.Layout;
 import android.text.SpannableStringBuilder;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -31,6 +34,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.prestoncinema.app.settings.MqttUartSettingsActivity;
 import com.prestoncinema.ble.BleManager;
@@ -41,11 +45,14 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +66,7 @@ import timber.log.Timber;
 public class FirmwareUpdateActivity extends UartInterfaceActivity implements MqttManager.MqttManagerListener, DownloadCompleteListener {
     // Log
     private final static String TAG = FirmwareUpdateActivity.class.getSimpleName();
+    private static final int FIRMWARE_IMPORT_CODE = 420;
 
     // UI TextBuffer (refreshing the text buffer is managed with a timer because a lot of changes an arrive really fast and could stall the main thread)
     private Handler mUIRefreshTimerHandler = new Handler();
@@ -100,9 +108,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private String productDetected;
 
     private String productRxString = "";
-//    private String pcsPath = "https://prestoncinema.com/Upgrades/src/firmware-new.xml";
-    private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=85f014ae-9252-4e69-b1f4-9e3993a57451";
-//    private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=69176ddb-c964-4c39-9543-c21e46743333";
+//    private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=85f014ae-9252-4e69-b1f4-9e3993a57451";
+    private String pcsPath = "https://storage.googleapis.com/preston-42629.appspot.com/firmware_app/firmware.xml";
     private String latestVersion = "";
 
 //    private ArrayList<String> firmwareChangesArrayList;
@@ -127,6 +134,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private SwipeRefreshLayout mSwipeRefreshLayout;
 
     private ArrayList<String> firmwareArrayList = new ArrayList<String>();
+    private HashMap<String, ArrayList<String>> firmwareUpdateInstructions = new HashMap<String, ArrayList<String>>();
 
     private List<Map<String, String>> firmwareMap = new ArrayList<Map<String, String>>();
     private SimpleAdapter firmwareAdapter;
@@ -140,6 +148,20 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_firmware_update);
+
+        firmwareUpdateInstructions = SharedHelper.populateFirmwareUpdateInstructions(FirmwareUpdateActivity.this);
+
+        if (findViewById(R.id.fragmentContainer) != null) {
+            if (savedInstanceState != null) {
+                return;
+            }
+
+            FirmwareUpdateInstructionsFragment fragment = new FirmwareUpdateInstructionsFragment();
+            Bundle bundle = new Bundle();
+            bundle.putSerializable("instructions", firmwareUpdateInstructions);
+            fragment.setArguments(bundle);
+            getSupportFragmentManager().beginTransaction().add(R.id.fragmentContainer, fragment).commit();
+        }
 
         mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
 
@@ -170,7 +192,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
         // Product Array Setup
         productNameArray = Arrays.asList(getResources().getStringArray(R.array.product_names));
-        firmwareChangesAdapter = new ArrayAdapter<String>(FirmwareUpdateActivity.this, R.layout.firmware_change_list_item);
+        firmwareChangesAdapter = new ArrayAdapter<>(FirmwareUpdateActivity.this, R.layout.firmware_change_list_item);
+        firmwareUpdateInstructions = SharedHelper.populateFirmwareUpdateInstructions(FirmwareUpdateActivity.this);
 
         // Mqtt init
         mMqttManager = MqttManager.getInstance(this);
@@ -210,10 +233,15 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     public void onResume() {
         super.onResume();
 
-        // Setup listeners
-        mBleManager.setBleListener(this);
 
-        mMqttManager.setListener(this);
+        // Setup listeners
+        if (mBleManager != null) {
+            mBleManager.setBleListener(this);
+        }
+
+        if (mMqttManager != null) {
+            mMqttManager.setListener(this);
+        }
 //        updateMqttStatus();
 
         // Start UI refresh
@@ -335,66 +363,18 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //                data += "\n";
 //            }
             byte[] dataBytes = data.getBytes();
-//            Timber.d("Step 1: MDR4 data in bytes: " + Arrays.toString(dataBytes));
         }
         else {
             data += "\n";
         }
 
         Timber.d("lastDataSent: " + data + "$$");
-//        Timber.d("data bytes: " + Arrays.toString(data.getBytes()));
 
         // Send to uart
         if (!wasReceivedFromMqtt || settings.getSubscribeBehaviour() == MqttSettings.kSubscribeBehaviour_Transmit) {
             sendData(data);
-//            mSentBytes += data.length();
         }
-
-        // Add to current buffer
-//        byte[] bytes = new byte[0];
-//        try {
-//            bytes = data.getBytes("UTF-8");
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//        }
-//        UartDataChunk dataChunk = new UartDataChunk(System.currentTimeMillis(), UartDataChunk.TRANSFERMODE_TX, bytes);
-//        mDataBuffer.add(dataChunk);
-//
-//        final String formattedData = mShowDataInHexFormat ? bytesToHex(bytes) : bytesToText(bytes, true);
-//        if (mIsTimestampDisplayMode) {
-//            final String currentDateTimeString = DateFormat.getTimeInstance().format(new Date(dataChunk.getTimestamp()));
-//            mBufferListAdapter.add(new TimestampData("[" + currentDateTimeString + "] TX: " + formattedData, mTxColor));
-//            mBufferListView.setSelection(mBufferListAdapter.getCount());
-//        }
-
-        // Update UI
-//        updateUI();
     }
-
-//    private void uartSendData(byte[] data, boolean wasReceivedFromMqtt) {
-////        lastDataSentByte = data;
-//        // MQTT publish to TX
-//        MqttSettings settings = MqttSettings.getInstance(com.prestoncinema.app.FirmwareUpdateActivity.this);
-//        if (!wasReceivedFromMqtt) {
-//            if (settings.isPublishEnabled()) {
-//                String topic = settings.getPublishTopic(MqttUartSettingsActivity.kPublishFeed_TX);
-//                final int qos = settings.getPublishQos(MqttUartSettingsActivity.kPublishFeed_TX);
-//                mMqttManager.publish(topic, data.toString(), qos);
-//            }
-//        }
-//
-////        // Add eol
-////        if (mIsEolEnabled) {
-////            // Add newline character if checked
-////            data += "\n";
-////        }
-//
-////        // Send to uart
-//        if (!wasReceivedFromMqtt || settings.getSubscribeBehaviour() == MqttSettings.kSubscribeBehaviour_Transmit) {
-//            sendData(data);
-////            mSentBytes += data.length();
-//        }
-//    }
 
     public void startDownload() {
         Timber.d("----------------- downloading firmware versions -------------------------");
@@ -402,9 +382,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             @Override
             public void downloadComplete(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareFilesMap) {
                 Timber.d("downloadComplete inner entered");
-//                if (mProgressDialog != null) {
-//                    mProgressDialog.dismiss();
-//                }
                 firmwareFilesDownloaded = true;
             }
         }).execute(pcsPath);
@@ -413,9 +390,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     @Override
     public void downloadComplete(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareFilesMap) {
         Timber.d("downloadComplete outer entered");
-//        if (mProgressDialog != null) {
-//            mProgressDialog.dismiss();
-//        }
     }
 
     // region Menu
@@ -423,45 +397,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_firmware, menu);
-
-        // Mqtt
-//        mMqttMenuItem = menu.findItem(R.index.action_mqttsettings);
-//        mMqttMenuItemAnimationHandler = new Handler();
-//        mMqttMenuItemAnimationRunnable.run();
-
-        // DisplayMode
-//        MenuItem displayModeMenuItem = menu.findItem(R.index.action_displaymode);
-//        displayModeMenuItem.setTitle(String.format(getString(R.string.uart_action_displaymode_format), getString(mIsTimestampDisplayMode ? R.string.uart_displaymode_timestamp : R.string.uart_displaymode_text)));
-//        SubMenu displayModeSubMenu = displayModeMenuItem.getSubMenu();
-//        if (mIsTimestampDisplayMode) {
-//            MenuItem displayModeTimestampMenuItem = displayModeSubMenu.findItem(R.index.action_displaymode_timestamp);
-//            displayModeTimestampMenuItem.setChecked(true);
-//        } else {
-//            MenuItem displayModeTextMenuItem = displayModeSubMenu.findItem(R.index.action_displaymode_text);
-//            displayModeTextMenuItem.setChecked(true);
-//        }
-
-        // DataMode
-//        MenuItem dataModeMenuItem = menu.findItem(R.index.action_datamode);
-//        dataModeMenuItem.setTitle(String.format(getString(R.string.uart_action_datamode_format), getString(mShowDataInHexFormat ? R.string.uart_format_hexadecimal : R.string.uart_format_ascii)));
-//        SubMenu dataModeSubMenu = dataModeMenuItem.getSubMenu();
-//        if (mShowDataInHexFormat) {
-//            MenuItem dataModeHexMenuItem = dataModeSubMenu.findItem(R.index.action_datamode_hex);
-//            dataModeHexMenuItem.setChecked(true);
-//        } else {
-//            MenuItem dataModeAsciiMenuItem = dataModeSubMenu.findItem(R.index.action_datamode_ascii);
-//            dataModeAsciiMenuItem.setChecked(true);
-//        }
-
-        // Echo
-//        MenuItem echoMenuItem = menu.findItem(R.index.action_echo);
-//        echoMenuItem.setTitle(R.string.uart_action_echo);
-//        echoMenuItem.setChecked(mIsEchoEnabled);
-
-        // Eol
-//        MenuItem eolMenuItem = menu.findItem(R.index.action_eol);
-//        eolMenuItem.setTitle(R.string.uart_action_eol);
-//        eolMenuItem.setChecked(mIsEolEnabled);
 
         return true;
     }
@@ -533,15 +468,13 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             case R.id.firmwareVersionHistoryMenuItem:
                 Timber.d("show revision history activity");
                 return true;
+            case R.id.firmwareUpdateLoadFileMenuItem:
+                Timber.d("import a local S19 file");
+                importFirmwareFile();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    private void startConnectedSettings() {
-        // Launch connected settings activity
-//        Intent intent = new Intent(this, ConnectedSettingsActivity.class);
-//        startActivityForResult(intent, kActivityRequestCode_ConnectedSettingsActivity);
     }
 
     @Override
@@ -555,6 +488,117 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //            Uri selectedFile = intent.getData();
 //            loadLensFile(selectedFile);
 //        }
+        if (requestCode == FIRMWARE_IMPORT_CODE && resultCode == Activity.RESULT_OK) {
+            // The document selected by the user won't be returned in the intent.
+            // Instead, a URI to that document will be contained in the return intent
+            // provided to this method as a parameter.
+            // Pull that URI using intent.getData().
+            Uri uri = null;
+            if (intent != null) {
+                uri = intent.getData();
+                Log.i(TAG, "Uri: " + uri.toString());
+                try {
+                    importFirmwareFromFile(uri);
+                } catch (IOException e) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            new AlertDialog.Builder(FirmwareUpdateActivity.this)
+                                    .setTitle("Error importing firmware file")
+                                    .setMessage("Please try again")
+                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                        }
+                                    })
+                                    .setCancelable(false)
+                                    .show();
+                        }
+                    });
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    // TODO: adapt this for use with the database
+    public void importFirmwareFile() {
+        Timber.d("open file explorer to select and import lens file");
+        // create the intent to launch the system's file explorer window
+        Intent importFirmwareFileIntent = new Intent(Intent.ACTION_GET_CONTENT);
+
+        // limit the search to plain text files
+        importFirmwareFileIntent.setType("*/*");
+
+        // only show files that can be opened (excluding things like a list of contacts or timezones)
+        importFirmwareFileIntent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        // start the activity. After user selects a file, onActivityResult action fires. Read the request_code there and import the file
+        startActivityForResult(importFirmwareFileIntent, FIRMWARE_IMPORT_CODE);
+    }
+
+    /** This method imports the S19 file from the filesystem and saves it in memory. The file isn't saved
+     * to the internal storage in case the user wants to keep
+     *
+     * @param uri
+     */
+    private void importFirmwareFromFile(Uri uri) throws IOException {
+        Timber.d("importing URI: " + uri);
+        BufferedReader reader = null;
+
+        try {
+            Cursor returnCursor = getContentResolver().query(uri, null, null, null, null);
+            int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
+            returnCursor.moveToFirst();
+            String[] names = returnCursor.getString(nameIndex).split("\\.");
+            final String importedName = names[0];
+            final String fileExtension = names[1];
+
+            if (fileExtension.equalsIgnoreCase("S19")) {
+                fileArray.clear();
+                InputStream inputStream = getContentResolver().openInputStream(uri);
+                reader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    if (line.length() > 0) {
+                        fileArray.add(line);                                      // add the read firmware file line into the array
+                    }
+                }
+
+                if (fileArray.size() > 0) {
+                    programLoaded = true;
+                    updateDialog.findViewById(R.id.updateInfoLinearLayout).setVisibility(View.GONE);
+                    TextView fileNameTextView = updateDialog.findViewById(R.id.customFirmwareFileNameTextView);
+                    String fileName = "File: " + importedName;
+                    fileNameTextView.setText(fileName);
+                    updateDialog.findViewById(R.id.customFirmwareLinearLayout).setVisibility(View.VISIBLE);
+                    updateDialog.getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.GONE);
+                    updateDialog.show();
+                } else {
+                    CharSequence text = "Error importing firmware file";
+                    SharedHelper.makeToast(FirmwareUpdateActivity.this, text, Toast.LENGTH_LONG);
+                }
+            }
+
+            else {
+                CharSequence text = "Error: invalid firmware file";
+                SharedHelper.makeToast(FirmwareUpdateActivity.this, text, Toast.LENGTH_LONG);
+                updateDialog.show();
+            }
+        } catch (Exception ex) {
+            Timber.d("importFirmwareFromFile: ", ex);
+        } finally {
+            Timber.d("finally importFirmwareFromFile OK - fileArray size = " + fileArray.size());
+            if (reader != null) {
+                try {
+                    reader.close();
+                }   catch (Exception e) {
+                    Timber.d("reader exception", e);
+                }
+            }
+        }
     }
 
     private void updateConnectedTextView(boolean status, final String deviceName) {
@@ -928,6 +972,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                 if (updateConfirmed) {
                     updateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setVisibility(View.GONE);
                     updateDialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
+                    updateDialog.getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.GONE);
                     uartSendData("Y", false);
                 }
                 else {
@@ -1026,6 +1071,12 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                            public void onClick(DialogInterface dialogInterface, int i) {
                            }
                        })
+                       .setNeutralButton("Import...", new DialogInterface.OnClickListener() {
+                           @Override
+                           public void onClick(DialogInterface dialogInterface, int i) {
+                               importFirmwareFile();
+                           }
+                       })
                        .setCancelable(false)
                        .create();
 
@@ -1107,7 +1158,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     /** This method returns the image for whatever product is detected for firmware updates
-     *
      * @param product
      * @return
      */
@@ -1185,25 +1235,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     }
                 });
                 updateDialog.findViewById(R.id.uploadingLinearLayout).setVisibility(View.GONE);
+                updateDialog.findViewById(R.id.customFirmwareFileNameTextView).setVisibility(View.GONE);
                 updateDialog.findViewById(R.id.uploadCompleteTextView).setVisibility(View.VISIBLE);
-
-
-//                if (updateDialog != null) {
-//                    updateDialog.hide();
-//                }
-//
-//                AlertDialog.Builder builder = new AlertDialog.Builder(com.prestoncinema.app.FirmwareUpdateActivity.this);
-//                builder.setTitle("Upload complete")
-//                        .setMessage("Firmware loaded successfully.")
-//                        .setPositiveButton("Done", new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                                // send the user back to the main activity
-//                                Intent intent = new Intent(FirmwareUpdateActivity.this, MainActivity.class);
-//                                startActivity(intent);
-//                            }
-//                        })
-//                        .show();
             }
         });
     }
@@ -1231,34 +1264,11 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         Timber.d("get firmware history for product: " + product);
     }
 
-//    private Map<String, String> createFirmwareMapRow(String prod) {
-//        Timber.d("product string: " + prod);
-//
-//        Map<String, String> fMap = new HashMap<String, String>();
-//        String path = getS19Path(prod);
-//
-//        Timber.d("s19 path: " + path);
-//
-//        String fileName = path.split("/")[path.split("/").length - 1];
-//        Timber.d("fileName: " + fileName + "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-//        String latestFile = fileName.split("-")[1].split("\\.")[0].replaceAll("_", ".");
-//        Timber.d("split latest file:" + latestFile + "******************************************************************************************************");
-//        fMap.put("productString", convertProductString(prod));
-//        fMap.put("versionString", latestFile);
-//        return fMap;
-//    }
-
     private String convertProductString(String prod) {
         String trimmedString = prod.replaceAll("[^A-Za-z0-9_]", "");
         switch (trimmedString) {
             case "Hand3":
                 return "HU3";
-//            case "DM3":
-//                return "DMF 2";
-//            case "F_I":
-//                return "Focus/Iris";
-//            case "Tr4":
-//                return "G4 Radio";
             case "MDR":
                 return "MDR-2";
             case "MDR3":
@@ -1267,8 +1277,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                 return "MDR-4";
             case "MLink":
                 return "VI";
-//            case "LightR":
-//                return "LR2";
             default:
                 return trimmedString;
         }
@@ -1299,35 +1307,21 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         return pathName;
     }
 
-    // read in the s19 file so we can send it line-by-line to the UART
+    /** This is the main method to read in an S19 file and store it in fileArray
+     *
+     * @param filePath the S19 file's location in the user's internal storage
+     */
     public void loadProgramFile(String filePath) {
-//        mProgressDialog = new ProgressDialog(this);
-//        mProgressDialog.setMessage("Loading firmware file...");
-//        mProgressDialog.setCancelable(false);
-//        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-//        mProgressDialog.setIndeterminate(true);
-//        mProgressDialog.show();
         Timber.d("loadProgramFile() entered: " + filePath);
         BufferedReader reader = null;
 
         fileArray.clear();
-        byte[] fileBytes = new byte[30];
-
         try {
-//            File firmwareFile = new File(filePath);
-
-//            Timber.d("file size: " + firmwareFile.length());
-
             FileInputStream fileIn = new FileInputStream(filePath);
-//            Timber.d("fileInFD: " + fileIn.getFD());
-//            Timber.d("fileIn: " + fileIn.read(fileBytes));
-
             reader = new BufferedReader(new InputStreamReader(fileIn));
-
-//            Timber.d("reader: " + reader);
             String line;
+
             while ((line = reader.readLine()) != null) {
-//                Timber.d("adding line to fileArray: " + line);
                 fileArray.add(line);
             }
             if (fileArray.size() > 0) {
@@ -1424,10 +1418,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
     }
 
-    private void showFirmwareAlertDialog(List<Map<String, String>> firmwareMap) {
-
-    }
-
     private String bytesToText(byte[] bytes, boolean simplifyNewLine) {
         String text = new String(bytes, Charset.forName("UTF-8"));
         if (simplifyNewLine) {
@@ -1484,32 +1474,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //        }
     }
 
-    private void recreateDataView() {
-
-//        if (mIsTimestampDisplayMode) {
-//            mBufferListAdapter.clear();
-//
-//            final int bufferSize = mDataBuffer.size();
-//            for (int i = 0; i < bufferSize; i++) {
-//
-//                final UartDataChunk dataChunk = mDataBuffer.get(i);
-//                final boolean isRX = dataChunk.getMode() == UartDataChunk.TRANSFERMODE_RX;
-//                final byte[] bytes = dataChunk.getData();
-//                final String formattedData = mShowDataInHexFormat ? bytesToHex(bytes) : bytesToText(bytes, true);
-//
-//                final String currentDateTimeString = DateFormat.getTimeInstance().format(new Date(dataChunk.getTimestamp()));
-//                mBufferListAdapter.add(new TimestampData("[" + currentDateTimeString + "] " + (isRX ? "RX" : "TX") + ": " + formattedData, isRX ? mRxColor : mTxColor));
-////                mBufferListAdapter.add("[" + currentDateTimeString + "] " + (isRX ? "RX" : "TX") + ": " + formattedData);
-//            }
-//            mBufferListView.setSelection(mBufferListAdapter.getCount());
-//        } else {
-//            mDataBufferLastSize = 0;
-//            mTextSpanBuffer.clear();
-//            mBufferTextView.setText("");
-//        }
-    }
-
-
 
     // region DataFragment
     public static class DataFragment extends Fragment {
@@ -1525,38 +1489,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             setRetainInstance(true);
         }
     }
-
-//    private void restoreRetainedDataFragment() {
-//        // find the retained fragment
-//        FragmentManager fm = getFragmentManager();
-//        mRetainedDataFragment = (DataFragment) fm.findFragmentByTag(TAG);
-//
-//        if (mRetainedDataFragment == null) {
-//            // Create
-//            mRetainedDataFragment = new DataFragment();
-//            fm.beginTransaction().add(mRetainedDataFragment, TAG).commit();
-//
-//            mDataBuffer = new ArrayList<>();
-//            mTextSpanBuffer = new SpannableStringBuilder();
-//        } else {
-//            // Restore status
-//            mShowDataInHexFormat = mRetainedDataFragment.mShowDataInHexFormat;
-//            mTextSpanBuffer = mRetainedDataFragment.mTextSpanBuffer;
-//            mDataBuffer = mRetainedDataFragment.mDataBuffer;
-//            mSentBytes = mRetainedDataFragment.mSentBytes;
-//            mReceivedBytes = mRetainedDataFragment.mReceivedBytes;
-//        }
-//    }
-//
-//    private void saveRetainedDataFragment() {
-//        mRetainedDataFragment.mShowDataInHexFormat = mShowDataInHexFormat;
-//        mRetainedDataFragment.mTextSpanBuffer = mTextSpanBuffer;
-//        mRetainedDataFragment.mDataBuffer = mDataBuffer;
-//        mRetainedDataFragment.mSentBytes = mSentBytes;
-//        mRetainedDataFragment.mReceivedBytes = mReceivedBytes;
-//    }
-    // endregion
-
 
     // region MqttManagerListener
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/import_lenses_select_action"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/darkestGray" />
+
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:dividerPadding="15dp"
+        android:layout_marginTop="10dp">
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/createNewListRadioButton"
+            android:text="@string/create_new_lens_list"
+            android:textSize="18sp"
+            android:textColor="@color/darkestGray" />
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/addToExistingListRadioButton"
+            android:text="@string/add_to_existing_lens_list"
+            android:textSize="18sp"
+            android:textColor="@color/darkestGray" />
+    </RadioGroup>
+
+</LinearLayout>

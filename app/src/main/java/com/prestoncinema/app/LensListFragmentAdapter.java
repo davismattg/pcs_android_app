@@ -7,7 +7,6 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 
 import com.prestoncinema.app.db.LensClickCallback;
 import com.prestoncinema.app.db.entity.LensEntity;
-import com.prestoncinema.app.model.Lens;
 import com.prestoncinema.app.ui.MyListFragment;
 
 import java.util.ArrayList;
@@ -37,19 +36,23 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
     private List<String> myListDataHeader;
     private HashMap<String, List<LensEntity>> myListDataChild;
 
+    private boolean fromImport = false;
+
 //    private HashMap<String, List<? extends Lens>> myListDataChild;
 
     /* Context used to know what activity we came from */
     private Context context;
 
-    private AllLensesFragment allLensesFragment;
+    private LensListFragment allLensesFragment;
 
     private LensClickCallback lensClickCallback;
+
+    private String listNote;
 
     public LensListFragmentAdapter(FragmentManager fm, List<String> myListDataHeader, HashMap<String, List<LensEntity>> myListDataChild,
                                    List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
                                    Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap,
-                                   ArrayList<LensEntity> lensObjectArrayList, Context context) {
+                                   ArrayList<LensEntity> lensObjectArrayList, String note, Context context) {
         super(fm);
 
         this.myListDataHeader = myListDataHeader;
@@ -59,6 +62,7 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
         this.lensListDataHeaderCount = lensListDataHeaderCount;
         this.lensPositionMap = lensPositionMap;
         this.allLensesList = lensObjectArrayList;
+        this.listNote = note;
         this.context = context;
     }
 
@@ -70,7 +74,7 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
     @Override
     public Fragment getItem(int position) {
         if (position == 0) {
-            allLensesFragment = AllLensesFragment.newInstance(position + 1, this.lensListManufHeader, this.lensListTypeHeader, this.lensListDataHeaderCount, this.lensPositionMap, this.allLensesList, this.context);
+            allLensesFragment = LensListFragment.newInstance(position + 1, this.lensListManufHeader, this.lensListTypeHeader, this.lensListDataHeaderCount, this.lensPositionMap, this.allLensesList, fromImport, listNote, this.context);
             return allLensesFragment;
         }
         else {
@@ -101,9 +105,10 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
         super.notifyDataSetChanged();
     }
 
-    public void updateAdapter(int currentTab) {
-        Timber.d("notify data set changed but keep tab at position " + currentTab);
-
-
+    public void updateAdapterFromSelectAll(boolean selected) {
+        if (allLensesFragment != null) {
+            Timber.d("update adapter from select all");
+            allLensesFragment.updateAdapterFromSelectAll(selected);
+        }
     }
 }

@@ -52,6 +52,9 @@ public interface LensListDao {
     @Query("SELECT * FROM lens_lists WHERE name = :name")
     LensListEntity loadLensListByNameSync(String name);
 
+    @Query("SELECT COUNT(*) FROM lens_list_lens_join WHERE listId = :listId")
+    int getCount(long listId);
+
     @Query("DELETE FROM lens_lists")
     void deleteAll();
 }

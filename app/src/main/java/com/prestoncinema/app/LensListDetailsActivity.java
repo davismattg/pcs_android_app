@@ -5,13 +5,11 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
 import android.text.InputType;
 import android.view.ContextMenu;
@@ -67,13 +65,13 @@ import timber.log.Timber;
  * TODO: Restrict input length on focal length (9999mm max) and serial/note length (14 bytes including focal length)
  */
 
-public class LensListActivity extends UartInterfaceActivity implements AdapterView.OnItemSelectedListener,
-        MyListFragment.OnLensChangedListener, AllLensesFragment.OnLensAddedListener,
-        AllLensesFragment.OnChildLensChangedListener, AllLensesFragment.OnLensSelectedListener,
-        AllLensesFragment.OnLensManufacturerSelectedListener, AllLensesFragment.OnLensSeriesSelectedListener {
+public class LensListDetailsActivity extends UartInterfaceActivity implements AdapterView.OnItemSelectedListener,
+        MyListFragment.OnLensChangedListener, LensListFragment.OnLensAddedListener,
+        LensListFragment.OnChildLensChangedListener, LensListFragment.OnLensSelectedListener,
+        LensListFragment.OnLensManufacturerSelectedListener, LensListFragment.OnLensSeriesSelectedListener {
 
     // Log
-    private final static String TAG = LensActivity.class.getSimpleName();
+    private final static String TAG = AllLensListsActivity.class.getSimpleName();
 
     // UI
     private ProgressDialog mProgressDialog;
@@ -101,6 +99,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
     private HashMap<String, List<String>> lensListTypeHeader = new HashMap<>();
 
     private ImageView mAddLensImageView;
+//    private TextView noteTextView;
 
     private ArrayList<String> lensArray = new ArrayList<String>();
     private ArrayList<LensEntity> lensesFromIntent = new ArrayList<LensEntity>();
@@ -111,6 +110,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
     private int numLenses = 0;
     private String lensFileString = "";
     private String lensFileStringStripped = "";
+    private String lensFileNote;
 
     private LensListEntity currentLensList;
     private File lensFile;
@@ -131,6 +131,8 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
     private int oth_byte = 0xF;
     private int maxSerialLength = 14;
 
+    private boolean allLensesSelected = false;
+
     private int lensId;                                                 // used to identify
     private long currentListId = 0;
 
@@ -144,7 +146,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 
     private LensListFragmentAdapter lensListFragmentAdapter;
 
-    public LensListActivity() throws MalformedURLException {
+    public LensListDetailsActivity() throws MalformedURLException {
     }
 
     @Override
@@ -156,7 +158,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 
         /* Database instantiation */
         appExecutors = new AppExecutors();
-        database = AppDatabase.getInstance(LensListActivity.this, appExecutors);
+        database = AppDatabase.getInstance(LensListDetailsActivity.this, appExecutors);
 
         // UI initialization
         mAddLensImageView = findViewById(R.id.lensTypeAddImageView);
@@ -176,11 +178,15 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
         myListDataChild.put("My List B", new ArrayList<LensEntity>());
         myListDataChild.put("My List C", new ArrayList<LensEntity>());
 
-        /* Get the filename string from the previous activity (LensActivity) and import the file */
+//        noteTextView = findViewById(R.id.lensListNoteTextView);
+
+        /* Get the filename string from the previous activity (AllLensListsActivity) and import the file */
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             lensFileString = extras.getString("lensFile");
             lensFileStringStripped = lensFileString;
+
+            lensFileNote = extras.getString("listNote");
 
             lensesFromIntent = getIntent().getParcelableArrayListExtra("lenses");
 
@@ -219,7 +225,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 
                 else {
                     CharSequence toastText = "Error: Not connected to Preston Updater";
-                    SharedHelper.makeToast(LensListActivity.this, toastText, Toast.LENGTH_SHORT);
+                    SharedHelper.makeToast(LensListDetailsActivity.this, toastText, Toast.LENGTH_SHORT);
                 }
             }
         });
@@ -334,7 +340,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 //        deleteLens(lens);
     }
 
-    /** onLensesSelected handles sending/receiving only selected lenses from the list
+    /** onLensesSelected handles selecting/deselecting lenses from the list
      *
      * @param lens
      */
@@ -349,14 +355,16 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
      */
     public void onManufacturerSelected(String manufacturer, boolean checked) {
         String verb = checked ? "Check" : "Uncheck";
+
         Timber.d(verb + " all lenses for manufacturer: " + manufacturer);
+
         selectLensesInDatabase(manufacturer, null, checked);
     }
 
-    public void onSeriesSelected(String manufacturer, String series, boolean checked) {
-        String verb = checked ? "Check" : "Uncheck";
+    public void onSeriesSelected(String manufacturer, String series, boolean seriesChecked, boolean checkParent) {
+        String verb = seriesChecked ? "Check" : "Uncheck";
         Timber.d(verb + " all lenses for " + manufacturer + " " + series);
-        selectLensesInDatabase(manufacturer, series, checked);
+        selectLensesInDatabase(manufacturer, series, seriesChecked);
     }
 
     private void showOrHideFab() {
@@ -455,37 +463,15 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
         Toast toast = Toast.makeText(context, toastText, duration);
 
         switch (id) {
-            case R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
-                return true;
-            case R.id.importLensMenuItem:
-                Timber.d("import lenses");
-                toast.show();
-                break;
-            case R.id.exportLensMenuItem:
-                Timber.d("export lenses");
-
-                /* Get the Lens List Fragment and call the method enableSelection() */
-//                AllLensesFragment allLensesFragment = (AllLensesFragment) getSupportFragmentManager().findFragmentById(R.tag.AllLensesFragment);
-//                AllLensesFragment allLensesFragment = (AllLensesFragment) lensListFragmentAdapter.getItem(3);
-                AllLensesFragment allLensesFragment = (AllLensesFragment) lensListFragmentAdapter.instantiateItem(null, 3);
-                Timber.d("allLensesFragment: " + allLensesFragment);
-
-                if (allLensesFragment != null) {
-                    Timber.d("found lens list fragment. Enable checkboxes");
-                    allLensesFragment.enableLensSelection();
-                }
-
-
-//                toast.show();
-                break;
-            case R.id.deleteLensMenuItem:
-                Timber.d("delete lenses");
-                toast.show();
-                break;
+//            case R.id.selectAllLensesMenuItem:
+//                Timber.d("select all lenses in this list");
+//                selectLensesInDatabase(null, null, !allLensesSelected);
+//                break;
             case R.id.renameLensFileMenuItem:
-                renameLensFile(lensFile, lensFileStringStripped);
-                Timber.d("rename the lens file");
+                if (currentLensList != null) {
+                    Timber.d("rename the lens file");
+                    renameLensList(currentLensList);
+                }
                 break;
         }
 
@@ -508,18 +494,19 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
     // before renaming, it checks if the filename is already in use, and prevents duplicate names   //
     // in that case.                                                                                //
     //////////////////////////////////////////////////////////////////////////////////////////////////
-    private void renameLensFile(final File file, String currentName) {
-        final String oldName = currentName.split(".lens")[0];
+    private void renameLensList(final LensListEntity list) {
+        final String oldName = list.getName();
+        final String oldNote = list.getNote();
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 // building the custom alert dialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(LensListActivity.this);
+                AlertDialog.Builder builder = new AlertDialog.Builder(LensListDetailsActivity.this);
                 LayoutInflater inflater = getLayoutInflater();
 
-                // the custom view is defined in dialog_rename_lens.xml, which we'll inflate to the dialog
-                View renameLensView = inflater.inflate(R.layout.dialog_rename_lens, null);
+                // the custom view is defined in dialog_rename_lens_list_list.xml, which we'll inflate to the dialog
+                View renameLensView = inflater.inflate(R.layout.dialog_rename_lens_list, null);
                 final EditText fileNameEditText = (EditText) renameLensView.findViewById(R.id.renameLensListNameEditText);
                 final EditText fileNoteEditText = renameLensView.findViewById(R.id.renameLensListNoteEditText);
 
@@ -541,6 +528,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
                 // set the text to the existing filename and select it
                 fileNameEditText.setText(oldName);
                 fileNameEditText.setSelection(oldName.length());
+                fileNoteEditText.setText(oldNote);
 
                 // create the alert dialog
                 final AlertDialog alert = builder.create();
@@ -556,35 +544,23 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
                     public void onClick(View v)
                     {
                         // get the text entered by the user
-                        String newName = fileNameEditText.getText().toString().trim().replace(".lens", "") + ".lens";           // do some housekeeping on the user-entered string
+                        String newName = fileNameEditText.getText().toString().trim().replace(".lens", "");           // do some housekeeping on the user-entered string
+                        String newNote = fileNoteEditText.getText().toString().trim();
 
                         // TODO: make sure the filename check is working robustly
                         // check for duplicate filenames
                         boolean save = checkLensFileNames(newName);
 
                         if (save) {
-                            Timber.d("\n\nOriginal file: " + file.toString());
+                            Timber.d("\n\nOriginal list name: " + oldName);
                             Timber.d("Save the file as: " + newName);
-                            Timber.d("getLensStorageDir: " + getLensStorageDir(newName).toString() + "\n\n");
 
                             // rename the file
-                            boolean wasFileRenamed = file.renameTo(getLensStorageDir(newName));                                     // rename the old file
-                            if (wasFileRenamed) {                                                                                       // file.renameTo() returned true
-                                setTitle(newName);                                                                                  // update the title of the activity w/ new file name
-                                lensFileStringStripped = newName.split(".lens")[0];
-                                lensFile = getLensStorageDir(newName);
-                                Timber.d("lensFile after rename: " + lensFile.toString());
-                                alert.dismiss();
-                            }
-                            else {
-                                Context context = getApplicationContext();
-                                CharSequence toastText = "Error renaming lens file. Please try again.";
-                                int duration = Toast.LENGTH_LONG;
+                            list.setName(newName);
+                            list.setNote(newNote);
 
-                                // make a toast letting the user know that there was an error renaming the file
-                                Toast toast = Toast.makeText(context, toastText, duration);
-                                toast.show();
-                            }
+                            updateLensListInDatabase(list);
+                            alert.dismiss();
                         }
 
                         else {
@@ -598,44 +574,6 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
                         }
                     }
                 });
-
-//                LayoutInflater dialogInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-//                final View renameLensView = dialogInflater.inflate(R.layout.dialog_rename_lens, null);
-//                final EditText fileNameEditText = (EditText) renameLensView.findViewById(R.tag.renameLensEditText);
-//
-//                fileNameEditText.setText(oldName);
-//                fileNameEditText.setSelection(oldName.length());
-//
-//                new AlertDialog.Builder(LensListActivity.this)
-//                        .setTitle("Enter new filename")
-//                        .setView(renameLensView)
-//                        .setPositiveButton("Save", new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                                String newFileName = fileNameEditText.getText().toString().trim().replace(".lens", "") + ".lens";           // do some housekeeping on the user-entered string
-//                                boolean wasFileRenamed = file.renameTo(getLensStorageDir(newFileName));                                     // rename the old file
-//                                if (wasFileRenamed) {                                                                                       // file.renameTo() returned true
-//                                    setTitle(newFileName);                                                                                  // update the title of the activity w/ new file name
-//                                }
-//                                else {      // file rename returned false, make a toast letting the user know
-//                                    Context context = getApplicationContext();
-//                                    CharSequence toastText = "Error renaming lens file. Please try again.";
-//                                    int duration = Toast.LENGTH_LONG;
-//
-//                                    // make a toast letting the user know that this feature is coming soon.
-//                                    Toast toast = Toast.makeText(context, toastText, duration);
-//                                    toast.show();
-//                                }
-//
-//                            }
-//                        })
-//                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                            }
-//                        })
-//                        .setCancelable(false)
-//                        .show();
             }
         });
     }
@@ -743,6 +681,34 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 //        }
     }
 
+    private void updateLensListInDatabase(final LensListEntity list) {
+        final LensListEntity[] listToUpdate = new LensListEntity[1];
+        listToUpdate[0] = list;
+
+        Single.fromCallable(new Callable<Void>() {
+            @Override
+            public Void call() {
+                database.lensListDao().update(listToUpdate);
+                return null;
+            }
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<Void>() {
+                    @Override
+                    public void onSuccess(Void value) {
+                        Timber.d("lens list updated successfully");
+                        updateActivityTitle();
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        CharSequence toastText = "Error updating lens list, please try again.";
+                        SharedHelper.makeToast(getApplicationContext(), toastText, Toast.LENGTH_LONG);
+                    }
+                });
+    }
+
     public void onNothingSelected(AdapterView<?> parent) {
         // Another interface callback
     }
@@ -833,7 +799,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 //        runOnUiThread(new Runnable() {
 //            @Override
 //            public void run() {
-//                new AlertDialog.Builder(LensListActivity.this)
+//                new AlertDialog.Builder(LensListDetailsActivity.this)
 //                    .setMessage("Are you sure you want to delete this lens?\n\nThis will not remove it from the HU3 until you export this lens file to HU3.")
 //                    .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
 //                        @Override
@@ -903,7 +869,11 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
             updateLensList(true);
         }
 
-        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, LensListActivity.this);
+        if (numLensesChecked == numLenses) {
+            allLensesSelected = true;
+        }
+
+        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, lensFileNote, LensListDetailsActivity.this);
         viewPager.setAdapter(lensListFragmentAdapter);
 
         showOrHideFab();
@@ -1495,7 +1465,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
                 try {
                     fos.close();
                     Timber.d("Changes saved successfully.");
-//                    Intent intent = new Intent(LensListActivity.this, LensActivity.class);
+//                    Intent intent = new Intent(LensListDetailsActivity.this, AllLensListsActivity.class);
 //                    startActivity(intent);
 
                 } catch (IOException e) {
@@ -1513,11 +1483,11 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                final EditText input = new EditText(LensListActivity.this);
+                final EditText input = new EditText(LensListDetailsActivity.this);
                 input.setSelectAllOnFocus(true);
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
 
-                new AlertDialog.Builder(LensListActivity.this)
+                new AlertDialog.Builder(LensListDetailsActivity.this)
                         .setMessage("Enter a new file name for the lenses")
                         .setView(input)
                         .setPositiveButton("Save", new DialogInterface.OnClickListener() {
@@ -1598,7 +1568,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
             public void onError(Throwable error) {
                 Timber.d(error.getMessage());
                 CharSequence text = "Error deleting lens - please try again";
-                SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+                SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
             }
         });
     }
@@ -1628,7 +1598,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
             public void onError(Throwable error) {
                 Timber.d(error.getMessage());
                 CharSequence text = "Error deleting lens - please try again";
-                SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+                SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
             }
         });
     }
@@ -1676,7 +1646,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
                     public void onError(Throwable error) {
                         Timber.d(error.getMessage());
                         CharSequence text = "Error updating lens list count - please try again";
-                        SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+                        SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
                     }
                 });
     }
@@ -1724,8 +1694,8 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
         updateLensInDatabase(lens, false, false);
     }
 
-    private void selectLensesInDatabase(String manufacturer, String series, final boolean checked) {
-        Timber.d("getting all " + manufacturer + " lenses from list");
+    private void selectLensesInDatabase(final String manufacturer, String series, final boolean checked) {
+        Timber.d("selecting lenses in database");
 
         final LensEntity[] lensesToUpdate = getLenses(manufacturer, series, checked);
 
@@ -1740,9 +1710,19 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
             @Override
             public void onSuccess(Integer value) {
                 Timber.d(value + " lenses updated");
-                updateLensList(false);
+
+                // update the adapter if a checkbox was tapped from the Manufacturer or Series levels
+                if (manufacturer != null) {
+                    updateLensList(false);
+                }
+
+                // use a different updating method because the user tapped the checkbox for "Select All"
+                else {
+                    lensListFragmentAdapter.updateAdapterFromSelectAll(checked);
+                }
+
                 CharSequence toastText = (checked ? "Added " + value + " lenses to selection" : "Removed " + value + " lenses from selection");
-                SharedHelper.makeToast(LensListActivity.this, toastText, Toast.LENGTH_SHORT);
+                SharedHelper.makeToast(LensListDetailsActivity.this, toastText, Toast.LENGTH_SHORT);
             }
 
             @Override
@@ -1752,35 +1732,52 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
         });
     }
 
+    /** This method selects the lenses from the ArrayList and returns the appropriate ones given the manufacturer/series
+     * parameters. This makes it easy to use the updateAll method in the LensDao
+     * @param manufacturer
+     * @param series
+     * @param checked
+     * @return
+     */
     private LensEntity[] getLenses(String manufacturer, String series, boolean checked) {
         ArrayList<LensEntity> lenses = new ArrayList<>();
 
         for (LensEntity lens : lensObjectArray) {
-            if (lens.getManufacturer().equals(manufacturer)) {
-                if (series != null) {
-                    if (lens.getSeries().equals(series)) {
+            if (manufacturer != null) {
+                if (lens.getManufacturer().equals(manufacturer)) {
+                    if (series != null) {
+                        if (lens.getSeries().equals(series)) {
+                            if (lens.getChecked() != checked) {
+                                lens.setChecked(checked);
+                                lenses.add(lens);
+                                if (checked) {
+                                    numLensesChecked++;
+                                } else {
+                                    numLensesChecked--;
+                                }
+                            }
+                        }
+                    } else {
                         if (lens.getChecked() != checked) {
                             lens.setChecked(checked);
                             lenses.add(lens);
                             if (checked) {
                                 numLensesChecked++;
-                            }
-                            else {
+                            } else {
                                 numLensesChecked--;
                             }
                         }
                     }
                 }
-                else {
-                    if (lens.getChecked() != checked) {
-                        lens.setChecked(checked);
-                        lenses.add(lens);
-                        if (checked) {
-                            numLensesChecked++;
-                        }
-                        else {
-                            numLensesChecked--;
-                        }
+            }
+            else {
+                if (lens.getChecked() != checked) {
+                    lens.setChecked(checked);
+                    lenses.add(lens);
+                    if (checked) {
+                        numLensesChecked++;
+                    } else {
+                        numLensesChecked--;
                     }
                 }
             }
@@ -1806,7 +1803,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
         }
         else {
             CharSequence toastText = "Error: Not connected to Preston Updater";
-            SharedHelper.makeToast(LensListActivity.this, toastText, Toast.LENGTH_SHORT);
+            SharedHelper.makeToast(LensListDetailsActivity.this, toastText, Toast.LENGTH_SHORT);
         }
     }
 
@@ -1817,10 +1814,10 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
             @Override
             public void run() {
                 // building the custom alert dialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(LensListActivity.this);
+                AlertDialog.Builder builder = new AlertDialog.Builder(LensListDetailsActivity.this);
                 LayoutInflater inflater = getLayoutInflater();
 
-                // the custom view is defined in dialog_rename_lens.xml, which we'll inflate to the dialog
+                // the custom view is defined in dialog_rename_lens_list_list.xml, which we'll inflate to the dialog
                 View sendLensView = inflater.inflate(R.layout.dialog_send_lenses, null);
                 final RadioButton addLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.addLensesRadioButton);
                 final RadioButton replaceLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.replaceLensesRadioButton);
@@ -1871,7 +1868,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
         bundle.putStringArrayList("lensArray", dataStringsToSend);
         bundle.putBoolean("addToExisting", addToExisting);
 
-        Intent intent = new Intent(LensListActivity.this, LensActivity.class);
+        Intent intent = new Intent(LensListDetailsActivity.this, AllLensListsActivity.class);
         intent.putExtra("lensTransferInfo", bundle);
         startActivity(intent);
     }
@@ -2279,7 +2276,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 //                    public void onError(Throwable error) {
 //                        Timber.d(error.getMessage());
 //                        CharSequence text = "Error retrieving join entry";
-//                        SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+//                        SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
 //                    }
 //                });
 //    }
@@ -2305,7 +2302,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 //            public void onError(Throwable error) {
 //                Timber.d(error.getMessage());
 //                CharSequence text = "Error deleting join entry";
-//                SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+//                SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
 //            }
 //        });
 //    }
@@ -2330,7 +2327,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 
                 if (showToast) {
                     CharSequence text = "Lens updated successfully";
-                    SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+                    SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
                 }
 
             }
@@ -2339,7 +2336,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
             public void onError(Throwable error) {
                 Timber.d("updateLensInDatabase onError: " + error.getMessage());
                 CharSequence text = "Error updating lens - please try again";
-                SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+                SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
             }
         });
     }
@@ -2370,7 +2367,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
                     public void onError(Throwable error) {
                         Timber.d("insertLensInDatabase onError: " + error.getMessage());
                         CharSequence text = "Error inserting lens - please try again";
-                        SharedHelper.makeToast(LensListActivity.this, text, Toast.LENGTH_SHORT);
+                        SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
                     }
                 });
     }
@@ -2389,7 +2386,7 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
 
         showOrHideFab();
 
-//        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, LensListActivity.this);
+//        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, LensListDetailsActivity.this);
 //        viewPager.setAdapter(lensListFragmentAdapter);
 
         // run the UI updates on the UI thread
@@ -2411,8 +2408,19 @@ public class LensListActivity extends UartInterfaceActivity implements AdapterVi
     }
 
     private void updateActivityTitle() {
-        String titleString = lensFileStringStripped + " (" + numLenses + ")";
+        String titleString, noteString;
+        if (currentLensList != null) {
+            titleString = currentLensList.getName() + " (" + numLenses + ")";
+            noteString = currentLensList.getNote();
+        }
+        else {
+            titleString = "";
+            noteString = "";
+        }
         setTitle(titleString);
+//        if (noteTextView != null) {
+//            noteTextView.setText(noteString);
+//        }
     }
 
     private void countLensLine(String lens) {

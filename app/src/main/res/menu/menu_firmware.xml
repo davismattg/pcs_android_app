@@ -17,5 +17,10 @@
             android:id="@+id/firmwareUpdateCheckMenuItem"
             android:title="@string/check_firmware_updates"
             app:showAsAction="never" />
+
+        <item
+            android:id="@+id/firmwareUpdateLoadFileMenuItem"
+            android:title="@string/load_firmware_file"
+            app:showAsAction="never" />
     </group>
 </menu>

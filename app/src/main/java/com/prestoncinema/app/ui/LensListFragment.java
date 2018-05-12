@@ -10,7 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.prestoncinema.app.LensListActivity;
+import com.prestoncinema.app.LensListDetailsActivity;
 import com.prestoncinema.app.R;
 import com.prestoncinema.app.databinding.LensListFragmentBinding;
 import com.prestoncinema.app.db.LensListAdapter;
@@ -76,7 +76,7 @@ public class LensListFragment extends android.support.v4.app.Fragment {
             Timber.d("lens file onClickCallback entered");
             String listName = list.getName();
             Timber.d("file clicked: " + listName);
-            Intent intent = new Intent(getContext(), LensListActivity.class);
+            Intent intent = new Intent(getContext(), LensListDetailsActivity.class);
             intent.putExtra("lensFile", listName);
             startActivity(intent);
         }
