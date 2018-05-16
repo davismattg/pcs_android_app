@@ -10,6 +10,7 @@ import android.widget.*;
 
 import com.prestoncinema.app.databinding.LensListLensBinding;
 import com.prestoncinema.app.db.entity.LensEntity;
+import com.prestoncinema.app.db.entity.LensListEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,13 +41,16 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 
     private ArrayList<Boolean> seriesCheckedStatus = new ArrayList<>();
 
+    private LensListEntity lensList;
+
     public LensListChildExpListViewAdapter(Context context,
-                                      List<String> listDataHeader,
-                                      HashMap<String, ArrayList<LensEntity>> listDataChild,
-                                      HashMap<Integer, ArrayList<Integer>> listDataChildIndices,
-                                      ArrayList<LensEntity> lensObjectList,
-                                      String manufName) {
+                                           LensListEntity lensList, List<String> listDataHeader,
+                                           HashMap<String, ArrayList<LensEntity>> listDataChild,
+                                           HashMap<Integer, ArrayList<Integer>> listDataChildIndices,
+                                           ArrayList<LensEntity> lensObjectList,
+                                           String manufName) {
         this.context = context;
+        this.lensList = lensList;
         this.listDataHeader = listDataHeader;
         this.listDataChild = listDataChild;
         this.lensObjectList = lensObjectList;
@@ -199,16 +203,16 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         ImageView myListBImageView = convertView.findViewById(R.id.myListBImageView);
         ImageView myListCImageView = convertView.findViewById(R.id.myListCImageView);
 
-        // show the icon if necessary
-        if (childObject.getMyListA()) {
+        // show the My List A/B/C icon if necessary
+        if (childObject.isLensMemberOfMyList(lensList, "My List A")) {
             myListAImageView.setVisibility(View.VISIBLE);
         }
 
-        if (childObject.getMyListB()) {
+        if (childObject.isLensMemberOfMyList(lensList, "My List B")) {
             myListBImageView.setVisibility(View.VISIBLE);
         }
 
-        if (childObject.getMyListC()) {
+        if (childObject.isLensMemberOfMyList(lensList, "My List C")) {
             myListCImageView.setVisibility(View.VISIBLE);
         }
 
@@ -270,9 +274,9 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 final TextView lensIndexTextView = (TextView) editLensView.findViewById(R.id.lensIndexTextView);
 
                 // check the status string to see if the lens is part of a list
-                final boolean myListA = childObject.getMyListA();
-                final boolean myListB = childObject.getMyListB();
-                final boolean myListC = childObject.getMyListC();
+                final boolean myListA = childObject.isLensMemberOfMyList(lensList, "My List A");
+                final boolean myListB = childObject.isLensMemberOfMyList(lensList, "My List B");
+                final boolean myListC = childObject.isLensMemberOfMyList(lensList, "My List C");
 
                 if (childObject.getCalibratedF()) {
                     CalFImageView.setVisibility(View.VISIBLE);

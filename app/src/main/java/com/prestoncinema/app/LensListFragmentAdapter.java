@@ -7,6 +7,7 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 
 import com.prestoncinema.app.db.LensClickCallback;
 import com.prestoncinema.app.db.entity.LensEntity;
+import com.prestoncinema.app.db.entity.LensListEntity;
 import com.prestoncinema.app.ui.MyListFragment;
 
 import java.util.ArrayList;
@@ -49,12 +50,15 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
 
     private String listNote;
 
-    public LensListFragmentAdapter(FragmentManager fm, List<String> myListDataHeader, HashMap<String, List<LensEntity>> myListDataChild,
+    private LensListEntity lensList;
+
+    public LensListFragmentAdapter(FragmentManager fm, LensListEntity lensList, List<String> myListDataHeader, HashMap<String, List<LensEntity>> myListDataChild,
                                    List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
                                    Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap,
                                    ArrayList<LensEntity> lensObjectArrayList, String note, Context context) {
         super(fm);
 
+        this.lensList = lensList;
         this.myListDataHeader = myListDataHeader;
         this.myListDataChild = myListDataChild;
         this.lensListManufHeader = lensListManufHeader;
@@ -74,7 +78,7 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
     @Override
     public Fragment getItem(int position) {
         if (position == 0) {
-            allLensesFragment = LensListFragment.newInstance(position + 1, this.lensListManufHeader, this.lensListTypeHeader, this.lensListDataHeaderCount, this.lensPositionMap, this.allLensesList, fromImport, listNote, this.context);
+            allLensesFragment = LensListFragment.newInstance(position + 1, this.lensList, this.lensListManufHeader, this.lensListTypeHeader, this.lensListDataHeaderCount, this.lensPositionMap, this.allLensesList, fromImport, listNote, this.context);
             return allLensesFragment;
         }
         else {

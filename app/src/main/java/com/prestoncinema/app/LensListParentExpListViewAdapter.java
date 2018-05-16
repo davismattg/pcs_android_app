@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.prestoncinema.app.db.entity.LensEntity;
+import com.prestoncinema.app.db.entity.LensListEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,10 +54,13 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
 //    private SparseIntArray seriesExpandedStatus = new SparseIntArray();
     private HashMap<Integer, Integer[]> seriesExpandedStatus = new HashMap<>();
 
-    public LensListParentExpListViewAdapter(Context context, List<String> listDataHeader, HashMap<String, List<String>> listChildData,
+    private LensListEntity lensList;
+
+    public LensListParentExpListViewAdapter(Context context, LensListEntity lensList, List<String> listDataHeader, HashMap<String, List<String>> listChildData,
                                             HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap,
                                             ArrayList<LensEntity> lensObjectArray, Map<Integer, Integer> lensListDataHeaderCount) {
         this.context = context;
+        this.lensList = lensList;
         this.listDataHeader = listDataHeader;
         this.listDataChild = listChildData;
         this.lensPositionMap = lensPositionMap;
@@ -217,6 +221,7 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         /* Initialize the adapter for the 2nd level of the ExpandableListView */
         childAdapter = new LensListChildExpListViewAdapter(
                 this.context,
+                this.lensList,
                 this.listDataChild.get(parentNode),
                 lensChildHash,
                 lensPositionIndicesMap,

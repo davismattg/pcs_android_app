@@ -507,7 +507,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
 
                 // the custom view is defined in dialog_rename_lens_list_list.xml, which we'll inflate to the dialog
                 View renameLensView = inflater.inflate(R.layout.dialog_rename_lens_list, null);
-                final EditText fileNameEditText = (EditText) renameLensView.findViewById(R.id.renameLensListNameEditText);
+                final EditText fileNameEditText = renameLensView.findViewById(R.id.renameLensListNameEditText);
                 final EditText fileNoteEditText = renameLensView.findViewById(R.id.renameLensListNoteEditText);
 
                 // set the custom view to be the view in the alert dialog and add the other params
@@ -818,13 +818,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
 //        });
 //    }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    // BIG function. This function reads the text file specified in lensFile and parses it into an //
-    // array (lensArray). It also calls the function parseLensLine, which takes the lens text file //
-    // raw data and formats it to display as an item in the lens list. Anytime the user changes    //
-    // something w/ a lens (add to my list, remove a lens, etc, you have to make sure to update    //
-    // BOTH lensArray and lensMap. lensArray is the basis for saving the modified file as new one  //
-    /////////////////////////////////////////////////////////////////////////////////////////////////
+
     private void importLenses() {
         Timber.d("importing lens list");
 
@@ -862,18 +856,18 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
             if (lens.getChecked()) numLensesChecked++;
         }
 
-        if (lensArray.size() > 0) {                                                                 // make sure something was actually imported
+//        if (lensArray.size() > 0) {                                                                 // make sure something was actually imported
             numLenses = lensArray.size();                                                           // the number of lenses, used for loops and display on the UI
 
             lensObjectArray = new ArrayList<>(numLenses);
             updateLensList(true);
-        }
+//        }
 
         if (numLensesChecked == numLenses) {
             allLensesSelected = true;
         }
 
-        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, lensFileNote, LensListDetailsActivity.this);
+        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), currentLensList, myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, lensFileNote, LensListDetailsActivity.this);
         viewPager.setAdapter(lensListFragmentAdapter);
 
         showOrHideFab();
@@ -902,20 +896,24 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         myListDataChild.get("My List B").clear();
         myListDataChild.get("My List C").clear();
 
+
         for (LensEntity thisLens : lensObjectArray) {
-            if (thisLens.getMyListA()) {
+//            if (thisLens.getMyListA()) {
+            if (currentLensList.getMyListALongIds().contains(thisLens.getId())) {
                 temporaryLensList = myListDataChild.get("My List A");
                 temporaryLensList.add(thisLens);
                 myListDataChild.put("My List A", temporaryLensList);
             }
 
-            if (thisLens.getMyListB()) {
+//            if (thisLens.getMyListB()) {
+            if (currentLensList.getMyListBLongIds().contains(thisLens.getId())) {
                 temporaryLensList = myListDataChild.get("My List B");
                 temporaryLensList.add(thisLens);
                 myListDataChild.put("My List B", temporaryLensList);
             }
 
-            if (thisLens.getMyListC()) {
+//            if (thisLens.getMyListC()) {
+            if (currentLensList.getMyListCLongIds().contains(thisLens.getId())) {
                 List<LensEntity> myListCLenses = myListDataChild.get("My List C");
                 myListCLenses.add(thisLens);
                 myListDataChild.put("My List C", myListCLenses);
@@ -1718,6 +1716,14 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
 
                 // use a different updating method because the user tapped the checkbox for "Select All"
                 else {
+                    if (checked) {
+                        numLensesChecked = value;
+                    }
+                    else {
+                        numLensesChecked = 0;
+                    }
+
+                    showOrHideFab();
                     lensListFragmentAdapter.updateAdapterFromSelectAll(checked);
                 }
 
@@ -1786,19 +1792,24 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         return lenses.toArray(new LensEntity[lenses.size()]);
     }
 
+    /**
+     * This method is called when the user presses the FloatingActionButton to send lenses to the HU3.
+     * It checks whether a Bluetooth Module is present, and if so, prepares the lenses to send by
+     * retrieving only those whose checked value == true. The user then must select whether to add
+     * the selected lenses to existing ones on the HU3, or replace all HU3 lenses with the
+     * selected ones.
+     */
     private void sendLensesFromFab() {
         if (isConnected) {
+            // loop through all lenses and get just the selected ones
             for (int i = 0; i < lensObjectArray.size(); i++) {
                 LensEntity lens = lensObjectArray.get(i);
-                Timber.d("Index: " + i + ", ID: " + lens.getTag() + ", Checked: " + lens.getChecked());
                 if (lens.getChecked() && !(lensObjectArrayToSend.contains(lens))) {
                     lensObjectArrayToSend.add(lens);
-                    Timber.d("adding lens " + lens.getTag());
                 }
             }
 
-            Timber.d("ready to send " + lensObjectArrayToSend.size() + " lenses");
-
+            // ask the user whether they want to add to or replace lenses on the HU3
             confirmLensSend();
         }
         else {
@@ -1807,9 +1818,13 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         }
     }
 
+    /**
+     * This method allows the user to decide whether they want to add the selected lenses to the HU3,
+     * or replace all lenses on the HU3 with the selected ones. Once the user has made their selection,
+     * it called sendSelectedLenses with a flag indicating whether to add to or replace lenses on
+     * the HU3.
+     */
     private void confirmLensSend() {
-        Timber.d("confirmLensSend");
-
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -1822,6 +1837,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
                 final RadioButton addLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.addLensesRadioButton);
                 final RadioButton replaceLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.replaceLensesRadioButton);
 
+                // some pretty formatting for the title of the Dialog
                 final int numLensesToSend = lensObjectArrayToSend.size();
                 String lensPluralString = "Lenses";
                 if (numLensesToSend == 1) {
@@ -1835,10 +1851,10 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
                         .setPositiveButton("Send", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                Timber.d("Start the intent to send these lenses");
+                                // get which RadioButton was checked
                                 boolean addLenses = addLensesRadioButton.isChecked();
-//                                boolean replaceLenses = replaceLensesRadioButton.isChecked();
 
+                                // send the selected lenses, using the flag for adding/replacing
                                 sendSelectedLenses(addLenses);
                             }
                         })
@@ -1857,17 +1873,31 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         });
     }
 
+    /**
+     * This method prepares the lens DataStrings for transmission to the HU3 using the LensEntity
+     * class method getDataString(LensListEntity list) which uses the list arg to determine whether
+     * the lens should be a member of MyList A/B/C for this situation. Then it builds the bundle
+     * and intent to send the lenses from AllLensListsActivity
+     * @param addToExisting
+     */
     private void sendSelectedLenses(boolean addToExisting) {
         ArrayList<String> dataStringsToSend = new ArrayList<String>(lensObjectArrayToSend.size());
 
+        // get the data string for each lens, using the special method that looks for MyList membership
         for (LensEntity lens : lensObjectArrayToSend) {
-            dataStringsToSend.add(lens.getDataString());
+            dataStringsToSend.add(lens.getDataString(currentLensList));
         }
 
+        // build the Bundle to send to AllLensListsActivity
         Bundle bundle = new Bundle();
+
+        // the lenses to send
         bundle.putStringArrayList("lensArray", dataStringsToSend);
+
+        // boolean of whether to add or replace
         bundle.putBoolean("addToExisting", addToExisting);
 
+        // start that shit
         Intent intent = new Intent(LensListDetailsActivity.this, AllLensListsActivity.class);
         intent.putExtra("lensTransferInfo", bundle);
         startActivity(intent);
@@ -2234,19 +2264,35 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
 
 //        lensObjectArray.remove(lensInd);
 
-        int lensInd = lensObject.getTag();
+        if (myListA) {
+            ArrayList<Long> ids = currentLensList.getMyListALongIds();
+            ids.add(lensObject.getId());
+            currentLensList.setMyListAIds(ids);
+        }
+
+        if (myListB) {
+            ArrayList<Long> ids = currentLensList.getMyListBLongIds();
+            ids.add(lensObject.getId());
+            currentLensList.setMyListBIds(ids);
+        }
+
+        if (myListC) {
+            ArrayList<Long> ids = currentLensList.getMyListCLongIds();
+            ids.add(lensObject.getId());
+            currentLensList.setMyListCIds(ids);
+        }
 
         lensObject.setSerial(serial);
         lensObject.setNote(note);
-        lensObject.setMyListA(myListA);
-        lensObject.setMyListB(myListB);
-        lensObject.setMyListC(myListC);
+//        lensObject.setMyListA(myListA);
+//        lensObject.setMyListB(myListB);
+//        lensObject.setMyListC(myListC);
         lensObject.setDataString(SharedHelper.buildLensDataString(lensObject));
 
 //        getCurrentListFromDatabase(lensObject);
 //        deleteLensListLensJoin(lensObject);
         updateLensInDatabase(lensObject, true, updateAdapter);
-
+        updateLensListInDatabase(currentLensList);
 //        return true;
     }
 
@@ -2462,18 +2508,18 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         lensListDataHeaderCount.put(key, currCount + 1);
     }
 
-    private String stripLensFileString() {
-        String[] fileStringArray = lensFileString.split("/");
-        String tempLensFileString = fileStringArray[fileStringArray.length - 1];
-        return tempLensFileString.substring(0, tempLensFileString.length() - 5);
-    }
-
-    public File getLensStorageDir(String lens) {
-        // Create the directory for the saved lens files
-        File file = new File(getExternalFilesDir(null), lens);
-        Timber.d("File: " + file);
-        return file;
-    }
+//    private String stripLensFileString() {
+//        String[] fileStringArray = lensFileString.split("/");
+//        String tempLensFileString = fileStringArray[fileStringArray.length - 1];
+//        return tempLensFileString.substring(0, tempLensFileString.length() - 5);
+//    }
+//
+//    public File getLensStorageDir(String lens) {
+//        // Create the directory for the saved lens files
+//        File file = new File(getExternalFilesDir(null), lens);
+//        Timber.d("File: " + file);
+//        return file;
+//    }
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
@@ -2484,105 +2530,105 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         return false;
     }
 
-    /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            return true;
-        }
-        return false;
-    }
+//    /* Checks if external storage is available to at least read */
+//    public boolean isExternalStorageReadable() {
+//        String state = Environment.getExternalStorageState();
+//        if (Environment.MEDIA_MOUNTED.equals(state) ||
+//                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+//            return true;
+//        }
+//        return false;
+//    }
 
-    /* Checks if any of the My List assignment states are toggled from the + button on the My List A/B/C header */
-    private boolean myListEnabled() {
-        return (myListExpAdapter.addToMyListA || myListExpAdapter.addToMyListB || myListExpAdapter.addToMyListC);
-    }
+//    /* Checks if any of the My List assignment states are toggled from the + button on the My List A/B/C header */
+//    private boolean myListEnabled() {
+//        return (myListExpAdapter.addToMyListA || myListExpAdapter.addToMyListB || myListExpAdapter.addToMyListC);
+//    }
 
-    /* Adds or removes the selected lens from the selected list */
-    private boolean toggleMyList(String list, LensEntity lens, boolean currentStatus) {
-        editMyList(list, lens, !currentStatus);
-        return !currentStatus;
-    }
-
-    /* Adds a lens to specified "My List" */
-    private void editMyList(String list, LensEntity lens, boolean add) {
-        Timber.d("-- Edit -- List: " + list + ", Lens: " + lens.getTag() + ", add: " + add);
-
-        int lensInd = lens.getTag();
-        int lensId = 0;
-
-        String originalData = lensArray.get(lensInd);
-        Timber.d("original String: " + originalData);
-
-        char[] data = originalData.toCharArray();
-
-        char status0H = data[15];                                                                   // Status byte 0 for the lens (Cal and MyList status)
-        char status0L = data[16];
-
-        int statByte0H = Integer.parseInt(String.valueOf(status0H), 16);                                      // convert to int
-        int statByte0L = Integer.parseInt(String.valueOf(status0L), 16);                                      // convert to int
-
-        // update the status bytes according to the my list assignments
-        switch(list) {
-            case "A":
-                if (add) statByte0L += 0x8;                                                         // add 0x8 to add to My List A
-                else statByte0L -= 0x8;                                                             // subtract 0x8 to remove from My List A
-                break;
-            case "B":
-                if (add) statByte0H += 0x1;                                                         // add 0x1 to add to My List B
-                else statByte0H -= 0x1;                                                             // subtract 0x1 to remove from My List A
-                break;
-            case "C":
-                if (add) statByte0H += 0x2;                                                         // add 0x2 to add to My List C
-                else statByte0H -= 0x2;                                                             // subtract 0x2 to remove from My List A
-                break;
-        }
-
-        if (statByte0H == 10) {                      // keep everything in Hex
-            statByte0H = 0xA;
-        }
-
-        if (statByte0H == 11) {                      // keep everything in Hex
-            statByte0H = 0xB;
-        }
-
-        // convert to the hex characters given the new My List assignment
-        String newStatus0H = Integer.toHexString(statByte0H).toUpperCase();
-        String newStatus0L = Integer.toHexString(statByte0L).toUpperCase();
-
-        // set the individual status byte characters (2 ASCII bytes)
-        data[15] = newStatus0H.charAt(0);
-        data[16] = newStatus0L.charAt(0);
-
-        // the updated string
-        String updatedData = String.valueOf(data);
-        Timber.d("updated String:  " + updatedData);
-
-        // update the variables used in the ExpandableListView adapter
-        // TODO: get rid of lensArray and make everything go off lensObjectArray using getDataString() field for each lens string
-        lensArray.set(lensInd, updatedData);
-
-        LensEntity updatedLens = parseLensLine(updatedData, lensInd, lensId, false);
-
-        lensObjectArray.set(lensInd, updatedLens);
-
-        String listName = "My List " + list;
-        temporaryLensList = myListDataChild.get(listName);
-        Timber.d("myListLenses before adding: " + temporaryLensList.toString());
-
-        if (add) {
-            temporaryLensList.add(updatedLens);
-        }
-        else {
-            temporaryLensList.remove(lens);
-        }
-
-//        Timber.d("myListALenses after adding: " + temporaryLensList.toString());
-        myListDataChild.put(listName, temporaryLensList);
-
-        // TODO: Toggle icons for My List edit when you click directly on the edit image for another list
-        // update the adapter to refresh the UI
-        updateLensList(true);
-    }
+//    /* Adds or removes the selected lens from the selected list */
+//    private boolean toggleMyList(String list, LensEntity lens, boolean currentStatus) {
+//        editMyList(list, lens, !currentStatus);
+//        return !currentStatus;
+//    }
+//
+//    /* Adds a lens to specified "My List" */
+//    private void editMyList(String list, LensEntity lens, boolean add) {
+//        Timber.d("-- Edit -- List: " + list + ", Lens: " + lens.getTag() + ", add: " + add);
+//
+//        int lensInd = lens.getTag();
+//        int lensId = 0;
+//
+//        String originalData = lensArray.get(lensInd);
+//        Timber.d("original String: " + originalData);
+//
+//        char[] data = originalData.toCharArray();
+//
+//        char status0H = data[15];                                                                   // Status byte 0 for the lens (Cal and MyList status)
+//        char status0L = data[16];
+//
+//        int statByte0H = Integer.parseInt(String.valueOf(status0H), 16);                                      // convert to int
+//        int statByte0L = Integer.parseInt(String.valueOf(status0L), 16);                                      // convert to int
+//
+//        // update the status bytes according to the my list assignments
+//        switch(list) {
+//            case "A":
+//                if (add) statByte0L += 0x8;                                                         // add 0x8 to add to My List A
+//                else statByte0L -= 0x8;                                                             // subtract 0x8 to remove from My List A
+//                break;
+//            case "B":
+//                if (add) statByte0H += 0x1;                                                         // add 0x1 to add to My List B
+//                else statByte0H -= 0x1;                                                             // subtract 0x1 to remove from My List A
+//                break;
+//            case "C":
+//                if (add) statByte0H += 0x2;                                                         // add 0x2 to add to My List C
+//                else statByte0H -= 0x2;                                                             // subtract 0x2 to remove from My List A
+//                break;
+//        }
+//
+//        if (statByte0H == 10) {                      // keep everything in Hex
+//            statByte0H = 0xA;
+//        }
+//
+//        if (statByte0H == 11) {                      // keep everything in Hex
+//            statByte0H = 0xB;
+//        }
+//
+//        // convert to the hex characters given the new My List assignment
+//        String newStatus0H = Integer.toHexString(statByte0H).toUpperCase();
+//        String newStatus0L = Integer.toHexString(statByte0L).toUpperCase();
+//
+//        // set the individual status byte characters (2 ASCII bytes)
+//        data[15] = newStatus0H.charAt(0);
+//        data[16] = newStatus0L.charAt(0);
+//
+//        // the updated string
+//        String updatedData = String.valueOf(data);
+//        Timber.d("updated String:  " + updatedData);
+//
+//        // update the variables used in the ExpandableListView adapter
+//        // TODO: get rid of lensArray and make everything go off lensObjectArray using getDataString() field for each lens string
+//        lensArray.set(lensInd, updatedData);
+//
+//        LensEntity updatedLens = parseLensLine(updatedData, lensInd, lensId, false);
+//
+//        lensObjectArray.set(lensInd, updatedLens);
+//
+//        String listName = "My List " + list;
+//        temporaryLensList = myListDataChild.get(listName);
+//        Timber.d("myListLenses before adding: " + temporaryLensList.toString());
+//
+//        if (add) {
+//            temporaryLensList.add(updatedLens);
+//        }
+//        else {
+//            temporaryLensList.remove(lens);
+//        }
+//
+////        Timber.d("myListALenses after adding: " + temporaryLensList.toString());
+//        myListDataChild.put(listName, temporaryLensList);
+//
+//        // TODO: Toggle icons for My List edit when you click directly on the edit image for another list
+//        // update the adapter to refresh the UI
+//        updateLensList(true);
+//    }
 }

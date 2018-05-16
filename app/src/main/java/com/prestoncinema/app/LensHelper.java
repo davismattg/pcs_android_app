@@ -9,6 +9,18 @@ import java.util.ArrayList;
  */
 
 public class LensHelper {
+    static int MAX_LENS_COUNT = 255;
+
+    /**
+     * This method is just a quick check to make sure we don't send the HU3 more than 255 lenses.
+     * This threshold might change for the HU4.
+     * @param numLenses
+     * @return
+     */
+    public static boolean isLensCountOK(int numLenses) {
+        return numLenses <= MAX_LENS_COUNT;
+    }
+
     /** This method selects the lenses from the ArrayList and returns the appropriate ones given the manufacturer/series
      * parameters. This makes it easy to use the updateAll method in the LensDao
      * @param manufacturer

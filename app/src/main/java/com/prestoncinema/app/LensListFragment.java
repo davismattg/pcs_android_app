@@ -13,6 +13,7 @@ import android.widget.ExpandableListAdapter;
 
 import com.prestoncinema.app.databinding.FragmentLensListBinding;
 import com.prestoncinema.app.db.entity.LensEntity;
+import com.prestoncinema.app.db.entity.LensListEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,14 +81,17 @@ public class LensListFragment extends Fragment {
 
     private ImageView selectAllLensesImageView;
 
+    private LensListEntity lensList;
+
     public static LensListFragment newInstance(
-            int page, List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
+            int page, LensListEntity lensList, List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
             Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer,
             ArrayList<Integer>>> lensPositionMap, ArrayList<LensEntity> lensObjectArrayList,
             boolean fromImport, String note, Context context) {
 
         LensListFragment fragment = new LensListFragment();
         fragment.context = context;
+        fragment.lensList = lensList;
         fragment.lensListManufHeader = lensListManufHeader;
         fragment.lensListDataHeaderCount = lensListDataHeaderCount;
         fragment.lensListTypeHeader = lensListTypeHeader;
@@ -109,7 +113,7 @@ public class LensListFragment extends Fragment {
         final FragmentLensListBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_lens_list, container, false);
 
         /* Initialize the adapter and ExpandableListView to hold the lenses in a multi-level collapsible ExpandableListView */
-        lensListExpAdapter = new LensListParentExpListViewAdapter(this.context, this.lensListManufHeader, this.lensListTypeHeader, lensPositionMap, lensObjectArrayList, lensListDataHeaderCount);
+        lensListExpAdapter = new LensListParentExpListViewAdapter(this.context, this.lensList, this.lensListManufHeader, this.lensListTypeHeader, lensPositionMap, lensObjectArrayList, lensListDataHeaderCount);
         binding.LensListFragmentParentExpListView.setAdapter(lensListExpAdapter);
 
         /* Set the listener for changes made to the "Parent" level of the ExpandableListView - adding a new lens within a given series */

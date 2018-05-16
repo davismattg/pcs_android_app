@@ -14,8 +14,10 @@ import android.os.Parcelable;
 import android.support.annotation.Nullable;
 
 import com.prestoncinema.app.BR;
+import com.prestoncinema.app.SharedHelper;
 import com.prestoncinema.app.model.Lens;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 
 /**
@@ -157,6 +159,10 @@ public class LensEntity extends BaseObservable implements Lens, Parcelable, Comp
 //    @Override
     public String getDataString() {
         return dataString;
+    }
+
+    public String getDataString(LensListEntity lensList) {
+        return SharedHelper.buildLensDataString(this, isLensMemberOfMyList(lensList, "My List A"), isLensMemberOfMyList(lensList, "My List B"), isLensMemberOfMyList(lensList, "My List C"));
     }
 
     public void setDataString(String dataString) {
@@ -338,6 +344,32 @@ public class LensEntity extends BaseObservable implements Lens, Parcelable, Comp
     public void setChecked(boolean checked) {
         this.checked = checked;
         notifyPropertyChanged(BR.checked);
+    }
+
+    /**
+     * This method checks whether a lens is a member of My List A/B/C for the specified LensList.
+     * Since MyListA/B/C is no longer part of the LensEntity, we look for the LensEntity's Long ID
+     * field in the LensListEntity's corresponding MyListXLongIds field.
+     * @param lensList
+     * @param myList
+     * @return
+     */
+    public boolean isLensMemberOfMyList(LensListEntity lensList, String myList) {
+        ArrayList<Long> myListIds = new ArrayList<>();
+
+        switch(myList) {
+            case "My List A":
+                myListIds = lensList.getMyListALongIds();
+                break;
+            case "My List B":
+                myListIds = lensList.getMyListBLongIds();
+                break;
+            case "My List C":
+                myListIds = lensList.getMyListCLongIds();
+                break;
+        }
+
+        return myListIds.contains(getId());
     }
 
     public LensEntity() {

@@ -276,7 +276,7 @@
 
     <string name="send_to_hu3">Send to HU3</string>
     <string name="send_to_existing_list">Add to existing lens list</string>
-    <string name="send_to_new_list">Add to new lens list</string>
+    <string name="send_to_new_list">Create new lens list</string>
 
     <!-- All Lenses Activity -->
     <string name="title_activity_all_lenses">Lens Database</string>

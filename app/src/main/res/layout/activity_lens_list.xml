@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="@drawable/default_background"
+        android:background="@drawable/app_background"
         tools:context="com.prestoncinema.app.LensListDetailsActivity">
 
         <android.support.design.widget.AppBarLayout

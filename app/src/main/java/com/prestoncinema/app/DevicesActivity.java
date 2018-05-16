@@ -35,7 +35,7 @@ public class DevicesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_devices);
 
-        mMyDevicesListView = (ListView) findViewById(R.id.myDevicesListView);
+        mMyDevicesListView = findViewById(R.id.myDevicesListView);
 //        deviceAdapter = new SimpleAdapter(DevicesActivity.this, deviceList, R.layout.device_list_item, new String[] {"manufString", "serialString", "flString", "statusString"}, new int[] {R.tag.lensTypeTextView, R.tag.lensSerialTextView, R.tag.lensFocalTextView, R.tag.lensStatusTextView});
 
         SharedPreferences sharedPref = getSharedPreferences("deviceHistory", MODE_PRIVATE);

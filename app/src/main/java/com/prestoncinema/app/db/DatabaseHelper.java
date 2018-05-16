@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.widget.Toast;
 
 import com.prestoncinema.app.AllLensListsActivity;
+import com.prestoncinema.app.AllLensesActivity;
 import com.prestoncinema.app.LensListDetailsActivity;
 import com.prestoncinema.app.SharedHelper;
 import com.prestoncinema.app.db.dao.LensDao;
@@ -203,7 +204,7 @@ public class DatabaseHelper {
      * @param count
      * @param fromImport
      */
-    public static void insertLensesAndList(final Context context, final ArrayList<LensEntity> lenses, String fileName, String note, int count, final boolean fromImport) {
+    public static void insertLensesAndList(final Context context, final ArrayList<LensEntity> lenses, final String fileName, String note, int count, final boolean fromImport) {
         // initialise the new list to insert
         final LensListEntity lensListToInsert = new LensListEntity();
 
@@ -237,6 +238,8 @@ public class DatabaseHelper {
                     @Override
                     public void onSuccess(Void value) {
                         pd.dismiss();
+                        CharSequence toastText = "'" + fileName + "' created successfully";
+                        SharedHelper.makeToast(context, toastText, Toast.LENGTH_LONG);
                     }
 
                     @Override

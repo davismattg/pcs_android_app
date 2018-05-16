@@ -39,7 +39,6 @@ public class DataGenerator {
         Timber.d("------------- Generating Default Lens List --------------");
         LensListEntity def = new LensListEntity();
         def.setName(DEFAULT_NAME);
-        def.setLocation("");
         def.setNote(DEFAULT_NOTE);
         def.setCount(DEFAULT_COUNT);
 

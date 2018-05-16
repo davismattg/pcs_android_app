@@ -235,10 +235,10 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             updateConnectedTextView(isConnected, "");
         }
 
-        mNoDevicesTextView = findViewById(R.id.nodevicesTextView);
+        mNoDevicesTextView = findViewById(R.id.noDevicesTextView);
         mDevicesFoundTextView =  findViewById(R.id.devicesFoundTextView);
 
-        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh() {

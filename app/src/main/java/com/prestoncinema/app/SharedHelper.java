@@ -126,6 +126,71 @@ public class SharedHelper {
         return mProgressDialog;
     }
 
+    public static HashMap<String, Object> buildLensListAndLenses(String name, String note, int count, ArrayList<String> lensDataStrings) {
+        HashMap<String, Object> outputMap = new HashMap<>();
+
+        ArrayList<LensEntity> builtLenses = new ArrayList<>(buildLenses(lensDataStrings));
+
+        LensListEntity builtList = buildLensList(name, note, count);
+
+        outputMap.put("list", builtList);
+        outputMap.put("lenses", builtLenses);
+
+        return outputMap;
+    }
+
+    public static LensListEntity buildLensList(String name, String note, int count) {
+        LensListEntity newList = new LensListEntity();
+        newList.setName(name);
+        newList.setNote(note);
+        newList.setCount(count);
+
+        return newList;
+    }
+
+    public static LensListEntity buildLensList(LensListEntity list, ArrayList<LensEntity> lenses) {
+        return buildLensList(list.getId(), list.getName(), list.getNote(), lenses.size(), lenses);
+    }
+
+    public static LensListEntity buildLensList(Long listId, String name, String note, int count, ArrayList<LensEntity> lenses) {
+        LensListEntity list = new LensListEntity();
+
+        ArrayList<Long> myListAIds = new ArrayList<Long>();
+        ArrayList<Long> myListBIds = new ArrayList<Long>();
+        ArrayList<Long> myListCIds = new ArrayList<Long>();
+
+        if (listId != null) {
+            list.setId(listId);
+        }
+
+        list.setName(name);
+        list.setNote(note);
+        list.setCount(count);
+
+        for (LensEntity lens : lenses) {
+            if (lens.getMyListA()) {
+                myListAIds.add(lens.getId());
+                lens.setMyListA(false);
+            }
+
+            if (lens.getMyListB()) {
+                myListBIds.add(lens.getId());
+                lens.setMyListB(false);
+            }
+
+            if (lens.getMyListC()) {
+                myListCIds.add(lens.getId());
+                lens.setMyListC(false);
+            }
+        }
+
+        list.setMyListAIds(myListAIds);
+        list.setMyListBIds(myListBIds);
+        list.setMyListCIds(myListCIds);
+
+        return list;
+    }
+
     /* Method to populate a List<LensEntity> from an imported array of lens data strings */
     public static List<LensEntity> buildLenses(ArrayList<String> lensStrings) {
         List<LensEntity> builtLenses = new ArrayList<LensEntity>(lensStrings.size());
@@ -225,13 +290,7 @@ public class SharedHelper {
 
         String line = SharedHelper.checkLensChars(data);
 
-//        byte[] initialBytes = line.getBytes();                                                             // get the hex bytes from the ASCII string
-//        int index = 0;
-//        if (initialBytes[0] == 0x2) {
-//            index += 1;
-//        }
-
-//        byte[] bytes = Arrays.copyOfRange(initialBytes, index, initialBytes.length);
+        StringBuilder lineBuilder = new StringBuilder(line);
 
         byte[] bytes = line.getBytes();
 
@@ -241,9 +300,22 @@ public class SharedHelper {
         lensObject.setCalibratedF(statusMap.get("calibrated")[0]);
         lensObject.setCalibratedI(statusMap.get("calibrated")[1]);
         lensObject.setCalibratedZ(statusMap.get("calibrated")[2]);
+
+        // set the My List A/B/C status on the LensEntity object for now. It gets cleared later on
+        // since the MyList stuff is now a part of the LensListEntity
         lensObject.setMyListA(statusMap.get("myList")[0]);
         lensObject.setMyListB(statusMap.get("myList")[1]);
         lensObject.setMyListC(statusMap.get("myList")[2]);
+
+        // since the MyList A/B/C is not a part of the Lens itself, we need to alter the data string.
+        // if we didn't, the data string sent to the HU3 would always indicate the lens was a member
+        // of My List (assuming it was a member upon initial import)
+        byte[] newStatus1 = removeMyListFromDataBytes(status1);
+        char newStatus1Beginning = (char) newStatus1[0];
+        char newStatus1End = (char) newStatus1[1];
+
+        lineBuilder.setCharAt(14, newStatus1Beginning);
+        lineBuilder.setCharAt(15, newStatus1End);
 
         /* Lens Manufacturer and Type */
         byte[] status2 = Arrays.copyOfRange(bytes, 16, 18);                                         // bytes 17 and 18 (ASCII bytes) are the second (hex) status byte
@@ -284,7 +356,7 @@ public class SharedHelper {
         lensObject.setNote(lensNote);                                                               // set the note property of the lens object
 
         /* Data String (raw String that gets sent to HU3 */
-        lensObject.setDataString(line);
+        lensObject.setDataString(lineBuilder.toString());
 
         /* isPrime */
         lensObject.setIsPrime(SharedHelper.isPrime(lensObject.getSeries()));
@@ -558,6 +630,73 @@ public class SharedHelper {
         seriesAndPosition.put("series", manufType);
         seriesAndPosition.put("seriesPos", seriesPos);
         return seriesAndPosition;
+    }
+
+    private static byte[] removeMyListFromDataBytes(byte[] bytes) {
+        byte[] outBytes = new byte[2];
+
+        // check the first byte to determine the status
+        switch (bytes[0]) {
+            case 70:    // F
+                outBytes[0] = 67;
+                break;
+            case 69:    // E
+                outBytes[0] = 67;
+                break;
+            case 68:    // D
+                outBytes[0] = 67;
+                break;
+            case 67:    // C
+                outBytes[0] = 67;
+                break;
+            case 66:    // B
+                outBytes[0] = 56;
+                break;
+            case 65:    // A
+                outBytes[0] = 56;
+                break;
+            case 57:    // 9
+                outBytes[0] = 56;
+                break;
+            default:        // 8 => no list, F not calibrated. Default case
+                outBytes[0] = 56;
+                break;
+        }
+
+        // check the second byte to determine the status
+        switch (bytes[1]) {
+            case 70:                // F
+                outBytes[1] = 55;
+                break;
+            case 69:                // E
+                outBytes[1] = 54;
+                break;
+            case 68:                // D
+                outBytes[1] = 53;
+                break;
+            case 67:                // C
+                outBytes[1] = 52;
+                break;
+            case 66:                // B
+                outBytes[1] = 51;
+                break;
+            case 65:                // A
+                outBytes[1] = 50;
+                break;
+            case 57:                // 9
+                outBytes[1] = 49;
+                break;
+            case 56:                // 8
+                outBytes[1] = 48;
+                break;
+            case 55:case 54:case 53:case 52:case 51:case 50:    // 3 & 2
+                outBytes[1] = bytes[1];
+                break;
+            default:
+                break;
+        }
+
+        return outBytes;
     }
 
     /* Method that accepts a String of the lens serial number (in hex representation, 4 characters) and returns that value as a (decimal) integer */
@@ -978,6 +1117,11 @@ public class SharedHelper {
                         lens.getMyListB(), lens.getMyListC());
     }
 
+    public static String buildLensDataString(LensEntity lens, boolean myListA, boolean myListB, boolean myListC) {
+        return buildLensDataString(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(),
+                lens.getSerial(), lens.getNote(), myListA, myListB, myListC);
+    }
+
     // function to do the heavy lifting of creating the hex characters from the user's selections
     public static String buildLensDataString(String manuf, String series, int focal1, int focal2, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
         int width = 110;
@@ -1008,15 +1152,12 @@ public class SharedHelper {
 
         // look @ the focal lengths to determine if prime or zoom lens, and format the string appropriately (should always be 14 characters long)
         if (focal1 == focal2) {
-//            Timber.d("prime lens detected by focal lengths");
             lensName = String.format("%-14s", String.valueOf(focal1) + "mm " + serial + note);
         }
         else if (focal2 == 0) {
-//            Timber.d("prime lens detected by zero FL2");
             lensName = String.format("%-14s", String.valueOf(focal1) + "mm " + serial + note);
         }
         else {              // zoom lens
-//            Timber.d("zoom lens detected by focal lengths");
             statByte1 += 1;
             lensName = String.format("%-14s", String.valueOf(focal1) + "-" + String.valueOf(focal2) + "mm " + serial + note);
         }

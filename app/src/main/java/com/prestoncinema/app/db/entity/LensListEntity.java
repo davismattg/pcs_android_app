@@ -8,6 +8,11 @@ import android.os.Parcelable;
 
 import com.prestoncinema.app.model.LensList;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,19 +25,31 @@ public class LensListEntity implements LensList, Parcelable {
     @PrimaryKey(autoGenerate = true)
     private long id;
     private String name;
-    private String location = "";
     private String note;
     private int count;
+
+    private String myListAIds;
+    private String myListBIds;
+    private String myListCIds;
 
     public int describeContents() { return 0; };
 
     @Ignore
     private List<LensEntity> lenses;
 
+    @Ignore
+    private ArrayList<Long> myListALongIds;
+    @Ignore
+    private ArrayList<Long> myListBLongIds;
+    @Ignore
+    private ArrayList<Long> myListCLongIds;
+
     public void writeToParcel(Parcel out, int flags) {
         out.writeLong(id);
         out.writeString(name);
-        out.writeString(location);
+        out.writeString(myListAIds);
+        out.writeString(myListBIds);
+        out.writeString(myListCIds);
         out.writeString(note);
         out.writeInt(count);
     }
@@ -51,7 +68,9 @@ public class LensListEntity implements LensList, Parcelable {
     private LensListEntity(Parcel in) {
         id = in.readLong();
         name = in.readString();
-        location = in.readString();
+        myListAIds = in.readString();
+        myListBIds = in.readString();
+        myListCIds = in.readString();
         note = in.readString();
         count = in.readInt();
     }
@@ -74,12 +93,104 @@ public class LensListEntity implements LensList, Parcelable {
         this.name = name;
     }
 
-    @Override public String getLocation() {
-        return location;
+    // My List A
+    @Override public String getMyListAIds() {
+        return myListAIds;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
+    @Override
+    public ArrayList<Long> getMyListALongIds() {
+        ArrayList<Long> longIds = new ArrayList<>();
+
+        if (myListAIds != null) {
+            try {
+                JSONArray json = new JSONArray(myListAIds);
+
+                for (int i = 0; i < json.length(); i++) {
+                    longIds.add(json.getLong(i));
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return longIds;
+    }
+
+    public void setMyListAIds(String myListAIds) {
+        this.myListAIds = myListAIds;
+    }
+
+    public void setMyListAIds(ArrayList<Long> ids) {
+        JSONArray json = new JSONArray(ids);
+        this.myListAIds = json.toString();
+    }
+
+    @Override public String getMyListBIds() {
+        return myListBIds;
+    }
+
+    @Override
+    public ArrayList<Long> getMyListBLongIds() {
+        ArrayList<Long> longIds = new ArrayList<>();
+
+        if (myListBIds != null) {
+            try {
+                JSONArray json = new JSONArray(myListBIds);
+
+                for (int i = 0; i < json.length(); i++) {
+                    longIds.add(json.getLong(i));
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return longIds;
+    }
+
+    public void setMyListBIds(String myListBIds) {
+        this.myListBIds = myListBIds;
+    }
+
+    public void setMyListBIds(ArrayList<Long> ids) {
+        JSONArray json = new JSONArray(ids);
+        this.myListBIds = json.toString();
+    }
+
+    @Override public String getMyListCIds() {
+        return myListCIds;
+    }
+
+    @Override
+    public ArrayList<Long> getMyListCLongIds() {
+        ArrayList<Long> longIds = new ArrayList<>();
+
+        if (myListCIds != null) {
+            try {
+                JSONArray json = new JSONArray(myListCIds);
+
+                for (int i = 0; i < json.length(); i++) {
+                    longIds.add(json.getLong(i));
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return longIds;
+    }
+
+    public void setMyListCIds(String myListCIds) {
+        this.myListCIds = myListCIds;
+    }
+
+    public void setMyListCIds(ArrayList<Long> ids) {
+        JSONArray json = new JSONArray(ids);
+        this.myListCIds = json.toString();
     }
 
     @Override
@@ -118,10 +229,12 @@ public class LensListEntity implements LensList, Parcelable {
     }
 
     @Ignore
-    public LensListEntity(int id, String name, String location, String note) {
+    public LensListEntity(int id, String name, String myListAIds, String myListBIds, String myListCIds, String note) {
         this.id = id;
         this.name = name;
-        this.location = location;
+        this.myListAIds = myListAIds;
+        this.myListBIds = myListBIds;
+        this.myListCIds = myListCIds;
         this.note = note;
     }
 
@@ -129,7 +242,9 @@ public class LensListEntity implements LensList, Parcelable {
     public LensListEntity(LensList list) {
         this.id = list.getId();
         this.name = list.getName();
-        this.location = list.getLocation();
+        this.myListAIds = list.getMyListAIds();
+        this.myListBIds = list.getMyListBIds();
+        this.myListCIds = list.getMyListCIds();
         this.note = list.getNote();
     }
 }

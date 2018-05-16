@@ -43,6 +43,7 @@ import android.widget.Toast;
 import com.prestoncinema.app.db.AppDatabase;
 import com.prestoncinema.app.db.AppExecutors;
 import com.prestoncinema.app.db.DataGenerator;
+import com.prestoncinema.app.db.DatabaseHelper;
 import com.prestoncinema.app.db.LensListAdapter;
 import com.prestoncinema.app.db.LensListClickCallback;
 //import com.prestoncinema.app.db.LocalLensListDataSource;
@@ -71,6 +72,7 @@ import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -123,6 +125,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
     private boolean lensFileLoaded = false;
     private boolean numLensesSent = false;
     private boolean showAllLenses = false;
+    private boolean checkNumberOfLenses = false;
 
     private boolean startConnectionSetup = true;
     private boolean isConnectionReady = false;
@@ -142,6 +145,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
     private Handler handler = new Handler();
     private int numAllLenses = 0;
     private int numLenses = 0;
+    private int numLensesToSend = 0;
     private int currentLens = 0;
     private int numSelectedLenses = 0;
 
@@ -171,8 +175,10 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
     private int MODE_HU3 = 0;
     private int MODE_SHARE = 1;
     private int MODE_SELECTED = 2;
+    private int MODE_SAVE = 3;
 
     private String STRING_DELETE = "DELETE";
+    private int MAX_LENS_COUNT = 255;
 
     private RecyclerView lensFilesRecyclerView;
     private LensListAdapter lensFileAdapter;
@@ -189,6 +195,8 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
     private ArrayList<LensEntity> lensesToManage;
     private List<LensEntity> lensesToDelete;
     private LensListEntity lensListToInsert;
+
+    private HashMap<String, Object> lensListAndLensesMap;
     private LensListEntity currentLensList;
     private List<LensListEntity> allLensLists;
     private List<LensListEntity> listsToUpdate;
@@ -197,6 +205,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
     private ArrayList<LensEntity> selectedLenses;
 
     private AppExecutors appExecutors;
+    private DatabaseHelper databaseHelper;
 
     private long lastListInsertedId;
     private long lastLensInsertedId;
@@ -232,6 +241,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
 
         appExecutors = new AppExecutors();
         database = AppDatabase.getInstance(this, appExecutors);
+        databaseHelper = new DatabaseHelper(database);
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -347,6 +357,8 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
             if (bundle != null) {
                 addToExistingLenses = bundle.getBoolean("addToExisting");
                 lensArray = bundle.getStringArrayList("lensArray");
+
+                checkNumberOfLenses = addToExistingLenses;
 
                 if (lensArray.size() > 0) {
                     lensFileLoaded = true;
@@ -1936,7 +1948,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                     }
                 }
 
-                // boolean toggled true when you click "Export lenses to HU3"
+                // boolean toggled true when you want to send lenses to the HU3"
                 if (lensSendMode) {
                     String text = bytesToText(bytes, true);
                     transmitLensData(text);
@@ -2101,17 +2113,68 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                 Timber.d("OK detected, not sending anything");
             }
             else {
-                uartSendData(ACK, false);
-                startLensTransfer = true;
                 String trimmedString = text.replaceAll("[^\\w]", "");
-                numLenses = Integer.valueOf(trimmedString, 16);
-                Timber.d("Number of lenses detected: " + numLenses);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        activateLensTransferProgress("RX");
+                int numLensesOnHU3 = Integer.valueOf(trimmedString, 16);
+
+                // if we are first requesting lenses from the HU3 (i.e. to add to existing lenses),
+                // make sure the total won't be over 255
+                if (checkNumberOfLenses) {
+                    Timber.d("Number of lenses on HU3 already: " + numLensesOnHU3);
+                    Timber.d("numLenses: " + numLenses);
+
+                    // the total that will be on the HU3 when all is said and done
+                    int numberToAdd = numLensesOnHU3 + numLenses;
+
+                    // if the total will be more than 255
+                    if (numberToAdd > MAX_LENS_COUNT) {
+                        Timber.d("TOO MANY LENSES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+                        // let the user know why they can't add more lenses
+                        String toastText1 = "Error: HU3 has " + String.valueOf(numLensesOnHU3) + " lenses already. ";
+                        String toastText2 = numberToAdd == 255 ? "Cannot add any more." : "Can only add " + String.valueOf(MAX_LENS_COUNT - numLensesOnHU3);
+                        final CharSequence toastText = toastText1 + toastText2;
+
+                        // show the toast
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                SharedHelper.makeToast(AllLensListsActivity.this, toastText, Toast.LENGTH_LONG);
+                            }
+                        });
+
+                        // set the flag to we don't send anything else to the HU3
+                        lensReceiveMode = false;
+                    } else {                                                // total <= 255
+                        numLenses = numLensesOnHU3;
+                        uartSendData(ACK, false);
+                        startLensTransfer = true;
+
+                        checkNumberOfLenses = false;
+                        Timber.d("Number of lenses detected: " + numLenses);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                activateLensTransferProgress("RX");
+                            }
+                        });
                     }
-                });
+                }
+
+                // not adding to existing lenses, so just send ACK to HU3
+                else {
+                    numLenses = numLensesOnHU3;
+
+                    uartSendData(ACK, false);
+                    startLensTransfer = true;
+
+                    Timber.d("Number of lenses detected: " + numLenses);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            activateLensTransferProgress("RX");
+                        }
+                    });
+                }
             }
         } else {
             if (text.contains(EOTStr)) {
@@ -2499,6 +2562,41 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         });
     }
 
+    /**
+     * This method retrieves a lens list from the database using the list's ID as the search parameter
+     * @param id
+     * @return
+     */
+    private void getLensListById(final long id) {
+        Observable.fromCallable(new Callable<LensListEntity>() {
+            @Override
+            public LensListEntity call() {
+                return database.lensListDao().loadLensList(id);
+            }
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<LensListEntity>() {
+                    @Override
+                    public void onCompleted() {
+                        getLensesForList(currentLensList, false, MODE_SAVE);
+//                        currentLensList.setName(newName);                                           // change the list's name
+//                        currentLensList.setNote(note);
+//                        updateLensList(currentLensList);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(LensListEntity listEntity) {
+                        currentLensList = listEntity;
+                    }
+                });
+    }
+
     private void insertLensList(final LensListEntity list) {
         Single.fromCallable(new Callable<Void>() {
             @Override
@@ -2690,7 +2788,13 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         if (mode == MODE_HU3) {
             Timber.d("Send lenses to HU3");
             if (isConnected) {
-                confirmLensAddOrReplace();
+                if (numLenses > MAX_LENS_COUNT) {
+                    CharSequence toastText = "Error: HU3 can accept 255 lenses max";
+                    SharedHelper.makeToast(AllLensListsActivity.this, toastText, Toast.LENGTH_LONG);
+                }
+                else {
+                    confirmLensAddOrReplace();
+                }
             }
 
             else {
@@ -2718,8 +2822,8 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
 
                 // the custom view is defined in dialog_send_lenses.xml, which we'll inflate to the dialog
                 View sendLensView = inflater.inflate(R.layout.dialog_send_lenses, null);
-                final RadioButton addLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.addLensesRadioButton);
-                final RadioButton replaceLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.replaceLensesRadioButton);
+                final RadioButton addLensesRadioButton = sendLensView.findViewById(R.id.addLensesRadioButton);
+                final RadioButton replaceLensesRadioButton = sendLensView.findViewById(R.id.replaceLensesRadioButton);
 
                 final int numLensesToSend = lensArray.size();
                 String lensPluralString = "Lenses";
@@ -2762,12 +2866,12 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
             lensReceiveMode = true;
             byte[] syn_byte = {0x16};
             uartSendData(syn_byte, false);
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    activateLensTransferProgress("RX");
-                }
-            });
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    activateLensTransferProgress("RX");
+//                }
+//            });
         }
         else {
             lensSendMode = true;
@@ -2782,50 +2886,50 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         }
     }
 
-    private void askToAddOrReplaceLenses() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // building the custom alert dialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(AllLensListsActivity.this);
-                LayoutInflater inflater = getLayoutInflater();
-
-                // the custom view is defined in dialog_send_lenses.xml, which we'll inflate to the dialog
-                View sendLensView = inflater.inflate(R.layout.dialog_send_lenses, null);
-                final RadioButton addLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.addLensesRadioButton);
-                final RadioButton replaceLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.replaceLensesRadioButton);
-
-                final int numLensesToSend = lensArray.size();
-
-                String lensPluralString = ((lensArray.size() == 1) ? "Lens" : "Lenses");
-
-                final String title = "Ready To Send " + numLensesToSend + " " + lensPluralString;
-
-                // set the custom view to be the view in the alert dialog and add the other params
-                builder.setView(sendLensView)
-                        .setTitle(title)
-                        .setPositiveButton("Send", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Timber.d("Start the intent to send these lenses");
-                                boolean addLenses = addLensesRadioButton.isChecked();
-                                sendSelectedLenses(addLenses);
-                            }
-                        })
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                lensArray.clear();
-                            }
-                        })
-                        .setCancelable(false);
-
-                // create the alert dialog
-                final AlertDialog alert = builder.create();
-                alert.show();
-            }
-        });
-    }
+//    private void askToAddOrReplaceLenses() {
+//        runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                // building the custom alert dialog
+//                AlertDialog.Builder builder = new AlertDialog.Builder(AllLensListsActivity.this);
+//                LayoutInflater inflater = getLayoutInflater();
+//
+//                // the custom view is defined in dialog_send_lenses.xml, which we'll inflate to the dialog
+//                View sendLensView = inflater.inflate(R.layout.dialog_send_lenses, null);
+//                final RadioButton addLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.addLensesRadioButton);
+//                final RadioButton replaceLensesRadioButton = (RadioButton) sendLensView.findViewById(R.id.replaceLensesRadioButton);
+//
+//                final int numLensesToSend = lensArray.size();
+//
+//                String lensPluralString = ((lensArray.size() == 1) ? "Lens" : "Lenses");
+//
+//                final String title = "Ready To Send " + numLensesToSend + " " + lensPluralString;
+//
+//                // set the custom view to be the view in the alert dialog and add the other params
+//                builder.setView(sendLensView)
+//                        .setTitle(title)
+//                        .setPositiveButton("Send", new DialogInterface.OnClickListener() {
+//                            @Override
+//                            public void onClick(DialogInterface dialog, int which) {
+//                                Timber.d("Start the intent to send these lenses");
+//                                boolean addLenses = addLensesRadioButton.isChecked();
+//                                sendSelectedLenses(addLenses);
+//                            }
+//                        })
+//                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+//                            @Override
+//                            public void onClick(DialogInterface dialog, int which) {
+//                                lensArray.clear();
+//                            }
+//                        })
+//                        .setCancelable(false);
+//
+//                // create the alert dialog
+//                final AlertDialog alert = builder.create();
+//                alert.show();
+//            }
+//        });
+//    }
 
     private void sendSelectedLenses(boolean add) {
         addToExistingLenses = add;
@@ -2834,33 +2938,33 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
             lensFileLoaded = true;
             numLenses = lensArray.size();
             currentLens = 0;
+
+            if (addToExistingLenses) {
+                checkNumberOfLenses = true;
+                startLensTransfer = false;
+                transmitAfterReceive = true;
+                lensSendMode = true;
+            } else {
+                lensSendMode = LensHelper.isLensCountOK(numLenses);
+
+                if (lensSendMode) {
+                    lensDone = false;
+                } else {
+                    CharSequence toastText = "Error: HU3 can accept 255 lenses max";
+                    SharedHelper.makeToast(AllLensListsActivity.this, toastText, Toast.LENGTH_LONG);
+                }
+            }
+
+            if (!baudRateSet) {
+                setBaudRate();
+            }
+
+            transmitDataAfterSetup = true;
+
+            if (lensSendMode) {
+                beginLensTransmit();
+            }
         }
-
-        Timber.d("lensArray loaded. NumLenses: " + numLenses);
-
-        if (addToExistingLenses) {
-            startLensTransfer = false;
-            transmitAfterReceive = true;
-        }
-        else {
-            lensSendMode = true;
-            lensDone = false;
-        }
-
-        if (!baudRateSet) {
-            setBaudRate();
-        }
-
-        transmitDataAfterSetup = true;
-
-        beginLensTransmit();
-
-//        if (add) {              // user wants to add to existing lenses, so
-//
-//        }
-//        else {
-//
-//        }
     }
 
     /**
@@ -2873,7 +2977,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         numLenses = lensArray.size();
 
         // build LensEntity objects from the raw data string from the HU3
-        ArrayList<LensEntity> importedLenses = new ArrayList<LensEntity>(SharedHelper.buildLenses(lensArray));
+        ArrayList<LensEntity> importedLenses = new ArrayList<>(SharedHelper.buildLenses(lensArray));
 
         // set the "checked" attribute of each lens to true
 //        importedLenses = SharedHelper.setChecked(importedLenses, true);
@@ -2940,12 +3044,15 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
      */
     private void saveLensListAndLenses(ArrayList<String> lensArray, String fileName, String note, int count) {
 //        lensesToInsert.clear();
-        lensListToInsert = new LensListEntity();
-        lensListToInsert.setName(fileName);
-        lensListToInsert.setNote(note);
-        lensListToInsert.setCount(count);
+//        lensListToInsert = new LensListEntity();
+//        lensListToInsert.setName(fileName);
+//        lensListToInsert.setNote(note);
+//        lensListToInsert.setCount(count);
 
-        lensesToInsert = SharedHelper.buildLenses(lensArray);
+        lensListAndLensesMap = SharedHelper.buildLensListAndLenses(fileName, note, count, lensArray);
+        lensListToInsert = (LensListEntity) lensListAndLensesMap.get("list");
+        lensesToInsert = (List<LensEntity>) lensListAndLensesMap.get("lenses");
+//        lensesToInsert = SharedHelper.buildLenses(lensArray);
 
         CharSequence progressText = "Saving lenses to database...";
         final ProgressDialog pd = SharedHelper.createProgressDialog(AllLensListsActivity.this, progressText);
@@ -2971,6 +3078,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
             public void onSuccess(Void value) {
                 pd.dismiss();
 
+                getLensListById(lastListInsertedId);
 //                allLensLists.add(lensListToInsert);
 //                lensFileAdapter.notifyDataSetChanged();
                 createLensListsObservable();
@@ -2987,6 +3095,11 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                 SharedHelper.makeToast(getApplicationContext(), toastText, Toast.LENGTH_LONG);
             }
         });
+    }
+
+    private void prepareLensesForImport(LensListEntity list) {
+        currentLensList = SharedHelper.buildLensList(list, lensesToManage);
+        updateLensList(currentLensList);
     }
 
     public File getLensStorageDir(String lens) {
@@ -3051,62 +3164,6 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
             Timber.d("not connected, show toast");
             CharSequence toastText = "Error: Not connected to PCS Bluetooth Module";
             SharedHelper.makeToast(AllLensListsActivity.this, toastText, Toast.LENGTH_SHORT);
-        }
-    }
-
-    // function that finds all the lens files on the phone and gives the user the option to delete them
-    public void ManageLensFiles(View view) {
-        File path = new File(getExternalFilesDir(null), "");    // the external files directory is where the lens files are stored
-        final File[] savedLensFiles = path.listFiles();
-        final ArrayList<String> filesToDelete = new ArrayList<String>();
-
-        if (savedLensFiles.length > 0) {
-            final String[] fileStrings = new String[savedLensFiles.length];
-            for (int i = 0; i < savedLensFiles.length; i++) {
-                String[] splitArray = savedLensFiles[i].toString().split("/");
-                fileStrings[i] = splitArray[splitArray.length - 1];
-            }
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(AllLensListsActivity.this);
-                    builder.setTitle("Select files for deletion")
-                            .setMultiChoiceItems(fileStrings, null, new DialogInterface.OnMultiChoiceClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                                    if (isChecked) {
-                                        filesToDelete.add(savedLensFiles[which].toString());
-                                        Timber.d("Items to delete: ");
-                                        for (String file : filesToDelete) {
-                                            Timber.d(file);
-                                        }
-                                    }
-                                    else {
-                                        filesToDelete.remove(filesToDelete.indexOf(savedLensFiles[which].toString()));
-                                        Timber.d("Items to delete: ");
-                                        for (String file : filesToDelete) {
-                                            Timber.d(file);
-                                        }
-                                    }
-                                }
-                            })
-                            .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int id) {
-                                    deleteLensFiles(filesToDelete);
-                                }
-                            })
-                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int id) {
-                                    filesToDelete.clear();
-                                }
-                            })
-                            .show();
-
-                }
-
-            });
         }
     }
 
@@ -3212,7 +3269,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
 
     }
 
-    private void getLensesForList(final LensList list, final boolean manage, final int mode) {
+    private void getLensesForList(final LensListEntity list, final boolean manage, final int mode) {
         long id;
 
         if (list != null) {
@@ -3233,6 +3290,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         }
 
         final long listId = id;
+
         Observable.fromCallable(new Callable<List<LensEntity>>() {
             @Override
             public List<LensEntity> call() {
@@ -3252,11 +3310,6 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                         Timber.d("getLensesForList onCompleted");
 
                         if (manage) {
-                            Timber.d("lenses to send to other activity: ");
-                            for (LensEntity lens : lensesToManage) {
-                                Timber.d("lens id = " + lens.getId() + ", " + SharedHelper.constructFocalLengthString(lens.getFocalLength1(), lens.getFocalLength2()));
-                            }
-
                             Intent intent = new Intent(AllLensListsActivity.this, LensListDetailsActivity.class);
                             intent.putExtra("lensFile", list.getName());
                             intent.putExtra("listId", listId);
@@ -3275,7 +3328,14 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                                 String timeStamp = new SimpleDateFormat("MM-dd-yyyy HH.mm.ss").format(new Date());
                                 name = "Lens Database - " + timeStamp;
                             }
-                            prepareLensesForExport(name, mode);
+
+                            if (mode != MODE_SAVE) {
+                                prepareLensesForExport(name, mode);
+                            }
+
+                            else {
+                                prepareLensesForImport(list);
+                            }
                         }
                     }
 
@@ -3463,6 +3523,12 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                 LinearLayout toExisting = getActionView.findViewById(R.id.sendSelectedLensesToExistingList);
                 LinearLayout toNew = getActionView.findViewById(R.id.sendSelectedLensesToNewList);
 
+                // set the custom view to be the view in the alert dialog and add the other params
+                builder.setView(getActionView).setCancelable(true);
+
+                // create the alert dialog
+                final AlertDialog alert = builder.create();
+
                 final CharSequence text = "Coming soon";
                 toHU3.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -3471,6 +3537,9 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
 //                        askToAddOrReplaceLenses();
                         if (isConnected) {
                             Timber.d("send selected lenses to HU3");
+                            lensesToManage = selectedLenses;
+                            prepareLensesForExport("", MODE_HU3);
+                            alert.dismiss();
                         }
 
                         else {
@@ -3484,16 +3553,10 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                     @Override
                     public void onClick(View view) {
                         Timber.d("send selected lenses to new list");
-                        SharedHelper.makeToast(AllLensListsActivity.this, text, Toast.LENGTH_SHORT);
+                        createNewListAndLenses();
+                        alert.dismiss();
                     }
                 });
-
-
-                // set the custom view to be the view in the alert dialog and add the other params
-                builder.setView(getActionView).setCancelable(true);
-
-                // create the alert dialog
-                final AlertDialog alert = builder.create();
 
                 toExisting.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -3508,6 +3571,44 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                 alert.show();
             }
         });
+    }
+
+    private void createNewListAndLenses() {
+        CharSequence title = "Create new lens list";
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(AllLensListsActivity.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        // the custom view is defined in dialog_rename_lens_list.xml, which we'll inflate to the dialog
+        View newLensListView = inflater.inflate(R.layout.dialog_rename_lens_list, null);
+        final EditText listNameEditText = newLensListView.findViewById(R.id.renameLensListNameEditText);
+        final EditText listNoteEditText = newLensListView.findViewById(R.id.renameLensListNoteEditText);
+
+        builder.setView(newLensListView)
+                .setTitle(title)
+                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // get the list name and note entered by the user
+                        String name = listNameEditText.getText().toString();
+                        String note = listNoteEditText.getText().toString();
+
+                        // insert the lenses and list into the database
+                        DatabaseHelper.insertLensesAndList(AllLensListsActivity.this, selectedLenses, name, note, selectedLenses.size(), false);
+                        createLensListsObservable();
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                })
+                .setCancelable(true);
+
+        // create the alert dialog
+        final AlertDialog alert = builder.create();
+        alert.show();
     }
 
     private void selectExistingLensLists() {

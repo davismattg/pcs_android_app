@@ -65,6 +65,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
     private HashMap<String, List<String>> allLensesTypeHeader;
     private HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> allLensesPositionMap;
     private ArrayList<LensEntity> allLenses = new ArrayList<>();
+    private ArrayList<LensEntity> lensesFromIntent = new ArrayList<>();
     private ArrayList<LensEntity> lensesToSend = new ArrayList<>();
     private ArrayList<String> lensDataStrings = new ArrayList<>();
     private List<LensListEntity> listsToUpdate = new ArrayList<LensListEntity>();
@@ -116,6 +117,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         Intent intent = getIntent();
 
         /* Get necessary variables from the intent (lensLists, fromImport, etc) */
+        lensesFromIntent = intent.getParcelableArrayListExtra("lenses");
         allLensLists = intent.getParcelableArrayListExtra("lists");
         isConnected = intent.getBooleanExtra("isConnected", false);
         fromImport = intent.getBooleanExtra("fromImport", false);
@@ -310,37 +312,42 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
      * of the ExpandableListView adapter, sets the activity title, etc
      */
     private void getAllLenses() {
-        Observable<List<LensEntity>> lensListsObservable = Observable.fromCallable(new Callable<List<LensEntity>>() {
-            @Override
-            public List<LensEntity> call() {
-                return database.lensDao().loadAll();
-            }
-        });
+        if (lensesFromIntent != null) {
+            allLenses = lensesFromIntent;
+            setupDataWithAllLenses();
+        }
+        else {
+            Observable<List<LensEntity>> lensListsObservable = Observable.fromCallable(new Callable<List<LensEntity>>() {
+                @Override
+                public List<LensEntity> call() {
+                    return database.lensDao().loadAll();
+                }
+            });
 
-        lensListsObservable
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<LensEntity>>() {
-                    @Override
-                    public void onCompleted() {
-                        Timber.d("Observable onCompleted");
+            lensListsObservable
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Observer<List<LensEntity>>() {
+                        @Override
+                        public void onCompleted() {
+                            Timber.d("Observable onCompleted");
 
-                        // now that allLenses is populated, set up the other parts of the activity that depend on them
-                        setupDataWithAllLenses();
-                    }
+                            // now that allLenses is populated, set up the other parts of the activity that depend on them
+                            setupDataWithAllLenses();
+                        }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        Timber.d("Observable onError: " + e);
-                    }
+                        @Override
+                        public void onError(Throwable e) {
+                            Timber.d("Observable onError: " + e);
+                        }
 
-                    @Override
-                    public void onNext(List<LensEntity> lenses) {
-                        Timber.d("Observable onNext");
-                        allLenses = new ArrayList<>(lenses);
-                    }
-                });
-
+                        @Override
+                        public void onNext(List<LensEntity> lenses) {
+                            Timber.d("Observable onNext");
+                            allLenses = new ArrayList<>(lenses);
+                        }
+                    });
+        }
     }
 
     /**
@@ -369,9 +376,11 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         allLensesPositionMap = SharedHelper.initializePositionMap(allLensesManufHeader, allLensesTypeHeaderCount);
 
         // initialize the Fragment that actually holds everything
+        LensListEntity lensList = new LensListEntity();
+        lensList.setName("All Lenses");
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragment = LensListFragment.newInstance(0, allLensesManufHeader, allLensesTypeHeader, allLensesTypeHeaderCount, allLensesPositionMap, allLenses, fromImport, listNote, context);
+        fragment = LensListFragment.newInstance(0, lensList, allLensesManufHeader, allLensesTypeHeader, allLensesTypeHeaderCount, allLensesPositionMap, allLenses, fromImport, listNote, context);
         fragmentTransaction.add(R.id.allLensesFragmentContainer, fragment);
         fragmentTransaction.commit();
 
@@ -1399,9 +1408,6 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
 
                             // insert the lenses and list into the database
                             DatabaseHelper.insertLensesAndList(AllLensesActivity.this, lensesToSave, name, note, lensesToSave.size(), true);
-
-                            CharSequence toastText = "'" + name + "' created successfully";
-                            SharedHelper.makeToast(AllLensesActivity.this, toastText, Toast.LENGTH_LONG);
 
                             resetUI();
                             // return to the AllLensListsActivity so the user can see all their lists

@@ -23,7 +23,7 @@ import java.util.List;
  * Created by MATT on 1/18/2018.
  */
 
-@Database(entities = {LensListEntity.class, LensEntity.class, LensListLensJoinEntity.class}, version = 1)
+@Database(entities = {LensListEntity.class, LensEntity.class, LensListLensJoinEntity.class}, version = 2)
 public abstract class AppDatabase extends RoomDatabase {
     private static AppDatabase INSTANCE;
 
@@ -54,6 +54,7 @@ public abstract class AppDatabase extends RoomDatabase {
      */
     private static AppDatabase buildDatabase(final Context context, final AppExecutors executors) {
         return Room.databaseBuilder(context, AppDatabase.class, DATABASE_NAME)
+                .fallbackToDestructiveMigration()
                 .addCallback(new Callback() {
                     @Override
                     public void onCreate(@NonNull SupportSQLiteDatabase db) {

@@ -7,10 +7,11 @@
     tools:context="com.prestoncinema.app.FirmwareInfoActivity">
 
     <ExpandableListView
+        android:id="@+id/firmwareListView"
         android:layout_width="395dp"
         android:layout_height="587dp"
+        android:layout_marginStart="8dp"
         android:background="#333333"
-        android:id="@+id/firmwareListView"
-        tools:layout_editor_absoluteY="8dp"
-        tools:layout_editor_absoluteX="8dp"></ExpandableListView>
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="8dp"></ExpandableListView>
 </android.support.constraint.ConstraintLayout>
