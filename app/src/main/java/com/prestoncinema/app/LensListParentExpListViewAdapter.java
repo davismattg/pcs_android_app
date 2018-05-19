@@ -82,8 +82,8 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
 
     /* Interface and setter method for the listener for changes to "Parent" level of ExpandableListView */
     public interface LensChangedListener {
-        void onChange(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        void onDelete(LensEntity lens);
+        void onChange(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onDelete(LensListEntity lensList, LensEntity lens);
     }
 
     public void setChildListener(LensChangedListener listener) {
@@ -245,14 +245,14 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         /* Set the listener for changes made to the "Child" level of the ExpandableListView (editing an existing lens) */
         childAdapter.setChildListener(new LensListChildExpListViewAdapter.ChildLensChangedListener() {
             @Override
-            public void onChange(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+            public void onChange(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
                 Timber.d("edit the existing lens from All Lenses tab");
-                childListener.onChange(lens, serial, note, myListA, myListB, myListC);
+                childListener.onChange(lensList, lens, serial, note, myListA, myListB, myListC);
             }
 
             @Override
-            public void onDelete(LensEntity lens) {
-                childListener.onDelete(lens);
+            public void onDelete(LensListEntity lensList, LensEntity lens) {
+                childListener.onDelete(lensList, lens);
             }
         });
 

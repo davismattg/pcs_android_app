@@ -33,6 +33,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
     private boolean isPrime;
     private int numChecked = 0;
 
+    private boolean allLenses = false;
+
     private ParentLensAddedListener parentListener;
     private ChildLensChangedListener childListener;
     private LensSelectedListener selectedListener;
@@ -57,14 +59,15 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         this.listDataChildIndices = listDataChildIndices;
         this.manufName = manufName;
 
+        this.allLenses = lensList.getName().equals("All Lenses");
         initializeCheckedList();
 
         Timber.d("----------------------------- new child adapter initialized ------------------------------");
     }
 
     public interface ChildLensChangedListener {
-        void onChange(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        void onDelete(LensEntity lens);
+        void onChange(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onDelete(LensListEntity lensList, LensEntity lens);
     }
 
     public void setChildListener(ChildLensChangedListener listener) {
@@ -156,8 +159,6 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         /* The Lens object whose information will populate the view */
         final LensEntity childObject = (LensEntity) getChild(groupPosition, childPosition);
 
-//        Timber.d("clicked child, lens id = " + childObject.getId());
-
         /* Get the strings that will be used to populate the lens row */
         final String childText = SharedHelper.constructFocalLengthString(childObject.getFocalLength1(), childObject.getFocalLength2());
 
@@ -180,41 +181,41 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 
         final ImageView checkLensImageView = (ImageView) convertView.findViewById(R.id.checkLensImageView);                               // the imageView used to contain the edit icon (pencil)
 
-        // initialize the ImageViews used to show whether the lens is calibrated
-        ImageView calFImageView = convertView.findViewById(R.id.lensCalFImageView);
-        ImageView calIImageView = convertView.findViewById(R.id.lensCalIImageView);
+//        // initialize the ImageViews used to show whether the lens is calibrated
+//        ImageView calFImageView = convertView.findViewById(R.id.lensCalFImageView);
+//        ImageView calIImageView = convertView.findViewById(R.id.lensCalIImageView);
         ImageView calZImageView = convertView.findViewById(R.id.lensCalZImageView);
 
-        // show the icon if necessary
-        if (childObject.getCalibratedF()) {
-            calFImageView.setVisibility(View.VISIBLE);
-        }
-
-        if (childObject.getCalibratedI()) {
-            calIImageView.setVisibility(View.VISIBLE);
-        }
-
+//        // show the icon if necessary
+//        if (childObject.getCalibratedF()) {
+//            calFImageView.setVisibility(View.VISIBLE);
+//        }
+//
+//        if (childObject.getCalibratedI()) {
+//            calIImageView.setVisibility(View.VISIBLE);
+//        }
+//
         if (childObject.getCalibratedZ()) {
             calZImageView.setVisibility(View.VISIBLE);
         }
-
-        // initialize the ImageViews used to show whether the lens is a member of My List A/B/C
-        ImageView myListAImageView = convertView.findViewById(R.id.myListAImageView);
-        ImageView myListBImageView = convertView.findViewById(R.id.myListBImageView);
-        ImageView myListCImageView = convertView.findViewById(R.id.myListCImageView);
-
-        // show the My List A/B/C icon if necessary
-        if (childObject.isLensMemberOfMyList(lensList, "My List A")) {
-            myListAImageView.setVisibility(View.VISIBLE);
-        }
-
-        if (childObject.isLensMemberOfMyList(lensList, "My List B")) {
-            myListBImageView.setVisibility(View.VISIBLE);
-        }
-
-        if (childObject.isLensMemberOfMyList(lensList, "My List C")) {
-            myListCImageView.setVisibility(View.VISIBLE);
-        }
+//
+//        // initialize the ImageViews used to show whether the lens is a member of My List A/B/C
+//        ImageView myListAImageView = convertView.findViewById(R.id.myListAImageView);
+//        ImageView myListBImageView = convertView.findViewById(R.id.myListBImageView);
+//        ImageView myListCImageView = convertView.findViewById(R.id.myListCImageView);
+//
+//        // show the My List A/B/C icon if necessary
+//        if (childObject.isLensMemberOfMyList(lensList, "My List A")) {
+//            myListAImageView.setVisibility(View.VISIBLE);
+//        }
+//
+//        if (childObject.isLensMemberOfMyList(lensList, "My List B")) {
+//            myListBImageView.setVisibility(View.VISIBLE);
+//        }
+//
+//        if (childObject.isLensMemberOfMyList(lensList, "My List C")) {
+//            myListCImageView.setVisibility(View.VISIBLE);
+//        }
 
         /* Set the tag and tag for this view */
         checkLensImageView.setTag(childObject.getId());
@@ -252,31 +253,31 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
             public void onClick(View v) {
                 LayoutInflater dialogInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-                final View editLensView = dialogInflater.inflate(R.layout.dialog_edit_lens, null);                               // inflate the view to use as the edit dialog
+                final View editLensView = dialogInflater.inflate(allLenses ? R.layout.dialog_edit_lens_all_lenses : R.layout.dialog_edit_lens, null);                               // inflate the view to use as the edit dialog
                 final LinearLayout editLensMainLayout = editLensView.findViewById(R.id.editLensMainLayout);
                 final LinearLayout confirmLensDeleteLayout = editLensView.findViewById(R.id.confirmLensDeleteLayout);
 
                 // initialize the UI components so we can access their contents when the user presses "Save"
-                TextView lensManufAndSeriesTextView = (TextView) editLensView.findViewById(R.id.lensManufAndSeriesTextView);                       // textView to display the lens manufacturer name
-                final TextView lensFocalLengthTextView = (TextView) editLensView.findViewById(R.id.lensFocalTextView);
-                final EditText lensSerialEditText = (EditText) editLensView.findViewById(R.id.LensSerialEditText);
-                final EditText lensNoteEditText = (EditText) editLensView.findViewById(R.id.LensNoteEditText);
+                TextView lensManufAndSeriesTextView = editLensView.findViewById(R.id.lensManufAndSeriesTextView);                       // textView to display the lens manufacturer name
+                final TextView lensFocalLengthTextView = editLensView.findViewById(R.id.lensFocalTextView);
+                final EditText lensSerialEditText = editLensView.findViewById(R.id.LensSerialEditText);
+                final EditText lensNoteEditText = editLensView.findViewById(R.id.LensNoteEditText);
 
-                final CheckBox myListACheckBox = (CheckBox) editLensView.findViewById(R.id.MyListACheckBox);
-                final CheckBox myListBCheckBox = (CheckBox) editLensView.findViewById(R.id.MyListBCheckBox);
-                final CheckBox myListCCheckBox = (CheckBox) editLensView.findViewById(R.id.MyListCCheckBox);
+                final CheckBox myListACheckBox = editLensView.findViewById(R.id.MyListACheckBox);
+                final CheckBox myListBCheckBox = editLensView.findViewById(R.id.MyListBCheckBox);
+                final CheckBox myListCCheckBox = editLensView.findViewById(R.id.MyListCCheckBox);
 
-                ImageView CalFImageView = (ImageView) editLensView.findViewById(R.id.lensCalFImageView);
-                ImageView CalIImageView = (ImageView) editLensView.findViewById(R.id.lensCalIImageView);
-                ImageView CalZImageView = (ImageView) editLensView.findViewById(R.id.lensCalZImageView);
+                ImageView CalFImageView = editLensView.findViewById(R.id.lensCalFImageView);
+                ImageView CalIImageView = editLensView.findViewById(R.id.lensCalIImageView);
+                ImageView CalZImageView = editLensView.findViewById(R.id.lensCalZImageView);
 
                 // the hidden textView where we store the lens tag (in the form of the view's tag)
-                final TextView lensIndexTextView = (TextView) editLensView.findViewById(R.id.lensIndexTextView);
+                final TextView lensIndexTextView = editLensView.findViewById(R.id.lensIndexTextView);
 
-                // check the status string to see if the lens is part of a list
-                final boolean myListA = childObject.isLensMemberOfMyList(lensList, "My List A");
-                final boolean myListB = childObject.isLensMemberOfMyList(lensList, "My List B");
-                final boolean myListC = childObject.isLensMemberOfMyList(lensList, "My List C");
+                // check to see if the lens is part of a list
+                final boolean myListA = childObject.isLensMemberOfMyList(lensList, "My List A") || childObject.getMyListA();
+                final boolean myListB = childObject.isLensMemberOfMyList(lensList, "My List B") || childObject.getMyListB();
+                final boolean myListC = childObject.isLensMemberOfMyList(lensList, "My List C") || childObject.getMyListC();
 
                 if (childObject.getCalibratedF()) {
                     CalFImageView.setVisibility(View.VISIBLE);
@@ -291,14 +292,20 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 }
 
                 // set up listeners for when the user checks the MyList boxes. If F of Lens isn't calibrated, don't let them add to list
-                MyListCheckBoxListener listener = new MyListCheckBoxListener();
-                listener.mContext = context;
-                listener.isFCal = childObject.getCalibratedF();
+                if (!allLenses) {
+                    MyListCheckBoxListener listener = new MyListCheckBoxListener();
+                    listener.mContext = context;
+                    listener.isFCal = childObject.getCalibratedF();
 
-                myListACheckBox.setOnCheckedChangeListener(listener);
-                myListBCheckBox.setOnCheckedChangeListener(listener);
-                myListCCheckBox.setOnCheckedChangeListener(listener);
+                    myListACheckBox.setOnCheckedChangeListener(listener);
+                    myListBCheckBox.setOnCheckedChangeListener(listener);
+                    myListCCheckBox.setOnCheckedChangeListener(listener);
 
+                    // check the myList checkboxes according to whether it's a member of the appropriate list
+                    myListACheckBox.setChecked(myListA);
+                    myListBCheckBox.setChecked(myListB);
+                    myListCCheckBox.setChecked(myListC);
+                }
 
                 // populate the text fields with existing values from the lens
                 String lensManufAndSerial = childObject.getManufacturer() + " - " + childObject.getSeries();
@@ -311,11 +318,6 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 }
 
                 lensNoteEditText.setText(childObject.getNote());
-
-                // check the myList checkboxes according to whether it's a member of the appropriate list
-                myListACheckBox.setChecked(myListA);
-                myListBCheckBox.setChecked(myListB);
-                myListCCheckBox.setChecked(myListC);
 
                 // add the tag from the lens item in the listView to the hidden textView so we can retrieve it later
                 long lensTag = (long) checkLensImageView.getTag();
@@ -410,15 +412,22 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                                 String newSerial = lensSerialEditText.getText().toString().trim();                                         // serial of the lens
                                 String newNote = lensNoteEditText.getText().toString().trim();
 
-                                // get the (potentially new) my list assignments for the lens
-                                boolean myListA = myListACheckBox.isChecked();
-                                boolean myListB = myListBCheckBox.isChecked();
-                                boolean myListC = myListCCheckBox.isChecked();
+                                boolean myListA = false;
+                                boolean myListB = false;
+                                boolean myListC = false;
+
+                                if (!allLenses) {
+                                    // get the (potentially new) my list assignments for the lens
+                                    myListA = myListACheckBox.isChecked();
+                                    myListB = myListBCheckBox.isChecked();
+                                    myListC = myListCCheckBox.isChecked();
+                                }
 
                                 boolean serialLengthOK = SharedHelper.checkSerialLength(childText, newSerial, newNote);
                                 boolean lensExists = false;
                                 boolean readyToSave = false;
 
+                                // TODO: finish lens checking logic
                                 if (serialLengthOK) {
 //                                    lensExists = SharedHelper.checkIfLensExists(listDataChild.get(childObject.getSeries()), childObject.getFocalLength1(), childObject.getFocalLength2(), newSerial, newNote);
 //                                    readyToSave = (serialLengthOK && !lensExists);
@@ -426,7 +435,7 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                                 }
 
                                 if (readyToSave) {
-                                    childListener.onChange(childObject, newSerial, newNote, myListA, myListB, myListC);
+                                    childListener.onChange(lensList, childObject, newSerial, newNote, myListA, myListB, myListC);
                                     dialog.dismiss();
                                 } else {
                                     CharSequence toastText;
@@ -462,7 +471,7 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                                 ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
-                                        childListener.onDelete(childObject);
+                                        childListener.onDelete(lensList, childObject);
                                         dialog.dismiss();
                                     }
                                 });

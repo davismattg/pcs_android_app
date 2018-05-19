@@ -1318,7 +1318,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
         }
 
-        if (mBleManager != null) {
+        if (mBleManager != null && mBleManager.getConnectedDevice() != null) {
             updateConnectedTextView(isConnected, mBleManager.getConnectedDevice().getName());
         }
     }

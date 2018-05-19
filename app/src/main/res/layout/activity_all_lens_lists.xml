@@ -18,6 +18,7 @@
             android:layout_height="70dp"
             android:paddingStart="10dp"
             android:paddingEnd="0dp"
+            android:id="@+id/lensDatabaseLayout"
             android:background="@color/darkBlue">
 
             <RelativeLayout
@@ -72,6 +73,82 @@
                 android:src="@drawable/ic_more_white_24dp"
                 android:layout_alignParentEnd="true"
                 android:id="@+id/allLensesDetailsImageView"
+                android:layout_centerVertical="true"/>
+        </RelativeLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="3dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="0dp"
+            android:id="@+id/receivedLensesLabelTextView"
+            android:text="@string/received_lenses_label"
+            android:textSize="16sp"
+            android:textColor="@color/lightGray"
+            android:visibility="visible" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="0dp"
+            android:id="@+id/receivedLensesLayout"
+            android:background="@color/medGray">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:layout_toStartOf="@id/receivedLensesDetailsImageView"
+                android:onClick="getAllLenses">
+
+                <TextView
+                    android:id="@+id/receivedLensesCountTextView"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/default_lens_count"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true" />
+
+                <LinearLayout
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:background="@color/white"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_toEndOf="@id/receivedLensesCountTextView"
+                    android:layout_alignParentBottom="true"
+                    android:id="@+id/receivedLensesCountDivider"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/receivedLensesTextView"
+                    android:text="@string/received_lenses"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:layout_toEndOf="@id/receivedLensesCountDivider"
+                    android:layout_centerVertical="true"/>
+            </RelativeLayout>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:src="@drawable/ic_more_white_24dp"
+                android:layout_alignParentEnd="true"
+                android:id="@+id/receivedLensesDetailsImageView"
                 android:layout_centerVertical="true"/>
         </RelativeLayout>
 

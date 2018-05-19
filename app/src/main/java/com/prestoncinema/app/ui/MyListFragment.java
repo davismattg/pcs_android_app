@@ -16,6 +16,7 @@ import com.prestoncinema.app.MyListViewAdapter;
 import com.prestoncinema.app.R;
 import com.prestoncinema.app.databinding.FragmentMyListBinding;
 import com.prestoncinema.app.db.entity.LensEntity;
+import com.prestoncinema.app.db.entity.LensListEntity;
 import com.prestoncinema.app.model.Lens;
 import com.prestoncinema.app.viewmodel.LensListViewModel;
 
@@ -35,8 +36,8 @@ public class MyListFragment extends Fragment {
      */
     OnLensChangedListener listener;
     public interface OnLensChangedListener {
-        public void onLensChanged(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        public void onLensDeleted(LensEntity lens);
+        public void onLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        public void onLensDeleted(LensListEntity lensList, LensEntity lens);
     }
 
     public static final String ARG_PAGE = "ARG_PAGE";
@@ -49,7 +50,9 @@ public class MyListFragment extends Fragment {
     private MyListViewAdapter myListViewAdapter;
     private String list;
 
-    public static MyListFragment newInstance(int page, String myList, HashMap<String, List<LensEntity>> myListData, Context context) {
+    private LensListEntity lensList;
+
+    public static MyListFragment newInstance(int page, String myList, HashMap<String, List<LensEntity>> myListData, LensListEntity lensList, Context context) {
         Bundle args = new Bundle();
         args.putInt(ARG_PAGE, page);
 
@@ -58,6 +61,7 @@ public class MyListFragment extends Fragment {
         fragment.context = context;
         fragment.myListData = myListData;
         fragment.list = myList;
+        fragment.lensList = lensList;
         fragment.setArguments(args);
 
         return fragment;
@@ -91,19 +95,19 @@ public class MyListFragment extends Fragment {
             }
         });
 
-        myListViewAdapter = new MyListViewAdapter(this.context, lenses);
+        myListViewAdapter = new MyListViewAdapter(this.context, lenses, lensList);
         myListView = view.findViewById(R.id.MyListFragmentListView);
         myListView.setAdapter(myListViewAdapter);
 
         myListViewAdapter.setListener(new MyListViewAdapter.LensChangedListener() {
             @Override
-            public void onChange(LensEntity lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
-                listener.onLensChanged(lens, serial, note, myListA, myListB, myListC);
+            public void onChange(LensListEntity lensList, LensEntity lens, String focal, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+                listener.onLensChanged(lensList, lens, serial, note, myListA, myListB, myListC);
             }
 
             @Override
-            public void onDelete(LensEntity lens) {
-                listener.onLensDeleted(lens);
+            public void onDelete(LensListEntity lensList, LensEntity lens) {
+                listener.onLensDeleted(lensList, lens);
             }
         });
 

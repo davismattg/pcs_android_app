@@ -293,15 +293,15 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
      * @param listB
      * @param listC
      */
-    public void onLensChanged(LensEntity lens, String serial, String note, boolean listA, boolean listB, boolean listC) {
-        editLens(lens, serial, note, listA, listB, listC, false);
+    public void onLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean listA, boolean listB, boolean listC) {
+        editLens(lensList, lens, serial, note, listA, listB, listC, false);
     }
 
     /** onLensDeleted handles when the user deletes a lens from the popup within one of the "My List" tabs
      * @param lens
      */
-    public void onLensDeleted(LensEntity lens) {
-        getListsForLens(lens);
+    public void onLensDeleted(LensListEntity lensList, LensEntity lens) {
+        getListsForLens(lensList, lens);
 //        deleteAssociations(lens);
     }
 
@@ -327,16 +327,16 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
      * @param listB
      * @param listC
      */
-    public void onChildLensChanged(LensEntity lens, String serial, String note, boolean listA, boolean listB, boolean listC) {
-        editLens(lens, serial, note, listA, listB, listC, false);
+    public void onChildLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean listA, boolean listB, boolean listC) {
+        editLens(lensList, lens, serial, note, listA, listB, listC, false);
     }
 
     /** onChildLensDeleted handles deleting a lens when the user selects "Delete" from the Edit Lens dialog
      *
      * @param lens
      */
-    public void onChildLensDeleted(LensEntity lens) {
-        getListsForLens(lens);
+    public void onChildLensDeleted(LensListEntity lensList, LensEntity lens) {
+        getListsForLens(lensList, lens);
 //        deleteLens(lens);
     }
 
@@ -1505,7 +1505,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         });
     }
 
-    private void getListsForLens(final LensEntity lens) {
+    private void getListsForLens(final LensListEntity lensList, final LensEntity lens) {
         listsToUpdate.clear();
             Observable.fromCallable(new Callable<List<LensListEntity>>() {
             @Override
@@ -1519,6 +1519,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
             @Override
             public void onCompleted() {
                 Timber.d("getListsForLens onCompleted");
+                // TODO: remove lens ID from MyList if it's a part of that list
                 deleteAssociations(lens);
 //                deleteLens(lens);
 //                deleteAssociations(listsToUpdate);
@@ -2152,7 +2153,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    private boolean editLens(int lensInd, int childPosition, String manufTitle, String typeTitle, String focal1, String focal2, String serial, boolean myListA, boolean myListB, boolean myListC) {
-    private void editLens(LensEntity lensObject, String serial, String note, boolean myListA, boolean myListB, boolean myListC, boolean updateAdapter) {
+    private void editLens(LensListEntity lensList, LensEntity lensObject, String serial, String note, boolean myListA, boolean myListB, boolean myListC, boolean updateAdapter) {
         Timber.d("///////////////////////////////////////////////////////////////");
         Timber.d("editLens - params: ");
         Timber.d("serial: " + serial);
@@ -2162,196 +2163,32 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         Timber.d("myListC: " + myListC);
         Timber.d("///////////////////////////////////////////////////////////////");
 
-//        int lensInd = lensObject.getTag();                                                           // the tag of the lens in the overall array
-//        String prevLensString = lensArray.get(lensInd);                                             // the original string that needs to be updated
-//
-//        Timber.d("previous lens string: " + prevLensString);
-//
-//        // TODO: make sure this tag is correct
-//        String toKeep = prevLensString.substring(30);                                               // substring of the stuff we don't care about updating, starting after the serial number
-//
-//        String nameSubString = prevLensString.substring(0, 18);                                     // get the first 19 characters of the lens data. This includes STX, 14 chars for name, and 2 chars for status
-//        String status0H = nameSubString.substring(14, 15);                                           // Status byte 0 for the lens (Cal and MyList status)
-//        String status0L = nameSubString.substring(15, 16);
-//        String status1H = nameSubString.substring(16, 17);                                           // Status byte 1 for the lens (Manuf and Series)
-//        String status1L = nameSubString.substring(17, 18);
-//        String focalString = prevLensString.substring(18, 26);                                      // 8 characters, 4 for each focal length
-////        String serialString = buildSerial(prevLensString.substring(27, 31));                        // 4 characters for the serial
-//        String serialString = buildSerial(serial);
-//
-//        int statByte0H = Integer.parseInt(status0H, 16);                                      // convert to int
-//        int statByte0L = Integer.parseInt(status0L, 16);                                      // convert to int
-//        int statByte1H = Integer.parseInt(status1H, 16);                                      // convert to int
-//        int statByte1L = Integer.parseInt(status1L, 16);                                      // convert to int
-//
-//        String lensName;
-//        String lensStatus1;
-//
-//        boolean isMyListC = isBitSet(statByte0H, 0x2);                                     // bitwise check of (previous) status byte for My List C
-//        boolean isMyListB = isBitSet(statByte0H, 0x1);                                     // bitwise check of (previous) status byte for My List B
-//        boolean isMyListA = isBitSet(statByte0L, 0x8);                                     // bitwise check of (previous) status byte for My List A
-//
-//        lensName = buildLensName(lensObject.getFocalLength1(), lensObject.getFocalLength2(), serial, note);                                           // concat the lens focal lengths, serial and note together. Always 14 chars long
-//
-//        Timber.d("new lens name: " + lensName + "$$");
-//
-//        // update the status bytes according to the my list assignments
-//        // myListA
-//        if (myListA != isMyListA) {                 // setting changed by user, so update
-//            if (isMyListA) {                        // was in my list A, but user removed it
-//               statByte0L -= 0x8;                    // subtract 0x8 to remove from myList A
-//            }
-//            else {
-//                statByte0L += 0x8;                   // add 0x8 to add to myList A
-//            }
-//        }
-//
-//        // myListB
-//        if (myListB != isMyListB) {                 // old/new settings don't match, so update
-//            if (isMyListB) {                        // if lens was in myList B
-//                statByte0H -= 0x1;                   // remove it
-//            }
-//            else {
-//                statByte0H += 0x1;                   // add 0x1 to add to myList B
-//            }
-//        }
-//
-//        // myListC
-//        if (myListC != isMyListC) {                 // old/new settings don't match, so update
-//            if (isMyListC) {                        // lens used to be in myList C
-//                statByte0H -= 0x2;                   // remove it
-//            }
-//            else {
-//                statByte0H += 0x2;                   // add 0x2 to add to myList C
-//            }
-//        }
-//
-//        if (statByte0H == 10) {                      // keep everything in Hex
-//            statByte0H = 0xA;
-//        }
-//
-//        if (statByte0H == 11) {                      // keep everything in Hex
-//            statByte0H = 0xB;
-//        }
-//
-//        String newLensName = lensName;
-//
-//        // convert to the hex characters that will be written in the file. these strings all need to
-//        // be constant length no matter how many characters are inside, so you have to pad with 0's if necessary
-//        String newStatus0H = Integer.toHexString(statByte0H).toUpperCase();
-//        String newStatus0L = Integer.toHexString(statByte0L).toUpperCase();
-//        String newStatus1H = Integer.toHexString(statByte1H).toUpperCase();
-//        String newStatus1L = Integer.toHexString(statByte1L).toUpperCase();
-//
-////        String newStatus2 = String.format("%2s", Integer.toHexString(statByte1H + statByte1L).toUpperCase().replaceAll(" ", "0"));
-////        Timber.d("newStatus1:" + newStatus1 + "$$");
-////        Timber.d("newStatus2:" + newStatus2 + "$$");
-//
-////        lensStatus1 = String.format("%4s", (newStatus1 + newStatus2).replaceAll(" ", "0"));
-//        lensStatus1 = newStatus0H + newStatus0L + newStatus1H + newStatus1L;
-//
-//        Timber.d("lensStatus1: " + lensStatus1 + "$$");
-//        String newString = newLensName + lensStatus1 + focalString + serialString + toKeep;
-//
-//        Timber.d("lensArray prev: " + lensArray.get(lensInd));
-//        lensArray.set(lensInd, newString);
-//        Timber.d("lensArray post: " + lensArray.get(lensInd));
-//
-//        LensEntity newLensObject = parseLensLine(newString, lensInd, false);
-//
-//        Timber.d(String.valueOf(newLensObject.getManufacturerPosition()));
-//        Timber.d(String.valueOf(newLensObject.getSeriesPosition()));
-
-//        lensObjectArray.remove(lensInd);
-
         if (myListA) {
-            ArrayList<Long> ids = currentLensList.getMyListALongIds();
+            ArrayList<Long> ids = lensList.getMyListALongIds();
             ids.add(lensObject.getId());
-            currentLensList.setMyListAIds(ids);
+            lensList.setMyListAIds(ids);
         }
 
         if (myListB) {
-            ArrayList<Long> ids = currentLensList.getMyListBLongIds();
+            ArrayList<Long> ids = lensList.getMyListBLongIds();
             ids.add(lensObject.getId());
-            currentLensList.setMyListBIds(ids);
+            lensList.setMyListBIds(ids);
         }
 
         if (myListC) {
-            ArrayList<Long> ids = currentLensList.getMyListCLongIds();
+            ArrayList<Long> ids = lensList.getMyListCLongIds();
             ids.add(lensObject.getId());
-            currentLensList.setMyListCIds(ids);
+            lensList.setMyListCIds(ids);
         }
 
         lensObject.setSerial(serial);
         lensObject.setNote(note);
-//        lensObject.setMyListA(myListA);
-//        lensObject.setMyListB(myListB);
-//        lensObject.setMyListC(myListC);
-        lensObject.setDataString(SharedHelper.buildLensDataString(lensObject));
 
-//        getCurrentListFromDatabase(lensObject);
-//        deleteLensListLensJoin(lensObject);
+        lensObject.setDataString(SharedHelper.buildLensDataString(lensList, lensObject));
+
         updateLensInDatabase(lensObject, true, updateAdapter);
-        updateLensListInDatabase(currentLensList);
-//        return true;
+        updateLensListInDatabase(lensList);
     }
-
-//    private void getCurrentListFromDatabase(final LensEntity lens) {
-//        Timber.d("getting list/lens join entity");
-//
-//        Single.fromCallable(new Callable<LensListLensJoinEntity>() {
-//            @Override
-//            public LensListLensJoinEntity call() throws Exception {
-//                return database.lensListLensJoinDao().getByListAndLensId(currentListId, lens.getId());
-//            }
-//        })
-//                .subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(new SingleSubscriber<LensListLensJoinEntity>() {
-//                    @Override
-//                    public void onSuccess(LensListLensJoinEntity join) {
-//                        if (join != null) {
-//                            Timber.d("retrieved join entry for current lens: " + join.toString());
-//                        }
-//                        else {
-//                            Timber.d("join is null");
-//                        }
-//                    }
-//
-//                    @Override
-//                    public void onError(Throwable error) {
-//                        Timber.d(error.getMessage());
-//                        CharSequence text = "Error retrieving join entry";
-//                        SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
-//                    }
-//                });
-//    }
-
-//    private void deleteLensListLensJoin(final LensEntity lens) {
-//        Single.fromCallable(new Callable<Void>() {
-//            @Override
-//            public Void call() throws Exception {
-//                database.lensListLensJoinDao().deleteByListAndLensId(currentListId, lens.getId());
-//                return null;
-//            }
-//        })
-//        .subscribeOn(Schedulers.io())
-//        .observeOn(AndroidSchedulers.mainThread())
-//        .subscribe(new SingleSubscriber<Void>() {
-//            @Override
-//            public void onSuccess(Void value) {
-//                Timber.d("deleted join entry for list ID " + currentListId + " and lens ID " + lens.getId());
-//                updateLensInDatabase(lens);
-//            }
-//
-//            @Override
-//            public void onError(Throwable error) {
-//                Timber.d(error.getMessage());
-//                CharSequence text = "Error deleting join entry";
-//                SharedHelper.makeToast(LensListDetailsActivity.this, text, Toast.LENGTH_SHORT);
-//            }
-//        });
-//    }
 
     private void updateLensInDatabase(final LensEntity lens, final boolean showToast, final boolean updateAdapter) {
         Timber.d("updating lens in database");

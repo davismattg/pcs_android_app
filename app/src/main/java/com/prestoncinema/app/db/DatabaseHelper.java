@@ -8,6 +8,8 @@ import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Database;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.widget.Toast;
 
 import com.prestoncinema.app.AllLensListsActivity;
@@ -22,6 +24,7 @@ import com.prestoncinema.app.db.entity.LensListEntity;
 import com.prestoncinema.app.db.entity.LensListLensJoinEntity;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -48,6 +51,8 @@ public class DatabaseHelper {
 //    private static long listId;
 //    private static long lensId;
 
+    public static int LENS_LIST_COUNT;
+
     private static List<LensEntity> lensesGlobal = new ArrayList<>();
     private static List<LensListEntity> lensListsGlobal = new ArrayList<>();
 
@@ -66,7 +71,7 @@ public class DatabaseHelper {
      * @param context
      * @return
      */
-    public static List<LensEntity> getAllLenses(final Context context) {
+    public static List<LensEntity> getAllLenses(final Context context, final boolean fromInsert) {
         Observable<List<LensEntity>> lensListsObservable = rx.Observable.fromCallable(new Callable<List<LensEntity>>() {
             @Override
             public List<LensEntity> call() {
@@ -81,6 +86,9 @@ public class DatabaseHelper {
                     @Override
                     public void onCompleted() {
                         Timber.d("Observable onCompleted");
+                        if (fromInsert) {
+
+                        }
                     }
 
                     @Override
@@ -138,6 +146,32 @@ public class DatabaseHelper {
         return lensListsGlobal;
     }
 
+
+    public static int getLensListCount(final Context context, final long listId) {
+        Single.fromCallable(new Callable<Integer>() {
+            @Override
+            public Integer call() {
+                return database.lensListLensJoinDao().getLensCountForList(listId);
+            }
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<Integer>() {
+                    @Override
+                    public void onSuccess(Integer value) {
+                        LENS_LIST_COUNT = value;
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        CharSequence toastText = "Error getting lens count";
+                        SharedHelper.makeToast(context, toastText, Toast.LENGTH_LONG);
+                    }
+                });
+
+        return LENS_LIST_COUNT;
+    }
+
     /**
      * This method saves new lenses to the database and assigns them to the proper Lens List(s).
      * @param context
@@ -145,6 +179,22 @@ public class DatabaseHelper {
      * @param lists
      */
     public static void insertLensesToExistingLists(final Context context, final ArrayList<LensEntity> lenses, final ArrayList<LensListEntity> lists) {
+        // after inserting a lens into the DB, its returned ID will get added to this list
+        // so we can create the join entry
+        final HashMap<Long, HashMap<String, ArrayList<Long>>> lensIds = new HashMap<>();
+
+        for (LensListEntity list : lists) {
+            lensIds.put(list.getId(), new HashMap<String, ArrayList<Long>>());
+
+            HashMap<String, ArrayList<Long>> thisListMap = lensIds.get(list.getId());
+
+            thisListMap.put("All", new ArrayList<Long>());
+//            thisListMap.put("My List A", new ArrayList<Long>());
+//            thisListMap.put("My List B", new ArrayList<Long>());
+//            thisListMap.put("My List C", new ArrayList<Long>());
+            lensIds.put(list.getId(), thisListMap);
+        }
+
         // show a progress dialog to the user while the database operation is running
         CharSequence progressText = "Saving lenses to database...";
         final ProgressDialog pd = SharedHelper.createProgressDialog(context, progressText);
@@ -154,26 +204,94 @@ public class DatabaseHelper {
         Single.fromCallable(new Callable<Void>() {
             @Override
             public Void call() {
-                for (LensListEntity list : lists) {
-                    // get the ID of the list to insert the lenses into
-                    long listId = list.getId();
+                for (LensListEntity lensList : lists) {
+                    // add each lens' ID into the HashMap so we can create the join entries later
+                    HashMap<String, ArrayList<Long>> thisListMap = lensIds.get(lensList.getId());
+                    ArrayList<Long> allIds = thisListMap.get("All");
 
-                    // update the count of the lens list to reflect the newly added lenses
-                    int count = list.getCount();
-                    count += lenses.size();
-                    list.setCount(count);
+                    for (LensEntity lens : lenses) {                                                            // loop through lenses
+//                        lens.setMyListA(false);
+//                        lens.setMyListB(false);
+//                        lens.setMyListC(false);
 
-                    // update the list in the database (since we changed its count)
-                    database.lensListDao().update(list);
+                        int countInDb = database.lensDao().lensExists(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
 
-                    // for each lens, insert it into the database, then build/insert a join entry to assign it to the list
-                    for (LensEntity lens : lenses) {                                                                    // loop through lenses
-                        long lensId = database.lensDao().insert(lens);                                                  // insert the lens and return its id
-                        Timber.d("inserted lens, returned id = " + lensId);
+                        long lensId;
 
-                        database.lensListLensJoinDao().insert(new LensListLensJoinEntity(listId, lensId));              // insert the list/lens join
+                        Timber.d("checking for the following lens in database: ");
+                        Timber.d("Manuf: " + lens.getManufacturer() + ", series: " + lens.getSeries() + ", " + lens.getFocalLength1() + "-" + lens.getFocalLength2() + "mm, serial: " + lens.getSerial() + ", note: " + lens.getNote() + " :)");
+
+                        // if countInDb == 0, the lens is not present in the database
+                        if (countInDb == 0) {
+                            lensId = database.lensDao().insert(lens);                                               // insert the lens and return its id
+                        }
+
+                        // record found in database, so retrieve it
+                        else {
+                            LensEntity foundLens = database.lensDao().getLensByAttributes(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
+                            lensId = foundLens.getId();
+                            Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
+                        }
+//                        long lensId = database.lensDao().insert(lens);                                               // insert the lens and return its id
+
+                        allIds.add(lensId);
+
+//                        // if lens was a member of My List, add its ID to the HashMap to set in the LensListEntity
+//                        if (lens.getMyListA()) {
+//                            ArrayList<Long> aIds = lensIds.get("My List A");
+//                            aIds.add(lensId);
+//                            lensIds.put("My List A", aIds);
+//                        }
+//
+//                        if (lens.getMyListB()) {
+//                            ArrayList<Long> bIds = lensIds.get("My List B");
+//                            bIds.add(lensId);
+//                            lensIds.put("My List B", bIds);
+//                        }
+//
+//                        if (lens.getMyListC()) {
+//                            ArrayList<Long> cIds = lensIds.get("My List C");
+//                            cIds.add(lensId);
+//                            lensIds.put("My List C", cIds);
+//                        }
                     }
+
+                    thisListMap.put("All", allIds);
+
+//                    // set the MyList attributes on the list itself
+//                    lensList.setMyListAIds(lensIds.get("My List A"));
+//                    lensList.setMyListBIds(lensIds.get("My List B"));
+//                    lensList.setMyListCIds(lensIds.get("My List C"));
+
+//                     // insert the list into the DB, returning its ID
+//                    long listId = database.lensListDao().insert(lensList);
+
+                    // finally, iterate over the lenses to create the list/lens join entries
+                    for (Long lensId : thisListMap.get("All")) {
+                        database.lensListLensJoinDao().insert(new LensListLensJoinEntity(lensList.getId(), lensId));
+                    }
+
                 }
+//                for (LensListEntity list : lists) {
+//                    // get the ID of the list to insert the lenses into
+//                    long listId = list.getId();
+//
+//                    // update the count of the lens list to reflect the newly added lenses
+//                    int count = list.getCount();
+//                    count += lenses.size();
+//                    list.setCount(count);
+//
+//                    // update the list in the database (since we changed its count)
+//                    database.lensListDao().update(list);
+//
+//                    // for each lens, insert it into the database, then build/insert a join entry to assign it to the list
+//                    for (LensEntity lens : lenses) {                                                                    // loop through lenses
+//                        long lensId = database.lensDao().insert(lens);                                                  // insert the lens and return its id
+//                        Timber.d("inserted lens, returned id = " + lensId);
+//
+//                        database.lensListLensJoinDao().insert(new LensListLensJoinEntity(listId, lensId));              // insert the list/lens join
+//                    }
+//                }
                 return null;
             }
         })
@@ -196,39 +314,90 @@ public class DatabaseHelper {
     }
 
     /**
-     * This method saves a Lens List and its associated lenses to the database.
-     * @param context
-     * @param lenses
-     * @param fileName
-     * @param note
-     * @param count
-     * @param fromImport
+     * This method saves a Lens List and its associated lenses to the database. It first inserts the
+     * lenses, returning the ID and storing that in a HashMap in case the lens was a member of My List.
+     * Then it sets the MyListXIds attribute on the list and inserts it into the DB, returning the ID.
+     * Finally, it creates lens_list_lens_join entries using the list ID and the ArrayList of lens IDs.
+     * @param context the activity that called this method
+     * @param lenses the ArrayList of lenses to insert into the DB
+     * @param lensList the pre-built lens list that has the new My List A/B/C setup
      */
-    public static void insertLensesAndList(final Context context, final ArrayList<LensEntity> lenses, final String fileName, String note, int count, final boolean fromImport) {
-        // initialise the new list to insert
-        final LensListEntity lensListToInsert = new LensListEntity();
-
-        // set the name, note, and number of lenses
-        lensListToInsert.setName(fileName);
-        lensListToInsert.setNote(note);
-        lensListToInsert.setCount(count);
+     public static void insertLensesAndList(final Context context, final ArrayList<LensEntity> lenses, final LensListEntity lensList) {
+         // after inserting a lens into the DB, its returned ID will get added to this list
+         // so we can create the join entry
+        final HashMap<String, ArrayList<Long>> lensIds = new HashMap<>();
+        lensIds.put("All", new ArrayList<Long>());
+        lensIds.put("My List A", new ArrayList<Long>());
+        lensIds.put("My List B", new ArrayList<Long>());
+        lensIds.put("My List C", new ArrayList<Long>());
 
         // show a progress dialog to the user while the database operation is running
         CharSequence progressText = "Saving lenses to database...";
         final ProgressDialog pd = SharedHelper.createProgressDialog(context, progressText);
         pd.show();
 
-        // begin database operations. start by creating a new list, then the then a lens, then the join
+        // begin database operations. start by saving each lens and then checking if it's a member of My List
         Single.fromCallable(new Callable<Void>() {
             @Override
             public Void call() {
-                long listId = database.lensListDao().insert(lensListToInsert);                                   // insert the list and return its id
                 for (LensEntity lens : lenses) {                                                            // loop through lenses
-                    long lensId = database.lensDao().insert(lens);                                               // insert the lens and return its id
-                    Timber.d("inserted lens, returned id = " + lensId);
+                    int countInDb = database.lensDao().lensExists(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
 
-                    database.lensListLensJoinDao().insert(new LensListLensJoinEntity(listId, lensId));      // insert the list/lens join
+                    long lensId;
+
+                    Timber.d("checking for the following lens in database: ");
+                    Timber.d("Manuf: " + lens.getManufacturer() + ", series: " + lens.getSeries() + ", " + lens.getFocalLength1() + "-" + lens.getFocalLength2() + "mm, serial: " + lens.getSerial() + ", note: " + lens.getNote() + " :)");
+
+                    // if countInDb == 0, the lens is not present in the database
+                    if (countInDb == 0) {
+                        lensId = database.lensDao().insert(lens);                                               // insert the lens and return its id
+                    }
+
+                    // record found in database, so retrieve it
+                    else {
+                        LensEntity foundLens = database.lensDao().getLensByAttributes(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
+                        lensId = foundLens.getId();
+                        Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
+                    }
+
+                    // add each lens' ID into the HashMap so we can create the join entries later
+                    ArrayList<Long> allIds = lensIds.get("All");
+                    allIds.add(lensId);
+                    lensIds.put("All", allIds);
+
+                    // if lens was a member of My List, add its ID to the HashMap to set in the LensListEntity
+                    if (lens.getMyListA()) {
+                        ArrayList<Long> aIds = lensIds.get("My List A");
+                        aIds.add(lensId);
+                        lensIds.put("My List A", aIds);
+                    }
+
+                    if (lens.getMyListB()) {
+                        ArrayList<Long> bIds = lensIds.get("My List B");
+                        bIds.add(lensId);
+                        lensIds.put("My List B", bIds);
+                    }
+
+                    if (lens.getMyListC()) {
+                        ArrayList<Long> cIds = lensIds.get("My List C");
+                        cIds.add(lensId);
+                        lensIds.put("My List C", cIds);
+                    }
                 }
+
+                // set the MyList attributes on the list itself
+                lensList.setMyListAIds(lensIds.get("My List A"));
+                lensList.setMyListBIds(lensIds.get("My List B"));
+                lensList.setMyListCIds(lensIds.get("My List C"));
+
+                // insert the list into the DB, returning its ID
+                long listId = database.lensListDao().insert(lensList);
+
+                // finally, iterate over the lenses to create the list/lens join entries
+                for (Long id : lensIds.get("All")) {
+                    database.lensListLensJoinDao().insert(new LensListLensJoinEntity(listId, id));
+                }
+
                 return null;
             }
         })
@@ -238,7 +407,7 @@ public class DatabaseHelper {
                     @Override
                     public void onSuccess(Void value) {
                         pd.dismiss();
-                        CharSequence toastText = "'" + fileName + "' created successfully";
+                        CharSequence toastText = "'" + lensList.getName() + "' created successfully";
                         SharedHelper.makeToast(context, toastText, Toast.LENGTH_LONG);
                     }
 

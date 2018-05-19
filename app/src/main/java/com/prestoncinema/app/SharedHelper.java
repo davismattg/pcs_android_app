@@ -144,6 +144,9 @@ public class SharedHelper {
         newList.setName(name);
         newList.setNote(note);
         newList.setCount(count);
+        newList.setMyListAIds(new ArrayList<Long>());
+        newList.setMyListBIds(new ArrayList<Long>());
+        newList.setMyListCIds(new ArrayList<Long>());
 
         return newList;
     }
@@ -170,17 +173,17 @@ public class SharedHelper {
         for (LensEntity lens : lenses) {
             if (lens.getMyListA()) {
                 myListAIds.add(lens.getId());
-                lens.setMyListA(false);
+//                lens.setMyListA(false);
             }
 
             if (lens.getMyListB()) {
                 myListBIds.add(lens.getId());
-                lens.setMyListB(false);
+//                lens.setMyListB(false);
             }
 
             if (lens.getMyListC()) {
                 myListCIds.add(lens.getId());
-                lens.setMyListC(false);
+//                lens.setMyListC(false);
             }
         }
 
@@ -240,9 +243,11 @@ public class SharedHelper {
 
     /* Method to check if all lenses in the list are checked */
     public static boolean areAllLensesChecked(ArrayList<LensEntity> lenses) {
-        for (LensEntity lens : lenses) {
-            if (!lens.getChecked()) {
-                return false;
+        if (lenses != null) {
+            for (LensEntity lens : lenses) {
+                if (!lens.getChecked()) {
+                    return false;
+                }
             }
         }
 
@@ -689,7 +694,7 @@ public class SharedHelper {
             case 56:                // 8
                 outBytes[1] = 48;
                 break;
-            case 55:case 54:case 53:case 52:case 51:case 50:    // 3 & 2
+            case 55:case 54:case 53:case 52:case 51:case 50:case 49:case 48:    // 3, 2, 1, 0
                 outBytes[1] = bytes[1];
                 break;
             default:
@@ -1111,19 +1116,36 @@ public class SharedHelper {
         return position;
     }
 
-    public static String buildLensDataString(LensEntity lens) {
+    /**
+     * This method builds the lens data string from a given LensEntity. Since MyList assignments are
+     * specific to a lens list, we can't rely on the MyList A/B/C attributes of the LensEntity object.
+     * As a result, we have to pass a lens list to this method to accurately determine whether a lens
+     * should have its data string altered to be a member of My List A/B/C.
+     * @param list the lens list these lenses are associated with
+     * @param lens the lens we need to build the data string
+     * @return
+     */
+    public static String buildLensDataString(LensListEntity list, LensEntity lens) {
+        boolean myListA = false, myListB = false, myListC = false;
+
+        // if we're exporting lenses that aren't associated with a particular list, list == null
+        if (list != null) {
+            myListA = list.getMyListALongIds().contains(lens.getId());
+            myListB = list.getMyListBLongIds().contains(lens.getId());
+            myListC = list.getMyListCLongIds().contains(lens.getId());
+        }
+
         return buildLensDataString(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(),
-                        lens.getFocalLength2(), lens.getSerial(), lens.getNote(), lens.getMyListA(),
-                        lens.getMyListB(), lens.getMyListC());
+                        lens.getFocalLength2(), lens.getSerial(), lens.getNote(), lens.getCalibratedF(), lens.getCalibratedI(), lens.getCalibratedZ(), myListA, myListB, myListC);
     }
 
     public static String buildLensDataString(LensEntity lens, boolean myListA, boolean myListB, boolean myListC) {
         return buildLensDataString(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(),
-                lens.getSerial(), lens.getNote(), myListA, myListB, myListC);
+                lens.getSerial(), lens.getNote(), lens.getCalibratedF(), lens.getCalibratedI(), lens.getCalibratedZ(), myListA, myListB, myListC);
     }
 
     // function to do the heavy lifting of creating the hex characters from the user's selections
-    public static String buildLensDataString(String manuf, String series, int focal1, int focal2, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+    public static String buildLensDataString(String manuf, String series, int focal1, int focal2, String serial, String note, boolean calF, boolean calI, boolean calZ, boolean myListA, boolean myListB, boolean myListC) {
         int width = 110;
         char fill = '0';
         int manufByte = 0x0;
@@ -1140,7 +1162,6 @@ public class SharedHelper {
         int oth_byte = 0xF;
         byte[] STX = {02};
         byte[] ETX = {0x0A, 0x0D};
-        String STXStr = new String(STX);
         String ETXStr = new String(ETX);
 
         String lensName;
@@ -1317,6 +1338,20 @@ public class SharedHelper {
                 break;
         }
 
+        // check calibrated status
+        if (calF) {
+            statByte0 += 0x4;
+        }
+
+        if (calI) {
+            statByte1 += 0x4;
+        }
+
+        if (calZ) {
+            statByte1 += 0x2;
+        }
+
+        // check myList booleans
         if (myListA) {
             statByte1 += 0x8;
         }

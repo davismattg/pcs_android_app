@@ -209,13 +209,13 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
     }
 
     @Override
-    public void onChildLensChanged(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+    public void onChildLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
         Timber.d("onChildLensChanged");
-        editLens(lens, serial, note, myListA, myListB, myListC, false);
+        editLens(lensList, lens, serial, note, myListA, myListB, myListC, false);
     }
 
     @Override
-    public void onChildLensDeleted(LensEntity lens) {
+    public void onChildLensDeleted(LensListEntity lensList, LensEntity lens) {
         Timber.d("onChildLensDeleted");
         getListsForLenses(lens);
     }
@@ -1170,7 +1170,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    private boolean editLens(int lensInd, int childPosition, String manufTitle, String typeTitle, String focal1, String focal2, String serial, boolean myListA, boolean myListB, boolean myListC) {
-    private void editLens(LensEntity lensObject, String serial, String note, boolean myListA, boolean myListB, boolean myListC, boolean updateAdapter) {
+    private void editLens(LensListEntity lensList, LensEntity lensObject, String serial, String note, boolean myListA, boolean myListB, boolean myListC, boolean updateAdapter) {
         Timber.d("///////////////////////////////////////////////////////////////");
         Timber.d("editLens - params: ");
         Timber.d("serial: " + serial);
@@ -1185,7 +1185,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         lensObject.setMyListA(myListA);
         lensObject.setMyListB(myListB);
         lensObject.setMyListC(myListC);
-        lensObject.setDataString(SharedHelper.buildLensDataString(lensObject));
+        lensObject.setDataString(SharedHelper.buildLensDataString(lensList, lensObject));
 
         updateLensInDatabase(lensObject, true, updateAdapter);
     }
@@ -1315,26 +1315,6 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
             CharSequence toastText = "You must select at least one lens";
             SharedHelper.makeToast(AllLensesActivity.this, toastText, Toast.LENGTH_SHORT);
         }
-
-//        String listName = lensListNameEditText.getText().toString().trim();
-//        String listNote = lensListNoteEditText.getText().toString().trim();
-//
-//        boolean okToSave = !listName.isEmpty();
-//
-//        // only save if the user selected at least one lens
-//        if (numChecked > 0 && okToSave) {
-//
-//            databaseHelper.insertLensesandList(AllLensesActivity.this, lensesToSave, listName, listNote, numChecked, fromImport);
-//
-//            // intent to return to the AllLensListsActivity
-//            Intent intent = new Intent(AllLensesActivity.this, AllLensListsActivity.class);
-//            startActivity(intent);
-//        }
-//
-//        else {
-//            CharSequence toastText = okToSave ? "You must select at least one lens to save." : "List name can't be blank.";
-//            SharedHelper.makeToast(AllLensesActivity.this, toastText, Toast.LENGTH_LONG);
-//        }
     }
 
     /**
@@ -1387,7 +1367,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
      */
     private void performImportedLensesAction(boolean createNewList, final ArrayList<LensEntity> lensesToSave) {
         if (createNewList) {
-            CharSequence title = "Create new lens list";
+            CharSequence dialogTitle = "Create new lens list";
 
             AlertDialog.Builder builder = new AlertDialog.Builder(AllLensesActivity.this);
             LayoutInflater inflater = getLayoutInflater();
@@ -1397,17 +1377,23 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
             final EditText listNameEditText = newLensListView.findViewById(R.id.renameLensListNameEditText);
             final EditText listNoteEditText = newLensListView.findViewById(R.id.renameLensListNoteEditText);
 
+            if (title != "All Lenses" && title != "Received Lenses") {
+                listNameEditText.setText(title);
+            }
+
             builder.setView(newLensListView)
-                    .setTitle(title)
+                    .setTitle(dialogTitle)
                     .setPositiveButton("Save", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             // get the list name and note entered by the user
-                            String name = listNameEditText.getText().toString();
-                            String note = listNoteEditText.getText().toString();
+                            String name = listNameEditText.getText().toString().trim();
+                            String note = listNoteEditText.getText().toString().trim();
+
+                            LensListEntity lensList = SharedHelper.buildLensList(name, note, lensesToSave.size());
 
                             // insert the lenses and list into the database
-                            DatabaseHelper.insertLensesAndList(AllLensesActivity.this, lensesToSave, name, note, lensesToSave.size(), true);
+                            DatabaseHelper.insertLensesAndList(AllLensesActivity.this, lensesToSave, lensList); //name, note, lensesToSave.size(), true);
 
                             resetUI();
                             // return to the AllLensListsActivity so the user can see all their lists
@@ -1463,7 +1449,6 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
                     .setPositiveButton("Save", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                                 // TODO: implement this shit
                             DatabaseHelper.insertLensesToExistingLists(AllLensesActivity.this, lensesToSave, listsToAddImportedLensesTo);
 
                             CharSequence toastText = "Lenses added successfully";

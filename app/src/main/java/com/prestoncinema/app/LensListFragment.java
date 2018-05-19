@@ -43,8 +43,8 @@ public class LensListFragment extends Fragment {
     }
 
     public interface OnChildLensChangedListener {
-        void onChildLensChanged(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        void onChildLensDeleted(LensEntity lens);
+        void onChildLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onChildLensDeleted(LensListEntity lensList, LensEntity lens);
     }
 
     public interface OnLensSelectedListener {
@@ -127,13 +127,13 @@ public class LensListFragment extends Fragment {
         /* Set the listener for changes made to the "Child" level of the ExpandableListView - editing an existing lens */
         lensListExpAdapter.setChildListener(new LensListParentExpListViewAdapter.LensChangedListener() {
             @Override
-            public void onChange(LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
-                childListener.onChildLensChanged(lens, serial, note, myListA, myListB, myListC);
+            public void onChange(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
+                childListener.onChildLensChanged(lensList, lens, serial, note, myListA, myListB, myListC);
             }
 
             @Override
-            public void onDelete(LensEntity lens) {
-                childListener.onChildLensDeleted(lens);
+            public void onDelete(LensListEntity lensList, LensEntity lens) {
+                childListener.onChildLensDeleted(lensList, lens);
             }
         });
 

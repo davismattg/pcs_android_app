@@ -41,20 +41,19 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_weight="1">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_height="wrap_content">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="35dp"
                         android:text="Serial:"
                         android:textStyle="bold"
-                        android:textColor="#000000"
+                        android:textColor="@color/darkestGray"
                         android:id='@+id/lensSerialHeaderTextView'
                         android:gravity="bottom"
                         android:layout_marginEnd="10dp"
@@ -72,118 +71,95 @@
                         android:layout_alignParentTop="true"
                         android:layout_toEndOf="@+id/lensSerialHeaderTextView" />
                 </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:text="Note:"
-                        android:textStyle="bold"
-                        android:textColor="#000000"
-                        android:id='@+id/lensNoteHeaderTextView'
-                        android:gravity="bottom"
-                        android:layout_marginEnd="10dp"
-                        android:textSize="18sp" />
-
-                    <EditText
-                        android:layout_width="80dp"
-                        android:layout_height="50dp"
-                        android:inputType="text"
-                        android:textSize="18sp"
-                        android:id="@+id/LensNoteEditText"
-                        android:layout_alignParentTop="true"
-                        android:layout_toEndOf="@+id/lensNoteHeaderTextView" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="29dp"
-                        android:text="Cal:"
-                        android:textStyle="bold"
-                        android:textColor="#000000"
-                        android:id="@+id/lensCalHeaderTextView"
-                        android:gravity="bottom"
-                        android:layout_marginEnd="10dp"
-                        android:textSize="18sp"/>
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:padding="3dp"
-                        android:id="@+id/lensCalFImageView"
-                        android:layout_alignBottom="@id/lensCalHeaderTextView"
-                        android:layout_toEndOf="@+id/lensCalHeaderTextView"
-                        android:visibility="gone"
-                        android:src="@drawable/f_square_3x"/>
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:padding="3dp"
-                        android:id="@+id/lensCalIImageView"
-                        android:layout_alignBottom="@id/lensCalHeaderTextView"
-                        android:layout_toEndOf="@id/lensCalFImageView"
-                        android:visibility="gone"
-                        android:src="@drawable/i_square_3x"/>
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:padding="3dp"
-                        android:id="@+id/lensCalZImageView"
-                        android:layout_alignBottom="@id/lensCalHeaderTextView"
-                        android:layout_toEndOf="@id/lensCalIImageView"
-                        android:visibility="gone"
-                        android:src="@drawable/z_square_3x"/>
-                </RelativeLayout>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:id="@+id/editLensMyListCheckboxes"
-                android:layout_weight="1">
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <!--<RelativeLayout-->
-                    <!--android:layout_width="match_parent"-->
-                    <!--android:layout_height="wrap_content" >-->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
-                    <CheckBox
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
-                        android:text="My List A"
-                        android:textColor="#000000"
-                        android:id="@+id/MyListACheckBox"/>
+                    <TextView
+                        android:id="@+id/lensCalHeaderTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="35dp"
+                        android:layout_marginEnd="10dp"
+                        android:gravity="bottom"
+                        android:text="Cal:"
+                        android:textColor="@color/darkestGray"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
-                    <CheckBox
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
-                        android:text="My List B"
-                        android:textColor="#000000"
-                        android:id="@+id/MyListBCheckBox"/>
+                    <ImageView
+                        android:id="@+id/lensCalFImageView"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_gravity="bottom"
+                        android:layout_toEndOf="@+id/lensCalHeaderTextView"
+                        android:layout_alignBottom="@+id/lensCalHeaderTextView"
+                        android:padding="3dp"
+                        android:src="@drawable/f_square_3x"
+                        android:visibility="visible" />
 
-                    <CheckBox
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
-                        android:text="My List C"
-                        android:textColor="#000000"
-                        android:id="@+id/MyListCCheckBox"/>
-                <!--</RelativeLayout>-->
+                    <ImageView
+                        android:id="@+id/lensCalIImageView"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_gravity="bottom"
+                        android:layout_toEndOf="@+id/lensCalFImageView"
+                        android:layout_alignBottom="@+id/lensCalHeaderTextView"
+                        android:padding="3dp"
+                        android:src="@drawable/i_square_3x"
+                        android:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/lensCalZImageView"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_gravity="bottom"
+                        android:layout_toEndOf="@+id/lensCalIImageView"
+                        android:layout_alignBottom="@+id/lensCalHeaderTextView"
+                        android:padding="3dp"
+                        android:src="@drawable/z_square_3x"
+                        android:visibility="visible" />
+                </RelativeLayout>
             </LinearLayout>
+        </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="35dp"
+                    android:text="Note:"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:id='@+id/lensNoteHeaderTextView'
+                    android:gravity="bottom"
+                    android:layout_marginEnd="10dp"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:layout_width="80dp"
+                    android:layout_height="50dp"
+                    android:inputType="text"
+                    android:textSize="18sp"
+                    android:id="@+id/LensNoteEditText"
+                    android:layout_alignParentTop="true"
+                    android:layout_toEndOf="@+id/lensNoteHeaderTextView" />
+            </RelativeLayout>
         </LinearLayout>
 
         <TextView

@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.prestoncinema.app.databinding.MyListLensBinding;
 import com.prestoncinema.app.db.entity.LensEntity;
+import com.prestoncinema.app.db.entity.LensListEntity;
 
 import java.util.List;
 
@@ -32,15 +33,18 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
 
     private LensChangedListener listener;
 
-    public MyListViewAdapter(Context context, List<LensEntity> children) {
+    private LensListEntity lensList;
+
+    public MyListViewAdapter(Context context, List<LensEntity> children, LensListEntity lensList) {
         super(context, -1, children);
         this.context = context;
         this.listChildren = children;
+        this.lensList = lensList;
     }
 
     public interface LensChangedListener {
-        void onChange(LensEntity lens, String focalString, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        void onDelete(LensEntity lens);
+        void onChange(LensListEntity lensList, LensEntity lens, String focalString, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onDelete(LensListEntity lensList, LensEntity lens);
     }
 
     public void setListener(LensChangedListener listener) {
@@ -208,7 +212,7 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
 
                                 if (readyToSave) {
                                     // TODO: pass the new parameters back to the main activity to edit the lens
-                                    lensListener.onChange(lensObject, lensFocalString, newSerial, newNote, myListA, myListB, myListC);
+                                    lensListener.onChange(lensList, lensObject, lensFocalString, newSerial, newNote, myListA, myListB, myListC);
                                     dialog.dismiss();
 
 //                                    if (editSuccessful) {
@@ -241,7 +245,7 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
                             @Override
                             public void onClick(View view) {
                                 Timber.d("delete lens " + lensObject.getTag());
-                                lensListener.onDelete(lensObject);
+                                lensListener.onDelete(lensList, lensObject);
                                 dialog.dismiss();
                             }
                         });
@@ -259,7 +263,7 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
                                 ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
-                                        lensListener.onDelete(lensObject);
+                                        lensListener.onDelete(lensList, lensObject);
                                         dialog.dismiss();
                                     }
                                 });

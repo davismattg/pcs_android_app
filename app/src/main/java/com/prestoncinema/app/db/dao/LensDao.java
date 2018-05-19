@@ -75,8 +75,13 @@ public interface LensDao {
     @Query("SELECT * FROM lenses WHERE manufacturer = :manufacturer AND series = :series")
     List<LensEntity> loadLensesManufacturerAndSeriesSync(String manufacturer, String series);
 
-//    @Query("DELETE from lenses where id = :id")
-//    void delete(long id);
+    @Query("SELECT COUNT(*) FROM lenses WHERE manufacturer = :manufacturer AND series = :series AND " +
+            "focalLength1 = :focal1 AND focalLength2 = :focal2 AND serial = :serial AND note = :note")
+    int lensExists(String manufacturer, String series, int focal1, int focal2, String serial, String note);
+
+    @Query("SELECT * FROM lenses WHERE manufacturer = :manufacturer AND series = :series AND " +
+            "focalLength1 = :focal1 AND focalLength2 = :focal2 AND serial = :serial AND note = :note")
+    LensEntity getLensByAttributes(String manufacturer, String series, int focal1, int focal2, String serial, String note);
 
     @Query("DELETE from lenses")
     void deleteAll();

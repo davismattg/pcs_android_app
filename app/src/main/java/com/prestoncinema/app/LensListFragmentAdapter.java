@@ -82,7 +82,7 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
             return allLensesFragment;
         }
         else {
-            return MyListFragment.newInstance(position + 1, getPageTitle(position), this.myListDataChild, this.context);
+            return MyListFragment.newInstance(position + 1, getPageTitle(position), this.myListDataChild, this.lensList, this.context);
         }
     }
 

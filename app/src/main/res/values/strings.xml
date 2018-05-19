@@ -282,10 +282,12 @@
     <string name="title_activity_all_lenses">Lens Database</string>
     <string name="all_lenses">Lens Database</string>
     <string name="selected_lenses">Selected Lenses</string>
+    <string name="received_lenses">Received Lenses</string>
     <string name="default_lens_name">My lens file 1</string>
     <string name="default_lens_count">255</string>
     <string name="default_lens_list_note">Test comment</string>
     <string name="lens_files">My Lens Lists</string>
+    <string name="received_lenses_label">Received lenses (from HU3/imported list)</string>
     <string name="enter_file_name">Please enter a file name:</string>
     <string name="confirm_lens_list_delete">Are you sure you want to delete this list?\nThis cannot be undone.</string>
     <string name="check_lens_delete_with_list">Also delete this list\'s lenses from the database</string>

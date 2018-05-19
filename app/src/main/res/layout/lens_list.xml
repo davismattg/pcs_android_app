@@ -2,6 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
         <import type="com.prestoncinema.app.SharedHelper" />
+        <import type="com.prestoncinema.app.db.DatabaseHelper" />
         <import type="com.prestoncinema.app.db.dao.LensListLensJoinDao" />
         <variable
             name="lensList"
@@ -33,7 +34,7 @@
                     android:id="@+id/lensListCountTextView"
                     android:layout_width="50dp"
                     android:layout_height="wrap_content"
-                    android:text="@{String.valueOf(lensList.getCount())}"
+                    android:text="@{String.valueOf(lensList.count)}"
                     android:textColor="@color/darkGray"
                     android:textSize="18sp"
                     android:textStyle="bold"
