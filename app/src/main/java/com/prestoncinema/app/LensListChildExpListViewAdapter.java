@@ -61,8 +61,6 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 
         this.allLenses = lensList.getName().equals("All Lenses");
         initializeCheckedList();
-
-        Timber.d("----------------------------- new child adapter initialized ------------------------------");
     }
 
     public interface ChildLensChangedListener {
@@ -179,43 +177,43 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         binding.setLens(childObject);
         convertView.setTag(binding);
 
-        final ImageView checkLensImageView = (ImageView) convertView.findViewById(R.id.checkLensImageView);                               // the imageView used to contain the edit icon (pencil)
+        final ImageView checkLensImageView = convertView.findViewById(R.id.checkLensImageView);                               // the imageView used to contain the edit icon (pencil)
 
-//        // initialize the ImageViews used to show whether the lens is calibrated
-//        ImageView calFImageView = convertView.findViewById(R.id.lensCalFImageView);
-//        ImageView calIImageView = convertView.findViewById(R.id.lensCalIImageView);
+        // initialize the ImageViews used to show whether the lens is calibrated
+        ImageView calFImageView = convertView.findViewById(R.id.lensCalFImageView);
+        ImageView calIImageView = convertView.findViewById(R.id.lensCalIImageView);
         ImageView calZImageView = convertView.findViewById(R.id.lensCalZImageView);
 
-//        // show the icon if necessary
-//        if (childObject.getCalibratedF()) {
-//            calFImageView.setVisibility(View.VISIBLE);
-//        }
-//
-//        if (childObject.getCalibratedI()) {
-//            calIImageView.setVisibility(View.VISIBLE);
-//        }
-//
+        // show the icon if necessary
+        if (childObject.getCalibratedF()) {
+            calFImageView.setVisibility(View.VISIBLE);
+        }
+
+        if (childObject.getCalibratedI()) {
+            calIImageView.setVisibility(View.VISIBLE);
+        }
+
         if (childObject.getCalibratedZ()) {
             calZImageView.setVisibility(View.VISIBLE);
         }
-//
-//        // initialize the ImageViews used to show whether the lens is a member of My List A/B/C
-//        ImageView myListAImageView = convertView.findViewById(R.id.myListAImageView);
-//        ImageView myListBImageView = convertView.findViewById(R.id.myListBImageView);
-//        ImageView myListCImageView = convertView.findViewById(R.id.myListCImageView);
-//
-//        // show the My List A/B/C icon if necessary
-//        if (childObject.isLensMemberOfMyList(lensList, "My List A")) {
-//            myListAImageView.setVisibility(View.VISIBLE);
-//        }
-//
-//        if (childObject.isLensMemberOfMyList(lensList, "My List B")) {
-//            myListBImageView.setVisibility(View.VISIBLE);
-//        }
-//
-//        if (childObject.isLensMemberOfMyList(lensList, "My List C")) {
-//            myListCImageView.setVisibility(View.VISIBLE);
-//        }
+
+        // initialize the ImageViews used to show whether the lens is a member of My List A/B/C
+        ImageView myListAImageView = convertView.findViewById(R.id.myListAImageView);
+        ImageView myListBImageView = convertView.findViewById(R.id.myListBImageView);
+        ImageView myListCImageView = convertView.findViewById(R.id.myListCImageView);
+
+        // show the My List A/B/C icon if necessary
+        if (childObject.isLensMemberOfMyList(lensList, "My List A")) {
+            myListAImageView.setVisibility(View.VISIBLE);
+        }
+
+        if (childObject.isLensMemberOfMyList(lensList, "My List B")) {
+            myListBImageView.setVisibility(View.VISIBLE);
+        }
+
+        if (childObject.isLensMemberOfMyList(lensList, "My List C")) {
+            myListCImageView.setVisibility(View.VISIBLE);
+        }
 
         /* Set the tag and tag for this view */
         checkLensImageView.setTag(childObject.getId());
@@ -496,6 +494,32 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 dialog.show();
             }
         });
+
+        // hide the cal icons if necessary TODO: figure out this bug cuz this shouldn't be needed. see SO post: https://stackoverflow.com/questions/50418604/imageview-setvisibility-not-working-only-for-first-item-in-expandablelistview
+        if (!childObject.getCalibratedF()) {
+            calFImageView.setVisibility(View.INVISIBLE);
+        }
+
+        if (!childObject.getCalibratedI()) {
+            calIImageView.setVisibility(View.INVISIBLE);
+        }
+
+        if (!childObject.getCalibratedZ()) {
+            calZImageView.setVisibility(View.INVISIBLE);
+        }
+
+        // hide the My List A/B/C icon if necessary TODO: figure out this bug cuz this shouldn't be needed. see SO post: https://stackoverflow.com/questions/50418604/imageview-setvisibility-not-working-only-for-first-item-in-expandablelistview
+        if (!childObject.isLensMemberOfMyList(lensList, "My List A")) {
+            myListAImageView.setVisibility(View.INVISIBLE);
+        }
+
+        if (!childObject.isLensMemberOfMyList(lensList, "My List B")) {
+            myListBImageView.setVisibility(View.INVISIBLE);
+        }
+
+        if (!childObject.isLensMemberOfMyList(lensList, "My List C")) {
+            myListCImageView.setVisibility(View.INVISIBLE);
+        }
 
         return convertView;
     }

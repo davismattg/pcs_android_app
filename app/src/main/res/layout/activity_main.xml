@@ -48,6 +48,7 @@
                 android:id="@+id/devicesFoundTextView"
                 android:textColor="@color/white"
                 android:visibility="visible"
+                android:textSize="16sp"
                 android:gravity="center_horizontal"/>
 
             <android.support.v4.widget.SwipeRefreshLayout
@@ -57,13 +58,24 @@
                 android:layout_marginBottom="10dp"
                 android:visibility="visible">
 
+                <!--<TextView-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:text="@string/swipe_to_refresh_devices"-->
+                    <!--android:textColor="@color/lightMedGray"-->
+                    <!--android:textSize="16sp"-->
+                    <!--android:textStyle="italic"-->
+                    <!--android:paddingTop="40dp"-->
+                    <!--android:gravity="center_horizontal"-->
+                    <!--android:visibility="gone"-->
+                    <!--android:id="@+id/swipeRefreshTextView" />-->
+
                 <ListView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:id="@+id/scannedDevicesListView"
                     android:divider="@color/lightGray"
                     android:dividerHeight="1dp">
-
                 </ListView>
             </android.support.v4.widget.SwipeRefreshLayout>
         </LinearLayout>

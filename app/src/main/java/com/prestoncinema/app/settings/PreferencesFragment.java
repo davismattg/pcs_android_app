@@ -1,8 +1,11 @@
 package com.prestoncinema.app.settings;
 
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
@@ -13,11 +16,15 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.prestoncinema.app.BuildConfig;
 import com.prestoncinema.app.R;
+import com.prestoncinema.app.SharedHelper;
 import com.prestoncinema.app.UartActivity;
 import com.prestoncinema.app.update.FirmwareUpdater;
+
+import timber.log.Timber;
 
 
 public class PreferencesFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -89,6 +96,21 @@ public class PreferencesFragment extends PreferenceFragment implements SharedPre
             }
         });
 
+        // Set up sending an email to support to report bugs/feature requests
+        Preference contactButton = findPreference("pref_help_contact");
+        contactButton.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                Timber.d("Send an email to tech support");
+
+                String emailTo = getResources().getString(R.string.support_email_address);
+                String emailSubject = getResources().getString(R.string.support_email_subject);
+
+                setUpSupportEmailIntent(emailTo, emailSubject);
+                return false;
+            }
+        });
+
 //        // Hide advanced options (if not debug)
 //        if (!BuildConfig.DEBUG) {
 //            PreferenceCategory category = (PreferenceCategory) findPreference("pref_key_update_settings");
@@ -98,6 +120,24 @@ public class PreferencesFragment extends PreferenceFragment implements SharedPre
 //            Preference versionCheckPreference = findPreference("pref_updatesversioncheck");
 //            category.removePreference(versionCheckPreference);
 //        }
+    }
+
+    /**
+     * This method creates and executes the Intent for customers to send an email to us directly from
+     * the app. By default, it sends the message to techsupport@prestoncinema.com.
+     * @param address
+     * @param subject
+     */
+    private void setUpSupportEmailIntent(String address, String subject) {
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:" + address + "?subject=" + subject));
+
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            CharSequence toastText = "Error: No email app found";
+            SharedHelper.makeToast(getActivity(), toastText, Toast.LENGTH_LONG);
+        }
     }
 
     private void initSummary(Preference p) {

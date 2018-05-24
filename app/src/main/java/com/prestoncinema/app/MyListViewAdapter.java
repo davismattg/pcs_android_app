@@ -62,7 +62,6 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             binding = MyListLensBinding.inflate(inflater);
             convertView = binding.getRoot();
-//            convertView = inflater.inflate(R.layout.my_list_lens, parent, false);
         }
 
         else {
@@ -71,37 +70,6 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
 
         binding.setLens(lensObject);
         convertView.setTag(binding);
-
-//        TextView lensManufAndSeriesTextView = convertView.findViewById(R.id.myListLensManufAndSeriesTextView);
-//        TextView lensFocalTextView = (TextView) convertView.findViewById(R.id.myListLensFocalTextView);
-//        TextView lensSerialAndNoteTextVIew = (TextView) convertView.findViewById(R.id.myListLensSerialTextView);
-//
-//        ImageView myListFCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalFImageView);
-//        ImageView myListICalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalIImageView);
-//        ImageView myListZCalImageView = (ImageView) convertView.findViewById(R.id.myListLensCalZImageView);
-
-//        final ImageView myListEditLensImageView = (ImageView) convertView.findViewById(R.id.myListEditLensImageView);
-//        myListEditLensImageView.setTag(lensObject.getTag());
-
-//        String lensManufAndSeries = lensObject.getManufacturer() + " - " + lensObject.getSeries();
-//        final String lensFocalString = SharedHelper.constructFocalLengthString(lensObject.getFocalLength1(), lensObject.getFocalLength2());
-//        String lensSerialAndNote = lensObject.getSerial() + " " + lensObject.getNote();
-
-//        lensManufAndSeriesTextView.setText(lensManufAndSeries);
-//        lensFocalTextView.setText(lensFocalString);
-//        lensSerialAndNoteTextVIew.setText(lensSerialAndNote);
-
-//        if (!lensObject.getCalibratedF()) {
-//            myListFCalImageView.setVisibility(View.GONE);
-//        }
-//
-//        if (!lensObject.getCalibratedI()) {
-//            myListICalImageView.setVisibility(View.GONE);
-//        }
-//
-//        if (!lensObject.getCalibratedZ()) {
-//            myListZCalImageView.setVisibility(View.GONE);
-//        }
 
         convertView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,26 +80,26 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
                 final LinearLayout confirmLensDeleteLayout = editLensView.findViewById(R.id.confirmLensDeleteLayout);
 
                 // initialize the UI components so we can access their contents when the user presses "Save"
-                TextView lensManufAndSeriesTextView = (TextView) editLensView.findViewById(R.id.lensManufAndSeriesTextView);                       // textView to display the lens manufacturer name
-                final TextView lensFocalLengthTextView = (TextView) editLensView.findViewById(R.id.lensFocalTextView);
-                final EditText lensSerialEditText = (EditText) editLensView.findViewById(R.id.LensSerialEditText);
-                final EditText lensNoteEditText = (EditText) editLensView.findViewById(R.id.LensNoteEditText);
+                TextView lensManufAndSeriesTextView = editLensView.findViewById(R.id.lensManufAndSeriesTextView);                       // textView to display the lens manufacturer name
+                final TextView lensFocalLengthTextView = editLensView.findViewById(R.id.lensFocalTextView);
+                final EditText lensSerialEditText = editLensView.findViewById(R.id.LensSerialEditText);
+                final EditText lensNoteEditText = editLensView.findViewById(R.id.LensNoteEditText);
 
-                final CheckBox myListACheckBox = (CheckBox) editLensView.findViewById(R.id.MyListACheckBox);
-                final CheckBox myListBCheckBox = (CheckBox) editLensView.findViewById(R.id.MyListBCheckBox);
-                final CheckBox myListCCheckBox = (CheckBox) editLensView.findViewById(R.id.MyListCCheckBox);
+                final CheckBox myListACheckBox = editLensView.findViewById(R.id.MyListACheckBox);
+                final CheckBox myListBCheckBox = editLensView.findViewById(R.id.MyListBCheckBox);
+                final CheckBox myListCCheckBox = editLensView.findViewById(R.id.MyListCCheckBox);
 
-                ImageView CalFImageView = (ImageView) editLensView.findViewById(R.id.lensCalFImageView);
-                ImageView CalIImageView = (ImageView) editLensView.findViewById(R.id.lensCalIImageView);
-                ImageView CalZImageView = (ImageView) editLensView.findViewById(R.id.lensCalZImageView);
+                ImageView CalFImageView = editLensView.findViewById(R.id.lensCalFImageView);
+                ImageView CalIImageView = editLensView.findViewById(R.id.lensCalIImageView);
+                ImageView CalZImageView = editLensView.findViewById(R.id.lensCalZImageView);
 
                 // the hidden textView where we store the lens tag (in the form of the view's tag)
-                final TextView lensIndexTextView = (TextView) editLensView.findViewById(R.id.lensIndexTextView);
+                final TextView lensIndexTextView = editLensView.findViewById(R.id.lensIndexTextView);
 
                 // check the status string to see if the lens is part of a list
-                final boolean myListA = lensObject.getMyListA();
-                final boolean myListB = lensObject.getMyListB();
-                final boolean myListC = lensObject.getMyListC();
+                final boolean myListA = lensObject.isLensMemberOfMyList(lensList, "My List A");
+                final boolean myListB = lensObject.isLensMemberOfMyList(lensList, "My List B");
+                final boolean myListC = lensObject.isLensMemberOfMyList(lensList, "My List C");
 
                 boolean calF = lensObject.getCalibratedF();
                 boolean calI = lensObject.getCalibratedI();

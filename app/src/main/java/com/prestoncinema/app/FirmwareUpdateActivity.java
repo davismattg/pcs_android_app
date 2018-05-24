@@ -669,6 +669,15 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
     }
 
+    /**
+     * This method buffers the incoming data from the BLE Module and returns a String to the rest of
+     * the input processing logic. Because BLE breaks up data packets, we have to use a StringBuilder
+     * to assemble the actual String, adding to it until we see a "\n" from the unit. In that case,
+     * split on "\n", add the first bit to the StringBuilder, empty the StringBuilder, and add the
+     * second bit into a fresh StringBuilder.
+     * @param bytes
+     * @return
+     */
     private String buildRxPacket(byte[] bytes) {
         String text = bytesToText(bytes, false);
         String response = text.replaceAll("[^A-Za-z0-9?.* \n]", "");
@@ -700,7 +709,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     } else {
 //                        Timber.d("newline detected. splitting...length = " + response.length());
                         if (response.length() > 1) {
-                            sBuilder.append(response.split("\n")[0] + "\n");
+                            String resp = response.split("\n")[0] + "\n";
+                            sBuilder.append(resp);
                         } else {
                             sBuilder.append(response);
                         }
@@ -711,9 +721,16 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                 } else {
                     if (response.contains("V")) {
 //                        Timber.d("Version detected early on, passing through");
-                        sBuilder.append(response);
-                        String packet = sBuilder.toString() + "\n";
-                        sBuilder.setLength(0);
+                        String packet = "";
+                        if (response.contains("\n")) {
+                            sBuilder.append(response.split("\n")[0]);
+                            packet = sBuilder.toString() + "\n";
+                            sBuilder.setLength(0);
+                            sBuilder.append(response.split("\n")[1]);
+                        }
+                        else {
+                           sBuilder.append(response);
+                        }
                         return packet;
                     }
                     else {
@@ -1094,7 +1111,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                        ListView changesListView = firmwareUpdateDialogView.findViewById(R.id.firmwareUpdateChangesListView);
                        final ProgressBar progressBar = firmwareUpdateDialogView.findViewById(R.id.firmwareUpdateProgressBar);
 
-                       productImageView.setImageResource(getProductImage(productDetected));
+                       productImageView.setImageResource(SharedHelper.getProductImage(productDetected));
 
                        String productNameText = productNameTextView.getText() + productDetected + ":";
                        String whatsNewText = "What's new in " + versionToInstall + ":";
@@ -1155,39 +1172,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
         Timber.d("---------------------");
         return out;
-    }
-
-    /** This method returns the image for whatever product is detected for firmware updates
-     * @param product
-     * @return
-     */
-    private int getProductImage(String product) {
-        Timber.d("get product image for " + product + "$$");
-        int id;
-        switch (product) {
-            case "HU3":
-                id = R.drawable.hu3_cropped;
-                break;
-            case "MDR-4":
-                id = R.drawable.mdr4_cropped;
-                break;
-            case "MDR-3":
-                id = R.drawable.mdr3_cropped;
-                break;
-            case "MDR-2":
-                // TODO: Add MDR-2 picture and associated drawable ID
-                id = R.drawable.mdr3_cropped;
-                break;
-            case "VI":
-                Timber.d("VI detected");
-                id = R.drawable.vi_cropped;
-                break;
-            default:
-                id = R.drawable.unknown_cropped;
-                break;
-
-        }
-        return id;
     }
 
     private void activateUploadProgress(final ProgressBar pb) {

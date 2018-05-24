@@ -113,16 +113,10 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     private static final int kActivityRequestCode_Devices = 4;
 
-    // Firmware Download request codes
-    private static final int kDownloadOperation_VersionsDatabase = 0;
-    private static final int kDownloadOperation_Software_Hex = 1;
-
     // UI
     private AlertDialog firmwareUpdateAlertDialog;
     private ListView mScannedDevicesListView;
     private BLEModuleListViewAdapter mScannedDevicesAdapter;
-//    private ArrayAdapter mScannedDevicesAdapter;
-//    private Button mScanButton;
     private TextView mConnectedTextView;
     private long mLastUpdateMillis;
     private TextView mNoDevicesTextView;
@@ -171,11 +165,13 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private boolean notifyFirmwareUpdate;
     private boolean rememberDevice;
 
-    private String connectedModuleName;
     private ArrayAdapter<String> firmwareUpdateChangesAdapter;
-//    private String[] firmwareUpdateChanges;
 
     private String CHANNEL_ID = "firmwareUpdates";
+
+    private String fullTitle;
+
+//    private TextView swipeRefreshTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -183,6 +179,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         setContentView(R.layout.activity_main);
 
         firmwareUpdateChangesAdapter = new ArrayAdapter<>(MainActivity.this, R.layout.firmware_change_list_item);
+
+        fullTitle = getResources().getString(R.string.title_activity_main_colored);
+        setTitle(fullTitle);
 
 //        showDebugDBAddressLogToast(getApplicationContext());
 
@@ -212,6 +211,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //        startActivity(intent); //, kActivityRequestCode_Settings);
 //        return true;
 
+
         // Init variables
         mBleManager = BleManager.getInstance(this);
         isConnected = (mBleManager.getState() == 2);
@@ -220,6 +220,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         mPeripheralList = new PeripheralList();
 
         // UI
+//        swipeRefreshTextView = findViewById(R.id.swipeRefreshTextView);
         mScannedDevicesListView = findViewById(R.id.scannedDevicesListView);
         mScannedDevicesAdapter = new BLEModuleListViewAdapter(getApplicationContext(), R.layout.layout_scan_item_title, mScannedDevices); //getApplicationContext(), mScannedDevices);
         mScannedDevicesListView.setAdapter(mScannedDevicesAdapter);
@@ -262,6 +263,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 public void run() {
                     mSwipeRefreshLayout.setVisibility(View.GONE);
                     mDevicesFoundTextView.setVisibility(View.GONE);
+//                    swipeRefreshTextView.setVisibility(View.GONE);
                 }
             });
         }
@@ -285,7 +287,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
             if (notifyFirmwareUpdate) {
                 Timber.d("subscribe to firmware updates");
-//                FirebaseMessaging.getInstance().subscribeToTopic("firmware");
+                FirebaseMessaging.getInstance().subscribeToTopic("firmware");
                 FirebaseMessaging.getInstance().subscribeToTopic("test");
             }
             else {
@@ -506,6 +508,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 public void run() {
                     mSwipeRefreshLayout.setVisibility(View.VISIBLE);
                     mDevicesFoundTextView.setVisibility(View.VISIBLE);
+//                    swipeRefreshTextView.setVisibility(View.VISIBLE);
 //                    mDevicesScrollView.setVisibility(View.VISIBLE);
                 }
             });
@@ -1029,14 +1032,14 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     final String deviceName = device.getName();                                                                 // get scanned device name
                     if (deviceName != null && (deviceName.contains("Preston") || deviceName.contains("PCS"))) {                                            // check for the PCS string to only show applicable devices
-                            boolean knownDevice = checkForDeviceInPreferences(device.getAddress(), deviceName);                 // check if the device address is already stored in SharedPreferences
-                            if (knownDevice && autoConnect) {                                                                                  // if remembered, connect to it
-                                stopScanning();
-                                Timber.d("Remembered device detected, connecting");
-                                mBleManager.setBleListener(MainActivity.this);                                                  // Force set listener (could be still checking for updates...)
-                                connect(device, true);                                                                          // connect. TODO: Utilize device priority tag from prefs (or whatever other system we decide on)
-                                return;
-                            }
+                        boolean knownDevice = checkForDeviceInPreferences(device.getAddress(), deviceName);                 // check if the device address is already stored in SharedPreferences
+                        if (knownDevice && autoConnect) {                                                                                  // if remembered, connect to it
+                            stopScanning();
+                            Timber.d("Remembered device detected, connecting");
+                            mBleManager.setBleListener(MainActivity.this);                                                  // Force set listener (could be still checking for updates...)
+                            connect(device, true);                                                                          // connect. TODO: Utilize device priority tag from prefs (or whatever other system we decide on)
+                            return;
+                        }
 
                         BluetoothDeviceData previouslyScannedDeviceData = null;
                         if (mScannedDevices == null)
@@ -1083,7 +1086,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
             // Start scanning
             mScanner.start();
-            mDevicesFoundTextView.setVisibility(View.VISIBLE);
+//            mDevicesFoundTextView.setVisibility(View.VISIBLE);
         }
 
         // Update UI
@@ -1250,6 +1253,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
                 // Show list and hide "no menu_devices" label
                 mNoDevicesTextView.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
+//                swipeRefreshTextView.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
 //                mDevicesScrollView.setVisibility(isListEmpty ? View.GONE : View.VISIBLE);
 //            }
 //        });
@@ -1300,6 +1304,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
               public void run() {
                   mSwipeRefreshLayout.setVisibility(View.GONE);
                   mDevicesFoundTextView.setVisibility(View.GONE);
+//                  swipeRefreshTextView.setVisibility(View.GONE);
               }
           });
 

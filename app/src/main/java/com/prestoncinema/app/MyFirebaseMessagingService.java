@@ -1,19 +1,13 @@
 package com.prestoncinema.app;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
-import android.os.IBinder;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.TaskStackBuilder;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -21,10 +15,6 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Map;
 
-import timber.log.Timber;
-
-import static android.content.ContentValues.TAG;
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
 import static android.util.Log.d;
 
 
@@ -41,19 +31,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        // ...
-
-        // TODO(developer): Handle FCM messages here.
-        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
-        d(TAG, "From: " + remoteMessage.getFrom());
-
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             final Map<String, String>  messageData = remoteMessage.getData();
-            d(TAG, "Message data payload: " + messageData);
             if (messageData.containsValue("firmwareUpdate")) {
-                d(TAG, "firmware update detected");
-
                 // declare the intent that happens when the user clicks on the notification
                 // Go to MainActivity by default
                 Intent resultIntent = new Intent(this, MainActivity.class);
@@ -63,8 +44,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 resultIntent.putExtra("version", messageData.get("version"));
                 resultIntent.putExtra("changes", messageData.get("changes"));
                 resultIntent.putExtra("type", "firmwareUpdate");
-
-                Timber.d("changes: " + messageData.get("changes"));
 
                 // The stack builder object will contain an artificial back stack for the started Activity.
                 // This ensures that navigating backward from the Activity leads out of
@@ -78,8 +57,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 stackBuilder.addNextIntent(resultIntent);
                 PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
+                Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_status_bar_color);
+
                 NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setSmallIcon(R.drawable.ic_status_bar)
+                        .setLargeIcon(largeIcon)
+                        .setColor(getResources().getColor(R.color.newRed))
                         .setContentTitle("Firmware Update: " + messageData.get("unit"))
                         .setContentText(messageData.get("message"))
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)

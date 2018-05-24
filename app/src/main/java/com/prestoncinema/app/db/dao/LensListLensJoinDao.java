@@ -42,6 +42,8 @@ public interface LensListLensJoinDao {
     @Query("SELECT * from lens_list_lens_join WHERE listId = :listId AND lensId = :lensId")
     LensListLensJoinEntity getByListAndLensId(long listId, long lensId);
 
+//    @Query("SELECT COUNT(*) from lens_list_lens_join WHERE")
+
     @Query("DELETE from lens_list_lens_join WHERE listId = :id")
     void deleteByListId(long id);
 

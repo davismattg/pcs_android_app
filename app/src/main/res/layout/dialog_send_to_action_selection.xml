@@ -72,4 +72,28 @@
             android:textColor="@color/darkestGray"/>
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:orientation="vertical"
+        android:background="@color/lightGray"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp">
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="vertical"
+        android:id="@+id/sendSelectedLensesToFile"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/send_to_file"
+            android:textSize="16sp"
+            android:gravity="center_horizontal"
+            android:textColor="@color/darkestGray"/>
+    </LinearLayout>
 </LinearLayout>

@@ -21,7 +21,7 @@ public class DataGenerator {
     /* Initialize the default Lens List */
     private static String[] MANUFACTURERS = {"Angenieux", "Canon", "Cooke", "Fujinon", "Leica", "Panavision", "Zeiss", "Other"};
     private static final String DEFAULT_NAME = "Default Lenses";
-    private static final String DEFAULT_NOTE = "Default lenses from HU3";
+    private static final String DEFAULT_NOTE = "Basic list w/o lens mappings";
     private static final int DEFAULT_COUNT = 65;
     private static final int NUM_ANGENIUEX = 5;
     private static final int NUM_CANON = 2;

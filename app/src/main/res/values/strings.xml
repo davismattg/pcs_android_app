@@ -107,9 +107,11 @@
     <!-- Main Activity -->
     <!--<string name="title_activity_main"><font fgcolor="#FFFFFF">Preston </font><font fgcolor="#FF533D">Cinema </font><font fgcolor="#FFFFFF">Systems</font></string>-->
     <string name="title_activity_main">Preston Cinema</string>
+    <string name="title_activity_main_colored"><font fgcolor="#FFFFFF">Preston </font><font fgcolor="#FF533D">Cinema </font><font fgcolor="#FFFFFF">Systems</font></string>
     <string name="firmware_button">Firmware Updates</string>
     <string name="lenses_button">Lens Management</string>
     <string name="scanning">Scanning for PCS Bluetooth Modules...</string>
+    <string name="swipe_to_refresh_devices">No modules found\n\nSwipe down to refresh list</string>
     <string name="disconnected">Disconnected</string>
     <string name="connected">Connected</string>
     <!-- Scan Help Activity -->
@@ -273,10 +275,17 @@
     <string name="clear">Clear</string>
     <string name="delete">Delete</string>
     <string name="delete_selected">Delete selected</string>
+    <string name="help">Help</string>
+
+    <string name="pref_help_contact_summary">Questions? Found a bug? Got a feature request? Click here to let us know so we can help you out!</string>
+    <string name="pref_help_contact_title">Contact Support</string>
+    <string name="support_email_address">techsupport@prestoncinema.com</string>
+    <string name="support_email_subject">Android App Feedback</string>
 
     <string name="send_to_hu3">Send to HU3</string>
     <string name="send_to_existing_list">Add to existing lens list</string>
     <string name="send_to_new_list">Create new lens list</string>
+    <string name="send_to_file">Share as lens file</string>
 
     <!-- All Lenses Activity -->
     <string name="title_activity_all_lenses">Lens Database</string>
@@ -287,6 +296,7 @@
     <string name="default_lens_count">255</string>
     <string name="default_lens_list_note">Test comment</string>
     <string name="lens_files">My Lens Lists</string>
+    <string name="lens_lists_empty">Nothing to see here.\nWhy not import some lenses from an HU3?</string>
     <string name="received_lenses_label">Received lenses (from HU3/imported list)</string>
     <string name="enter_file_name">Please enter a file name:</string>
     <string name="confirm_lens_list_delete">Are you sure you want to delete this list?\nThis cannot be undone.</string>
@@ -299,6 +309,7 @@
     <string name="lens_list_name_hint">List name</string>
     <string name="lens_list_note_hint">Note/comment (optional)</string>
     <string name="save_lenses_to_database">Save selected...</string>
+    <string name="send_selected_lenses">Send...</string>
     <string name="cancel">Cancel</string>
 
     <string name="import_lenses_select_action">What would you like to do?</string>

@@ -18,6 +18,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.Toast;
@@ -98,11 +99,15 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
     private DatabaseHelper databaseHelper;
 
     private int numLensesChecked = 0;
+    private int MAX_LENS_COUNT = 255;
 
     private Button saveLensesToDatabaseButton;
+    private Button sendLensesButton;
 
     private ArrayList<LensListEntity> listsToAddImportedLensesTo = new ArrayList<>();
     private ArrayList<LensListEntity> allLensLists = new ArrayList<>();
+
+    ArrayList<String> invalidFileNames = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,6 +118,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         /* UI initialization */
         fab = findViewById(R.id.allLensesFab);
         saveLensesToDatabaseButton = findViewById(R.id.saveLensesToDatabaseButton);
+        sendLensesButton = findViewById(R.id.sendSelectedLensesButton);
 
         Intent intent = getIntent();
 
@@ -131,20 +137,25 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         getAllLenses();
 
         /* Initialize the FloatingActionButton used to send the lenses to HU3 */
-        fab.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Timber.d("FAB clicked, export lenses to HU3");
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//                Timber.d("FAB clicked, export lenses to HU3");
+//
+//                if (isConnected) {
+//                    sendLensesFromFab();
+//                }
+//
+//                else {
+//                    CharSequence toastText = "Error: Not connected to Preston Updater";
+//                    SharedHelper.makeToast(AllLensesActivity.this, toastText, Toast.LENGTH_SHORT);
+//                }
+//            }
+//        });
 
-                if (isConnected) {
-                    sendLensesFromFab();
-                }
-
-                else {
-                    CharSequence toastText = "Error: Not connected to Preston Updater";
-                    SharedHelper.makeToast(AllLensesActivity.this, toastText, Toast.LENGTH_SHORT);
-                }
-            }
-        });
+        invalidFileNames.add("All Lenses");
+        invalidFileNames.add("Received Lenses");
+        invalidFileNames.add("Lens Database");
+        invalidFileNames.add("Selected Lenses");
     }
 
     @Override
@@ -208,10 +219,29 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         buildLensData(manuf, series, focal1, focal2, serial, note, false, false, false);
     }
 
+    /**
+     * Interface method called when the user edits a lens from anywhere other than inside a specific
+     * lens list. For this reason, we only call updateLensInDatabase on the edited lens.
+     * @param lensList the "list" associated with the operation. Not really relevant since this method
+     *                 is called outside a specific list. As a result, lensList is just a new LensListEntity
+     *                 with the name "All Lenses", which is used for filtering operations later.
+     * @param lens the lens to edit
+     * @param serial the new serial
+     * @param note the new note
+     * @param listA always should be false since not associated with a specific list
+     * @param listB always should be false since not associated with a specific list
+     * @param listC always should be false since not associated with a specific list
+     */
     @Override
-    public void onChildLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC) {
-        Timber.d("onChildLensChanged");
-        editLens(lensList, lens, serial, note, myListA, myListB, myListC, false);
+    public void onChildLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean listA, boolean listB, boolean listC) {
+        HashMap<String, Object> lensAndListMap = LensHelper.editListAndLens(lensList, lens, serial, note, listA, listB, listC);
+
+        LensEntity editedLens = (LensEntity) lensAndListMap.get("lens");
+
+        // don't update the database if the user is editing a lens during import from the HU3
+        if (!fromImport) {
+            updateLensInDatabase(editedLens, true, true);
+        }
     }
 
     @Override
@@ -396,12 +426,13 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
     private void showOrHideFab() {
         // if at least one lens is selected and we're not trying to select lenses for import to DB
         if (numLensesChecked > 0 && !fromImport) {
-            fab.setVisibility(View.VISIBLE);
+//            fab.setVisibility(View.VISIBLE);
+            sendLensesButton.setVisibility(View.VISIBLE);
         }
 
         // don't need the FAB
         else {
-            fab.setVisibility(View.INVISIBLE);
+//            fab.setVisibility(View.INVISIBLE);
 
             // if we're trying to import lenses to the DB, show the appropriate options
             if (fromImport) {
@@ -411,14 +442,91 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
     }
 
     /**
+     * This method is the OnClick handler for the "Send..." button that appears when the user is
+     * viewing this activity by pressing on the "Selected Lenses" area. The button lets the user choose
+     * what action to take for the selected lenses.
+     * @param view the button that triggered this method
+     */
+    public void getSelectedLensesShareAction(View view) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // building the custom alert dialog
+                final AlertDialog.Builder builder = new AlertDialog.Builder(AllLensesActivity.this);
+                final LayoutInflater inflater = getLayoutInflater();
+
+                // the custom view is defined in dialog_send_lenses.xml, which we'll inflate to the dialog
+                View getActionView = inflater.inflate(R.layout.dialog_send_to_action_selection, null);
+                LinearLayout toHU3 = getActionView.findViewById(R.id.sendSelectedLensesToHU3);
+                LinearLayout toExisting = getActionView.findViewById(R.id.sendSelectedLensesToExistingList);
+                LinearLayout toNew = getActionView.findViewById(R.id.sendSelectedLensesToNewList);
+                LinearLayout toFile = getActionView.findViewById(R.id.sendSelectedLensesToFile);
+
+                // set the custom view to be the view in the alert dialog and add the other params
+                builder.setView(getActionView).setCancelable(true);
+
+                // create the alert dialog
+                final AlertDialog alert = builder.create();
+
+                getSelectedLenses();
+
+                toHU3.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (isConnected) {
+                            Timber.d("send selected lenses to HU3");
+                            prepareLensesForExport(null, MODE_HU3);
+                            alert.dismiss();
+                        }
+
+                        else {
+                            CharSequence text = "No module detected";
+                            SharedHelper.makeToast(AllLensesActivity.this, text, Toast.LENGTH_SHORT);
+                        }
+                    }
+                });
+
+                toNew.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Timber.d("send selected lenses to new list");
+                        performImportedLensesAction(true, lensesToSend);
+                        alert.dismiss();
+                    }
+                });
+
+                toExisting.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Timber.d("send selected lenses to existing list");
+                        performImportedLensesAction(false, lensesToSend);
+                        alert.dismiss();
+                    }
+                });
+
+                toFile.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Timber.d("export selected lenses to lens file");
+                        askToNameExportedLensFile();
+                        alert.dismiss();
+                    }
+                });
+
+                alert.show();
+            }
+        });
+    }
+
+    /**
      * This method handles picking the selected lenses from allLenses and getting them ready to send
-     * to the HU3. Once the lenses are ready, it calls confirmLensSend() so the user can confirm
+     * to the HU3. Once the lenses are ready, it calls confirmLensAddOrReplace() so the user can confirm
      * whether they want to add to or replace the lenses on the HU3
      */
-    private void sendLensesFromFab() {
-        getSelectedLenses();
-        confirmLensSend();
-    }
+//    private void sendLensesFromFab() {
+////        getSelectedLenses();
+////        confirmLensAddOrReplace();
+//    }
 
     /**
      * This method looks at all the lenses contained in allLenses and adds the selected ones. This
@@ -435,8 +543,106 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         }
     }
 
-    private void confirmLensSend() {
-        Timber.d("confirmLensSend");
+    /**
+     * This method gets the data strings from each lens in lensesToSend and adds them to the
+     * lensDataStrings ArrayList. It then either sends the lenses to the HU3 or creates the text
+     * file and calls shareLensFile to send it out via an Intent. The action taken is determined
+     * by the mode param.
+     * @param fileName the name of the file (only used if exporting to an external file)
+     * @param mode flag indicating the action to take (send to Hu3 or file)
+     */
+    private void prepareLensesForExport(String fileName, int mode) {
+        lensDataStrings.clear();
+
+        // gets only the selected lenses
+        getSelectedLenses();
+
+        // get the data string for each lens and add it to the array that will be sent
+        for (LensEntity lens : lensesToSend) {
+            String dataStr = SharedHelper.buildLensDataString(null, lens);
+
+            if (dataStr.length() > 100) {
+                lensDataStrings.add(dataStr);
+            }
+        }
+
+        numLenses = lensDataStrings.size();
+
+        // send lenses to the HU3
+        if (mode == MODE_HU3) {
+            if (isConnected) {
+                if (numLenses > MAX_LENS_COUNT) {
+                    CharSequence toastText = "Error: HU3 can accept 255 lenses max";
+                    SharedHelper.makeToast(AllLensesActivity.this, toastText, Toast.LENGTH_LONG);
+                }
+                else {
+                    confirmLensAddOrReplace();
+                }
+            }
+
+            else {
+                CharSequence text = "No Bluetooth module detected. Please connect and try again";
+                SharedHelper.makeToast(AllLensesActivity.this, text, Toast.LENGTH_LONG);
+            }
+        }
+
+        if (mode == MODE_SHARE) {
+            Timber.d("share the lenses - need to build file");
+            File listToExport = createTextLensFile(fileName);
+            shareLensFile(listToExport);
+        }
+    }
+
+    private void askToNameExportedLensFile() {
+        CharSequence title = "Please enter a file name";
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(AllLensesActivity.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        // the custom view is defined in dialog_rename_lens_list.xml, which we inflate
+        View newLensListView = inflater.inflate(R.layout.dialog_rename_lens_list, null);
+        final EditText listNameEditText = newLensListView.findViewById(R.id.renameLensListNameEditText);
+        final EditText listNoteEditText = newLensListView.findViewById(R.id.renameLensListNoteEditText);
+
+        // hide the note EditText cuz the user is just entering a name for the exported lens file
+        listNoteEditText.setVisibility(View.GONE);
+
+        builder.setView(newLensListView)
+                .setTitle(title)
+                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // get the list name and note entered by the user
+                        String name = listNameEditText.getText().toString().trim();
+
+//                        LensListEntity lensList = new LensListEntity(); //SharedHelper.buildLensList(null, name, "", lensesToManage.size(), lensesToManage);
+//                        lensList.setName(name);
+
+                        prepareLensesForExport(name, MODE_SHARE);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                })
+                .setCancelable(true);
+
+        // create the alert dialog
+        final AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    /**
+     * This method prompts the user for whether they would like to add the selected lenses to the HU3,
+     * or replace all lenses currently stored on the HU3. It's called once the user selects "Send to
+     * HU3" option in the dialog that pops up after tapping on the "Send..." button. The actual
+     * transfer of lenses is taken care of by the method sendSelectedLenses, with a boolean flag for
+     * add/replace as a param.
+     */
+    private void confirmLensAddOrReplace() {
+        Timber.d("confirmLensAddOrReplace");
 
         runOnUiThread(new Runnable() {
             @Override
@@ -465,6 +671,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
                                 Timber.d("Start the intent to send these lenses");
                                 boolean addLenses = addLensesRadioButton.isChecked();
 
+                                // send the lenses to the HU3
                                 sendSelectedLenses(addLenses);
                             }
                         })
@@ -481,45 +688,6 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
                 alert.show();
             }
         });
-    }
-
-    /**
-     * This method gets the data strings from each lens in lensesToSend and adds them to the
-     * lensDataStrings ArrayList. It then creates the text file and calls shareLensFile to
-     * send it out via an Intent.
-     * @param fileName
-     * @param mode
-     */
-    private void prepareLensesForExport(String fileName, int mode) {
-        lensDataStrings.clear();
-
-        for (LensEntity lens : lensesToSend) {
-            String dataStr = lens.getDataString();
-
-            if (dataStr.length() > 100) {
-                lensDataStrings.add(dataStr);
-            }
-        }
-
-        numLenses = lensDataStrings.size();
-
-//        if (mode == MODE_HU3) {
-//            Timber.d("Send lenses to HU3");
-//            if (isConnected) {
-////                ();
-//            }
-//
-//            else {
-//                CharSequence text = "No Bluetooth module detected. Please connect and try again";
-//                SharedHelper.makeToast(AllLensesActivity.this, text, Toast.LENGTH_LONG);
-//            }
-//        }
-
-        if (mode == MODE_SHARE) {
-            Timber.d("share the lenses - need to build file");
-            File listToExport = createTextLensFile(fileName);
-            shareLensFile(listToExport);
-        }
     }
 
     /**
@@ -579,15 +747,19 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         }
     }
 
+    /**
+     * This method is the
+     * @param addToExisting
+     */
     private void sendSelectedLenses(boolean addToExisting) {
-        ArrayList<String> dataStringsToSend = new ArrayList<String>(lensesToSend.size());
-
-        for (LensEntity lens : lensesToSend) {
-            dataStringsToSend.add(lens.getDataString());
-        }
+//        ArrayList<String> dataStringsToSend = new ArrayList<String>(lensesToSend.size());
+//
+//        for (LensEntity lens : lensesToSend) {
+//            dataStringsToSend.add(lens.getDataString());
+//        }
 
         Bundle bundle = new Bundle();
-        bundle.putStringArrayList("lensArray", dataStringsToSend);
+        bundle.putStringArrayList("lensArray", lensDataStrings);
         bundle.putBoolean("addToExisting", addToExisting);
 
         Intent intent = new Intent(AllLensesActivity.this, AllLensListsActivity.class);
@@ -1165,31 +1337,6 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
                 });
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // function to edit an existing lens after user changes the serial or mylist assignment in the edit dialog
-    //
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//    private boolean editLens(int lensInd, int childPosition, String manufTitle, String typeTitle, String focal1, String focal2, String serial, boolean myListA, boolean myListB, boolean myListC) {
-    private void editLens(LensListEntity lensList, LensEntity lensObject, String serial, String note, boolean myListA, boolean myListB, boolean myListC, boolean updateAdapter) {
-        Timber.d("///////////////////////////////////////////////////////////////");
-        Timber.d("editLens - params: ");
-        Timber.d("serial: " + serial);
-        Timber.d("note: " + note);
-        Timber.d("myListA: " + myListA);
-        Timber.d("myListB: " + myListB);
-        Timber.d("myListC: " + myListC);
-        Timber.d("///////////////////////////////////////////////////////////////");
-
-        lensObject.setSerial(serial);
-        lensObject.setNote(note);
-        lensObject.setMyListA(myListA);
-        lensObject.setMyListB(myListB);
-        lensObject.setMyListC(myListC);
-        lensObject.setDataString(SharedHelper.buildLensDataString(lensList, lensObject));
-
-        updateLensInDatabase(lensObject, true, updateAdapter);
-    }
-
     private void updateLensInDatabase(final LensEntity lens, final boolean showToast, final boolean updateAdapter) {
         Timber.d("updating lens in database");
         Timber.d("lens id: " + lens.getId());
@@ -1377,7 +1524,8 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
             final EditText listNameEditText = newLensListView.findViewById(R.id.renameLensListNameEditText);
             final EditText listNoteEditText = newLensListView.findViewById(R.id.renameLensListNoteEditText);
 
-            if (title != "All Lenses" && title != "Received Lenses") {
+
+            if (!invalidFileNames.contains(title)) {
                 listNameEditText.setText(title);
             }
 
@@ -1393,11 +1541,9 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
                             LensListEntity lensList = SharedHelper.buildLensList(name, note, lensesToSave.size());
 
                             // insert the lenses and list into the database
-                            DatabaseHelper.insertLensesAndList(AllLensesActivity.this, lensesToSave, lensList); //name, note, lensesToSave.size(), true);
+                            DatabaseHelper.insertLensesAndList(AllLensesActivity.this, lensesToSave, lensList);
 
                             resetUI();
-                            // return to the AllLensListsActivity so the user can see all their lists
-//                            returnToAllLensListsActivity();
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

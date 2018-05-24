@@ -103,7 +103,7 @@
                         android:layout_alignBottom="@+id/lensCalHeaderTextView"
                         android:padding="3dp"
                         android:src="@drawable/f_square_3x"
-                        android:visibility="visible" />
+                        android:visibility="invisible" />
 
                     <ImageView
                         android:id="@+id/lensCalIImageView"
@@ -114,7 +114,7 @@
                         android:layout_alignBottom="@+id/lensCalHeaderTextView"
                         android:padding="3dp"
                         android:src="@drawable/i_square_3x"
-                        android:visibility="visible" />
+                        android:visibility="invisible" />
 
                     <ImageView
                         android:id="@+id/lensCalZImageView"
@@ -125,7 +125,7 @@
                         android:layout_alignBottom="@+id/lensCalHeaderTextView"
                         android:padding="3dp"
                         android:src="@drawable/z_square_3x"
-                        android:visibility="visible" />
+                        android:visibility="invisible" />
                 </RelativeLayout>
             </LinearLayout>
         </LinearLayout>

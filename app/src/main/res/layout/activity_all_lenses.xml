@@ -65,4 +65,19 @@
         android:visibility="gone"
         android:id="@+id/saveLensesToDatabaseButton"
         android:onClick="saveImportedLensesOnClick"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/send_selected_lenses"
+        android:background="@drawable/button_bg_red"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:padding="10dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="20dp"
+        android:visibility="gone"
+        android:id="@+id/sendSelectedLensesButton"
+        android:onClick="getSelectedLensesShareAction"/>
 </RelativeLayout>

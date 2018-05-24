@@ -14,6 +14,10 @@ import com.prestoncinema.app.db.AppExecutors;
 import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.db.entity.LensListEntity;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -272,11 +276,9 @@ public class SharedHelper {
                 id = R.drawable.mdr3_cropped;
                 break;
             case "MDR-2":
-                // TODO: Add MDR-2 picture and associated drawable ID
-                id = R.drawable.mdr3_cropped;
+                id = R.drawable.mdr2_cropped;
                 break;
             case "VI":
-                Timber.d("VI detected");
                 id = R.drawable.vi_cropped;
                 break;
             default:
@@ -293,7 +295,7 @@ public class SharedHelper {
         /* Initialize the Lens object that will store all the info about this lens */
         LensEntity lensObject = new LensEntity();
 
-        String line = SharedHelper.checkLensChars(data);
+        String line = checkLensChars(data);
 
         StringBuilder lineBuilder = new StringBuilder(line);
 
@@ -315,7 +317,7 @@ public class SharedHelper {
         // since the MyList A/B/C is not a part of the Lens itself, we need to alter the data string.
         // if we didn't, the data string sent to the HU3 would always indicate the lens was a member
         // of My List (assuming it was a member upon initial import)
-        byte[] newStatus1 = removeMyListFromDataBytes(status1);
+        byte[] newStatus1 = LensHelper.removeMyListFromDataBytes(status1);
         char newStatus1Beginning = (char) newStatus1[0];
         char newStatus1End = (char) newStatus1[1];
 
@@ -637,73 +639,6 @@ public class SharedHelper {
         return seriesAndPosition;
     }
 
-    private static byte[] removeMyListFromDataBytes(byte[] bytes) {
-        byte[] outBytes = new byte[2];
-
-        // check the first byte to determine the status
-        switch (bytes[0]) {
-            case 70:    // F
-                outBytes[0] = 67;
-                break;
-            case 69:    // E
-                outBytes[0] = 67;
-                break;
-            case 68:    // D
-                outBytes[0] = 67;
-                break;
-            case 67:    // C
-                outBytes[0] = 67;
-                break;
-            case 66:    // B
-                outBytes[0] = 56;
-                break;
-            case 65:    // A
-                outBytes[0] = 56;
-                break;
-            case 57:    // 9
-                outBytes[0] = 56;
-                break;
-            default:        // 8 => no list, F not calibrated. Default case
-                outBytes[0] = 56;
-                break;
-        }
-
-        // check the second byte to determine the status
-        switch (bytes[1]) {
-            case 70:                // F
-                outBytes[1] = 55;
-                break;
-            case 69:                // E
-                outBytes[1] = 54;
-                break;
-            case 68:                // D
-                outBytes[1] = 53;
-                break;
-            case 67:                // C
-                outBytes[1] = 52;
-                break;
-            case 66:                // B
-                outBytes[1] = 51;
-                break;
-            case 65:                // A
-                outBytes[1] = 50;
-                break;
-            case 57:                // 9
-                outBytes[1] = 49;
-                break;
-            case 56:                // 8
-                outBytes[1] = 48;
-                break;
-            case 55:case 54:case 53:case 52:case 51:case 50:case 49:case 48:    // 3, 2, 1, 0
-                outBytes[1] = bytes[1];
-                break;
-            default:
-                break;
-        }
-
-        return outBytes;
-    }
-
     /* Method that accepts a String of the lens serial number (in hex representation, 4 characters) and returns that value as a (decimal) integer */
     private static String convertSerial(String serial) {
         int serialInDecimal = Integer.parseInt(serial, 16);                                         // convert from hex to decimal
@@ -950,8 +885,6 @@ public class SharedHelper {
      * @return
      */
     public static boolean isLensOK(String lensString) {
-        Timber.d("is lens ok? " + lensString);
-
         // Check that the string contains only ASCII characters
         if (!isOnlyAscii(lensString)) {
             return false;
@@ -1079,29 +1012,12 @@ public class SharedHelper {
         manufMap.put("Zeiss", 6);
         manufMap.put("Other", 7);
 
-        Timber.d("manufMap: " + manufMap.toString());
-
         for (LensEntity lens : lenses) {
             String manuf = lens.getManufacturer();
             int key = manufMap.get(manuf);
             int currCount = count.get(key);
 
             count.put(key, currCount += 1);
-//            switch (lens.getManufacturer()) {
-//                case "Angenieux":
-//                    key = 0;
-//                    break;
-//                case "Canon":
-//                    key = 1;
-//                    break;
-//                case "Cooke":
-//                    key = 2;
-//                    break;
-//                case "Fujinon":
-//                    key = 3;
-//                    break;
-//
-//            }
         }
 
         return count;
@@ -1130,9 +1046,11 @@ public class SharedHelper {
 
         // if we're exporting lenses that aren't associated with a particular list, list == null
         if (list != null) {
-            myListA = list.getMyListALongIds().contains(lens.getId());
-            myListB = list.getMyListBLongIds().contains(lens.getId());
-            myListC = list.getMyListCLongIds().contains(lens.getId());
+            if (!list.getName().equals("All Lenses")) {
+                myListA = list.getMyListALongIds().contains(lens.getId());
+                myListB = list.getMyListBLongIds().contains(lens.getId());
+                myListC = list.getMyListCLongIds().contains(lens.getId());
+            }
         }
 
         return buildLensDataString(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(),

@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.prestoncinema.app.AllLensListsActivity;
 import com.prestoncinema.app.AllLensesActivity;
+import com.prestoncinema.app.LensHelper;
 import com.prestoncinema.app.LensListDetailsActivity;
 import com.prestoncinema.app.SharedHelper;
 import com.prestoncinema.app.db.dao.LensDao;
@@ -51,7 +52,7 @@ public class DatabaseHelper {
 //    private static long listId;
 //    private static long lensId;
 
-    public static int LENS_LIST_COUNT;
+    private static int LENS_LIST_COUNT;
 
     private static List<LensEntity> lensesGlobal = new ArrayList<>();
     private static List<LensListEntity> lensListsGlobal = new ArrayList<>();
@@ -174,6 +175,8 @@ public class DatabaseHelper {
 
     /**
      * This method saves new lenses to the database and assigns them to the proper Lens List(s).
+     * It also checks for duplicate lens entries and assigns existing lenses to a list instead of
+     * creating a duplicate lens with the same attributes
      * @param context
      * @param lenses
      * @param lists
@@ -210,16 +213,9 @@ public class DatabaseHelper {
                     ArrayList<Long> allIds = thisListMap.get("All");
 
                     for (LensEntity lens : lenses) {                                                            // loop through lenses
-//                        lens.setMyListA(false);
-//                        lens.setMyListB(false);
-//                        lens.setMyListC(false);
-
-                        int countInDb = database.lensDao().lensExists(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
+                        int countInDb = database.lensDao().lensExists(LensHelper.removeMyListFromDataString(lens.getDataString()));
 
                         long lensId;
-
-                        Timber.d("checking for the following lens in database: ");
-                        Timber.d("Manuf: " + lens.getManufacturer() + ", series: " + lens.getSeries() + ", " + lens.getFocalLength1() + "-" + lens.getFocalLength2() + "mm, serial: " + lens.getSerial() + ", note: " + lens.getNote() + " :)");
 
                         // if countInDb == 0, the lens is not present in the database
                         if (countInDb == 0) {
@@ -232,39 +228,11 @@ public class DatabaseHelper {
                             lensId = foundLens.getId();
                             Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
                         }
-//                        long lensId = database.lensDao().insert(lens);                                               // insert the lens and return its id
 
                         allIds.add(lensId);
-
-//                        // if lens was a member of My List, add its ID to the HashMap to set in the LensListEntity
-//                        if (lens.getMyListA()) {
-//                            ArrayList<Long> aIds = lensIds.get("My List A");
-//                            aIds.add(lensId);
-//                            lensIds.put("My List A", aIds);
-//                        }
-//
-//                        if (lens.getMyListB()) {
-//                            ArrayList<Long> bIds = lensIds.get("My List B");
-//                            bIds.add(lensId);
-//                            lensIds.put("My List B", bIds);
-//                        }
-//
-//                        if (lens.getMyListC()) {
-//                            ArrayList<Long> cIds = lensIds.get("My List C");
-//                            cIds.add(lensId);
-//                            lensIds.put("My List C", cIds);
-//                        }
                     }
 
                     thisListMap.put("All", allIds);
-
-//                    // set the MyList attributes on the list itself
-//                    lensList.setMyListAIds(lensIds.get("My List A"));
-//                    lensList.setMyListBIds(lensIds.get("My List B"));
-//                    lensList.setMyListCIds(lensIds.get("My List C"));
-
-//                     // insert the list into the DB, returning its ID
-//                    long listId = database.lensListDao().insert(lensList);
 
                     // finally, iterate over the lenses to create the list/lens join entries
                     for (Long lensId : thisListMap.get("All")) {
@@ -272,26 +240,7 @@ public class DatabaseHelper {
                     }
 
                 }
-//                for (LensListEntity list : lists) {
-//                    // get the ID of the list to insert the lenses into
-//                    long listId = list.getId();
-//
-//                    // update the count of the lens list to reflect the newly added lenses
-//                    int count = list.getCount();
-//                    count += lenses.size();
-//                    list.setCount(count);
-//
-//                    // update the list in the database (since we changed its count)
-//                    database.lensListDao().update(list);
-//
-//                    // for each lens, insert it into the database, then build/insert a join entry to assign it to the list
-//                    for (LensEntity lens : lenses) {                                                                    // loop through lenses
-//                        long lensId = database.lensDao().insert(lens);                                                  // insert the lens and return its id
-//                        Timber.d("inserted lens, returned id = " + lensId);
-//
-//                        database.lensListLensJoinDao().insert(new LensListLensJoinEntity(listId, lensId));              // insert the list/lens join
-//                    }
-//                }
+
                 return null;
             }
         })
@@ -341,7 +290,7 @@ public class DatabaseHelper {
             @Override
             public Void call() {
                 for (LensEntity lens : lenses) {                                                            // loop through lenses
-                    int countInDb = database.lensDao().lensExists(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
+                    int countInDb = database.lensDao().lensExists(LensHelper.removeMyListFromDataString(lens.getDataString()));
 
                     long lensId;
 
