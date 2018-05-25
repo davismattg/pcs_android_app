@@ -282,6 +282,9 @@
     <string name="support_email_address">techsupport@prestoncinema.com</string>
     <string name="support_email_subject">Android App Feedback</string>
 
+    <string name="about">About</string>
+    <string name="pref_app_version_summary">App Version</string>
+
     <string name="send_to_hu3">Send to HU3</string>
     <string name="send_to_existing_list">Add to existing lens list</string>
     <string name="send_to_new_list">Create new lens list</string>

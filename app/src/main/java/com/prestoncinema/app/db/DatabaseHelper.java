@@ -213,7 +213,8 @@ public class DatabaseHelper {
                     ArrayList<Long> allIds = thisListMap.get("All");
 
                     for (LensEntity lens : lenses) {                                                            // loop through lenses
-                        int countInDb = database.lensDao().lensExists(LensHelper.removeMyListFromDataString(lens.getDataString()));
+                        String dataString = LensHelper.removeMyListFromDataString(lens.getDataString());
+                        int countInDb = database.lensDao().lensExists(dataString);
 
                         long lensId;
 
@@ -290,7 +291,8 @@ public class DatabaseHelper {
             @Override
             public Void call() {
                 for (LensEntity lens : lenses) {                                                            // loop through lenses
-                    int countInDb = database.lensDao().lensExists(LensHelper.removeMyListFromDataString(lens.getDataString()));
+                    String dataString = LensHelper.removeMyListFromDataString(lens.getDataString());
+                    int countInDb = database.lensDao().lensExists(dataString);
 
                     long lensId;
 

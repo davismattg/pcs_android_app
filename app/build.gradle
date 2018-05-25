@@ -8,6 +8,11 @@ def keystoreProperties = new Properties()
 // Load the keystore.properties file into the keystoreProperties object
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
+// version numbering variables
+def versionMajor = 0
+def versionMinor = 1
+def versionPatch = 2
+
 android {
     signingConfigs {
         config {
@@ -23,8 +28,10 @@ android {
         applicationId "com.prestoncinema.app"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 1
-        versionName "0.1"
+        versionCode versionMajor * 10000
+                    + versionMinor * 100
+                    + versionPatch
+        versionName "${versionMajor}.${versionMinor}.${versionPatch}"
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -37,10 +44,15 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.config
+
+            resValue "string", "app_version",
+                    "${defaultConfig.versionName}"
         }
-//        debug {
-//            resValue("string", "PORT_NUMBER", "9999")
-//        }
+        debug {
+            versionNameSuffix ".debug"
+            resValue "string", "app_version",
+                    "${defaultConfig.versionName}${versionNameSuffix}"
+        }
     }
     dataBinding {
         enabled = true

@@ -1054,16 +1054,16 @@ public class SharedHelper {
         }
 
         return buildLensDataString(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(),
-                        lens.getFocalLength2(), lens.getSerial(), lens.getNote(), lens.getCalibratedF(), lens.getCalibratedI(), lens.getCalibratedZ(), myListA, myListB, myListC);
+                        lens.getFocalLength2(), lens.getSerial(), lens.getNote(), lens.getCalibratedF(), lens.getCalibratedI(), lens.getCalibratedZ(), myListA, myListB, myListC, lens.getDataString());
     }
 
     public static String buildLensDataString(LensEntity lens, boolean myListA, boolean myListB, boolean myListC) {
         return buildLensDataString(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(),
-                lens.getSerial(), lens.getNote(), lens.getCalibratedF(), lens.getCalibratedI(), lens.getCalibratedZ(), myListA, myListB, myListC);
+                lens.getSerial(), lens.getNote(), lens.getCalibratedF(), lens.getCalibratedI(), lens.getCalibratedZ(), myListA, myListB, myListC, lens.getDataString());
     }
 
     // function to do the heavy lifting of creating the hex characters from the user's selections
-    public static String buildLensDataString(String manuf, String series, int focal1, int focal2, String serial, String note, boolean calF, boolean calI, boolean calZ, boolean myListA, boolean myListB, boolean myListC) {
+    public static String buildLensDataString(String manuf, String series, int focal1, int focal2, String serial, String note, boolean calF, boolean calI, boolean calZ, boolean myListA, boolean myListB, boolean myListC, String dataString) {
         int width = 110;
         char fill = '0';
         int manufByte = 0x0;
@@ -1088,6 +1088,12 @@ public class SharedHelper {
         String lensFocal1Str;
         String lensFocal2Str;
         String lensSerialStr;
+
+        String dataStringUnchanged = "";
+
+        if (dataString.length() > 0) {
+            dataStringUnchanged = dataString.substring(30);
+        }
 
         // look @ the focal lengths to determine if prime or zoom lens, and format the string appropriately (should always be 14 characters long)
         if (focal1 == focal2) {
@@ -1304,9 +1310,21 @@ public class SharedHelper {
             lensSerialStr = "0000"; //String.format("%4s", Integer.toHexString(0).toUpperCase()).replaceAll(" ", "0");
         }
         String toPad = lensName + lensStatus1 + lensStatus2 + lensFocal1Str + lensFocal2Str + lensSerialStr;
-        String padded = toPad + new String(new char[width - toPad.length()]).replace('\0', fill) + ETXStr;
+        String emptyPadding = new String(new char[width - toPad.length()]).replace('\0', fill) + ETXStr;
+        String paddedNew = toPad + dataStringUnchanged;
 
-        Timber.d("lensString length: " + padded.length());
+        String padded;
+
+        if (dataString.length() > 0) {
+            padded = paddedNew;
+        }
+
+        else {
+            padded = toPad + emptyPadding;
+        }
+
+        Timber.d("padded length: " + padded.length());
+        Timber.d("paddedNew length: " + paddedNew.length());
         Timber.d("lensString:" + padded + "$$");
 
         return padded;

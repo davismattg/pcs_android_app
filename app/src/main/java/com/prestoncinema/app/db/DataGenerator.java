@@ -410,7 +410,7 @@ public class DataGenerator {
         lens.setSeriesPosition(0);
         // TODO: create method in shared helper that constructs the data string from lens characteristics
 //        lens.setDataString(SharedHelper.createDataString());
-        lens.setDataString(SharedHelper.buildLensDataString(manufacturer, series, focal1, focal2, "", "", false, false, false, false, false, false));
+        lens.setDataString(SharedHelper.buildLensDataString(manufacturer, series, focal1, focal2, "", "", false, false, false, false, false, false, ""));
         lens.setCalibratedF(false);
         lens.setCalibratedI(false);
         lens.setCalibratedZ(false);

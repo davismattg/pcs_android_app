@@ -656,6 +656,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                     @Override
                     public void onCompleted() {
                         Timber.d("createLensListsObservable onCompleted");
+
                         createLensListsCountObservable();
                     }
 
@@ -684,6 +685,9 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
 
         if (allLensLists.size() == 0) {
             lensListsEmptyTextView.setVisibility(View.VISIBLE);
+        }
+        else {
+            lensListsEmptyTextView.setVisibility(View.GONE);
         }
     }
 
@@ -768,7 +772,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
     }
 
     /**
-     * This method creates the Observabe used with RxAndroid to update the UI when the Lens Lists
+     * This method creates the Observable used with RxAndroid to update the UI when the Lens Lists
      * are retrieved from the database
      */
     private void createSelectedLensesObservable() {
@@ -1269,10 +1273,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         .subscribe(new SingleSubscriber<Void>() {
             @Override
             public void onSuccess(Void value) {
-                allLensLists.clear();
-                allLenses.clear();
-                selectedLenses.clear();
-                lensFileAdapter.notifyDataSetChanged();
+                Timber.d("deleteEverything() succeeded");
 
                 CharSequence text = "Database cleared successfully";
                 SharedHelper.makeToast(AllLensListsActivity.this, text, Toast.LENGTH_LONG);
@@ -1282,7 +1283,8 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
 
             @Override
             public void onError(Throwable error) {
-
+                Timber.d("deleteEverything() encountered an error");
+                Timber.d(error.getMessage());
             }
         });
     }
@@ -1415,7 +1417,24 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                 long listId = database.lensListDao().insert(list);
                 long lensId;
                 for (LensEntity lens : lenses) {
-                    lensId = database.lensDao().insert(lens);
+                    String dataString = LensHelper.removeMyListFromDataString(lens.getDataString());
+                    int countInDb = database.lensDao().lensExists(dataString);
+
+                    Timber.d("checking for the following lens in database: ");
+                    Timber.d("Manuf: " + lens.getManufacturer() + ", series: " + lens.getSeries() + ", " + lens.getFocalLength1() + "-" + lens.getFocalLength2() + "mm, serial: " + lens.getSerial() + ", note: " + lens.getNote() + " :)");
+
+                    // if countInDb == 0, the lens is not present in the database
+                    if (countInDb == 0) {
+                        lensId = database.lensDao().insert(lens);                                               // insert the lens and return its id
+                    }
+
+                    // record found in database, so retrieve it
+                    else {
+                        LensEntity foundLens = database.lensDao().getLensByAttributes(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
+                        lensId = foundLens.getId();
+                        Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
+                    }
+
                     database.lensListLensJoinDao().insert(new LensListLensJoinEntity(listId, lensId));
                 }
                 return null;
@@ -1426,7 +1445,6 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         .subscribe(new SingleSubscriber<Void>() {
             @Override
             public void onSuccess(Void value) {
-//                createLensListsObservable();
                 resetUI();
 
                 CharSequence text = "Default lenses restored to database";
@@ -2145,8 +2163,6 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         numLenses = lensArray.size();
         byte[] start_byte = {01, 05};
         String startString = new String(start_byte);
-
-        Timber.d("lensArray: " + lensArray.toString());
 
         if (isConnectionReady) {
             lensSendMode = true;
@@ -3833,6 +3849,22 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
      * subscriptions
      */
     private void resetUI() {
+        if (allLensLists != null) {
+            allLensLists.clear();
+        }
+
+        if (allLenses != null) {
+            allLenses.clear();
+        }
+
+        if (selectedLenses != null) {
+            selectedLenses.clear();
+        }
+
+        if (lensFileAdapter != null) {
+            lensFileAdapter.notifyDataSetChanged();
+        }
+
         createAllLensesObservable();
         createLensListsObservable();
         createLensListsCountObservable();

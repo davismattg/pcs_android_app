@@ -2522,7 +2522,8 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         Single.fromCallable(new Callable<Long>() {
             @Override
             public Long call() throws Exception {
-                int countInDb = database.lensDao().lensExists(LensHelper.removeMyListFromDataString(lens.getDataString()));
+                String dataString = LensHelper.removeMyListFromDataString(lens.getDataString());
+                int countInDb = database.lensDao().lensExists(dataString);
 
                 long lensId;
 

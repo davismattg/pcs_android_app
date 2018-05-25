@@ -678,7 +678,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
                         .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                lensesToSend.clear();
+//                                lensesToSend.clear();
                             }
                         })
                         .setCancelable(false);
@@ -1307,7 +1307,6 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         }
 
         getListsForLenses(lensesToDelete);
-//        deleteLenses(lensesToDelete);
     }
 
     private void deleteLenses(final LensEntity... lens) {
@@ -1451,11 +1450,12 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
      * @param view the "Save selected" button
      */
     public void saveImportedLensesOnClick(View view) {
-        // remove all the lenses that aren't selected
-        ArrayList<LensEntity> lensesToSave = SharedHelper.getCheckedLenses(allLenses);
+        // get the selected lenses
+        getSelectedLenses();
 
-        if (lensesToSave.size() > 0) {
-            selectImportedLensesAction(lensesToSave);
+        // if at least one lens is selected, ask the user what they want to do with them
+        if (lensesToSend.size() > 0) {
+            selectImportedLensesAction(lensesToSend);
         }
 
         else {

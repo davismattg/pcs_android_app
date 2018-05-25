@@ -104,8 +104,10 @@ public class PreferencesFragment extends PreferenceFragment implements SharedPre
                 Timber.d("Send an email to tech support");
 
                 String emailTo = getResources().getString(R.string.support_email_address);
-                String emailSubject = getResources().getString(R.string.support_email_subject);
+                String basicSubject = getResources().getString(R.string.support_email_subject);
+                String currentVersion = getResources().getString(R.string.app_version);
 
+                String emailSubject = basicSubject + " - V" + currentVersion;
                 setUpSupportEmailIntent(emailTo, emailSubject);
                 return false;
             }
