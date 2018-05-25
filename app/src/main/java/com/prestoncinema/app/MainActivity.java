@@ -96,17 +96,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private final static String kPreferences = "MainActivity_prefs";
     private final static String kPreferences_filtersPanelOpen = "filtersPanelOpen";
 
-    // Components
-    private final static int kComponentsNameIds[] = {
-            R.string.scan_connectservice_info,
-            R.string.scan_connectservice_uart,
-            R.string.scan_connectservice_pinio,
-            R.string.scan_connectservice_controller,
-            R.string.scan_connectservice_beacon,
-            R.string.scan_connectservice_neopixel,
-    };
-
-    // Activity request codes (used for onActivityResult)
+     // Activity request codes (used for onActivityResult)
     private static final int kActivityRequestCode_EnableBluetooth = 1;
     private static final int kActivityRequestCode_Settings = 2;
     private static final int kActivityRequestCode_ConnectedActivity = 3;
@@ -121,7 +111,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private long mLastUpdateMillis;
     private TextView mNoDevicesTextView;
     private TextView mDevicesFoundTextView;
-//    private ScrollView mDevicesScrollView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private ProgressDialog pDialog;
     public static final int progress_bar_type = 0;
@@ -282,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             // Setting to remember devices upon connection
             rememberDevice = sharedPreferences.getBoolean("pref_remember_device", true);
 
-            // Subscribe the app to the "firmware" topic by default_lenses. TODO: make this settable by user in preferences
+            // Subscribe the app to the "firmware" topic by default_lenses.
             notifyFirmwareUpdate = sharedPreferences.getBoolean("pref_subscribe_to_firmware_updates", true);
 
             if (notifyFirmwareUpdate) {
@@ -1037,7 +1026,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                             stopScanning();
                             Timber.d("Remembered device detected, connecting");
                             mBleManager.setBleListener(MainActivity.this);                                                  // Force set listener (could be still checking for updates...)
-                            connect(device, true);                                                                          // connect. TODO: Utilize device priority tag from prefs (or whatever other system we decide on)
+                            connect(device, true);                                                              // connect.
                             return;
                         }
 
@@ -1352,7 +1341,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        autostartScan();            // TODO: sometimes module blue LED still lit after disconnecting, and thus can't be reconnected to during scan
+                        autostartScan();
                     }
                 });
             }
