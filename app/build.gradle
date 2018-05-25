@@ -28,9 +28,7 @@ android {
         applicationId "com.prestoncinema.app"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode versionMajor * 10000
-                    + versionMinor * 100
-                    + versionPatch
+        versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
 
         javaCompileOptions {
