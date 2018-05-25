@@ -212,7 +212,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //        swipeRefreshTextView = findViewById(R.id.swipeRefreshTextView);
         mScannedDevicesListView = findViewById(R.id.scannedDevicesListView);
         mScannedDevicesAdapter = new BLEModuleListViewAdapter(getApplicationContext(), R.layout.layout_scan_item_title, mScannedDevices); //getApplicationContext(), mScannedDevices);
-        mScannedDevicesListView.setAdapter(mScannedDevicesAdapter);
+        if (mScannedDevicesAdapter != null) {
+            mScannedDevicesListView.setAdapter(mScannedDevicesAdapter);
+        }
 
         mConnectedTextView = findViewById(R.id.ConnectedTextView);
         registerForContextMenu(mConnectedTextView);

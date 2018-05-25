@@ -386,36 +386,45 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
      * which can take time. This method is only called once the lenses are fetched from the database.
      */
     private void setupDataWithAllLenses() {
-        // sort the lenses by focal length
-        Collections.sort(allLenses);
+        Timber.d("setting up data with all lenses");
+        if (allLenses != null) {
+            // sort the lenses by focal length
+            Collections.sort(allLenses);
 
-        // set the number of lenses
-        numLenses = allLenses.size();
+            // set the number of lenses
+            numLenses = allLenses.size();
 
-        // get the number of selected lenses
-        numLensesChecked = getNumberCheckedLenses();
+            // get the number of selected lenses
+            numLensesChecked = getNumberCheckedLenses();
 
-        // show or hide he FAB to send lenses to the HU3
-        showOrHideFab();
+            // show or hide he FAB to send lenses to the HU3
+            showOrHideFab();
 
-        // set up components of the adapter for the ExpandableListView
-        allLensesManufHeader = SharedHelper.populateLensManufHeader(context);
-        allLensesTypeHeader = SharedHelper.populateLensTypeHeader(context, allLensesManufHeader);
-        allLensesTypeHeaderCountInitial = SharedHelper.initializeLensTypeHeaderCount(allLensesManufHeader);
-        allLensesTypeHeaderCount = SharedHelper.populateLensTypeHeaderCount(allLensesTypeHeaderCountInitial, allLensesManufHeader, allLenses);
-        allLensesPositionMap = SharedHelper.initializePositionMap(allLensesManufHeader, allLensesTypeHeaderCount);
+            // set up components of the adapter for the ExpandableListView
+            allLensesManufHeader = SharedHelper.populateLensManufHeader(context);
+            allLensesTypeHeader = SharedHelper.populateLensTypeHeader(context, allLensesManufHeader);
+            allLensesTypeHeaderCountInitial = SharedHelper.initializeLensTypeHeaderCount(allLensesManufHeader);
+            allLensesTypeHeaderCount = SharedHelper.populateLensTypeHeaderCount(allLensesTypeHeaderCountInitial, allLensesManufHeader, allLenses);
+            allLensesPositionMap = SharedHelper.initializePositionMap(allLensesManufHeader, allLensesTypeHeaderCount);
 
-        // initialize the Fragment that actually holds everything
-        LensListEntity lensList = new LensListEntity();
-        lensList.setName("All Lenses");
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragment = LensListFragment.newInstance(0, lensList, allLensesManufHeader, allLensesTypeHeader, allLensesTypeHeaderCount, allLensesPositionMap, allLenses, fromImport, listNote, context);
-        fragmentTransaction.add(R.id.allLensesFragmentContainer, fragment);
-        fragmentTransaction.commit();
+            // initialize the Fragment that actually holds everything
+            LensListEntity lensList = new LensListEntity();
+            lensList.setName("All Lenses");
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragment = LensListFragment.newInstance(0, lensList, allLensesManufHeader, allLensesTypeHeader, allLensesTypeHeaderCount, allLensesPositionMap, allLenses, fromImport, listNote, context);
+            fragmentTransaction.add(R.id.allLensesFragmentContainer, fragment);
 
-        // update the activity title to reflect the number of lenses
-        setActivityTitle();
+            // use this method instead of commit() because app was crashing if screen was rotated
+            fragmentTransaction.commitAllowingStateLoss();
+
+            // update the activity title to reflect the number of lenses
+            setActivityTitle();
+        }
+
+        else {
+            Timber.d("allLenses is null");
+        }
     }
 
     /**
@@ -424,16 +433,15 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
      * and instead show a button to save the (selected) lenses to the database.
      */
     private void showOrHideFab() {
+        Timber.d("showOrHideFab");
         // if at least one lens is selected and we're not trying to select lenses for import to DB
         if (numLensesChecked > 0 && !fromImport) {
-//            fab.setVisibility(View.VISIBLE);
             sendLensesButton.setVisibility(View.VISIBLE);
+            Timber.d("visibility set to true");
         }
 
         // don't need the FAB
         else {
-//            fab.setVisibility(View.INVISIBLE);
-
             // if we're trying to import lenses to the DB, show the appropriate options
             if (fromImport) {
                 saveLensesToDatabaseButton.setVisibility(View.VISIBLE);
