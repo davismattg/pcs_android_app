@@ -906,14 +906,14 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
         } else if (requestCode == kActivityRequestCode_Settings) {
             // Return from activity settings. Update app behaviour if needed
-            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-            boolean updatesEnabled = sharedPreferences.getBoolean("pref_updatesenabled", true);
-            if (updatesEnabled) {
-                mLatestCheckedDeviceAddress = null;
-                mFirmwareUpdater.refreshSoftwareUpdatesDatabase();
-            } else {
-                mFirmwareUpdater = null;
-            }
+//            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+//            boolean updatesEnabled = sharedPreferences.getBoolean("pref_updatesenabled", true);
+//            if (updatesEnabled) {
+//                mLatestCheckedDeviceAddress = null;
+//                mFirmwareUpdater.refreshSoftwareUpdatesDatabase();
+//            } else {
+//                mFirmwareUpdater = null;
+//            }
         }
     }
 

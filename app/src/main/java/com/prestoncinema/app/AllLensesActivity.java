@@ -404,7 +404,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
             allLensesManufHeader = SharedHelper.populateLensManufHeader(context);
             allLensesTypeHeader = SharedHelper.populateLensTypeHeader(context, allLensesManufHeader);
             allLensesTypeHeaderCountInitial = SharedHelper.initializeLensTypeHeaderCount(allLensesManufHeader);
-            allLensesTypeHeaderCount = SharedHelper.populateLensTypeHeaderCount(allLensesTypeHeaderCountInitial, allLensesManufHeader, allLenses);
+            allLensesTypeHeaderCount = SharedHelper.populateLensTypeHeaderCount(allLensesTypeHeaderCountInitial, allLenses);
             allLensesPositionMap = SharedHelper.initializePositionMap(allLensesManufHeader, allLensesTypeHeaderCount);
 
             // initialize the Fragment that actually holds everything
@@ -1320,6 +1320,8 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
     private void deleteLenses(final LensEntity... lens) {
         final int numLensesDeleted = lens.length;
 
+        Timber.d("deleting " + numLensesDeleted + " lenses");
+
         Single.fromCallable(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
@@ -1448,6 +1450,9 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
         numLenses = allLenses.size();
         setActivityTitle();
         Collections.sort(allLenses);
+
+        allLensesTypeHeaderCount = SharedHelper.populateLensTypeHeaderCount(SharedHelper.initializeLensTypeHeaderCount(allLensesManufHeader), allLenses);
+        fragment.updateHeaderCount(allLensesTypeHeaderCount);
         fragment.updateAdapter();
     }
 

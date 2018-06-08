@@ -236,6 +236,10 @@ public class LensListFragment extends Fragment {
         }
     }
 
+    public void updateHeaderCount(Map<Integer, Integer> newCount) {
+        lensListExpAdapter.updateHeaderCount(newCount);
+    }
+
     public void updateAdapter() {
         if (lensListExpAdapter != null) {
             Timber.d("updateAdapter");

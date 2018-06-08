@@ -254,6 +254,7 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                 final View editLensView = dialogInflater.inflate(allLenses ? R.layout.dialog_edit_lens_all_lenses : R.layout.dialog_edit_lens, null);                               // inflate the view to use as the edit dialog
                 final LinearLayout editLensMainLayout = editLensView.findViewById(R.id.editLensMainLayout);
                 final LinearLayout confirmLensDeleteLayout = editLensView.findViewById(R.id.confirmLensDeleteLayout);
+//                final TextView deleteConfirmationTextView = editLensView.findViewById(R.id.confirmLensDeleteTextView);
 
                 // initialize the UI components so we can access their contents when the user presses "Save"
                 TextView lensManufAndSeriesTextView = editLensView.findViewById(R.id.lensManufAndSeriesTextView);                       // textView to display the lens manufacturer name
@@ -462,6 +463,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                             public void onClick(View view) {
                                 editLensMainLayout.setVisibility(View.GONE);
                                 confirmLensDeleteLayout.setVisibility(View.VISIBLE);
+
+
 
                                 ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE).setText("Delete");
                                 ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.INVISIBLE);
@@ -677,41 +680,47 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                                 posButton.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
-                                        int fLength1 = Integer.parseInt(lensFLength1.getText().toString().trim());
-                                        int fLength2 = Integer.parseInt((isPrime) ? "0" : lensFLength2.getText().toString().trim());
-                                        String serial = lensSerialEditText.getText().toString().trim();
-                                        String note = lensNoteEditText.getText().toString().trim();
+                                        String fLength1Entered = lensFLength1.getText().toString().replaceAll("[^\\d.]", "");
+                                        String fLength2Entered = lensFLength2.getText().toString().replaceAll("[^\\d.]", "");
 
-                                        String completeFocalString = SharedHelper.constructFocalLengthString(fLength1, fLength2);
+                                        boolean fLengthOK = isPrime ? (fLength1Entered.length() > 0) : (fLength1Entered.length() > 0 && fLength2Entered.length() > 0);
 
-                                        boolean serialLengthOK = SharedHelper.checkSerialLength(completeFocalString, serial, note);
-                                        boolean lensExists = false;
-                                        boolean readyToSave = false;
+                                        if (fLengthOK) {
+                                            int fLength1 = Integer.parseInt(lensFLength1.getText().toString().trim());
+                                            int fLength2 = Integer.parseInt((isPrime) ? "0" : lensFLength2.getText().toString().trim());
+                                            String serial = lensSerialEditText.getText().toString().trim();
+                                            String note = lensNoteEditText.getText().toString().trim();
 
-                                        if (serialLengthOK) {
-                                            lensExists = SharedHelper.checkIfLensExists(listDataChild.get(typeTitle), fLength1, fLength2, serial, note);
-                                            readyToSave = (serialLengthOK && !lensExists);
+                                            String completeFocalString = SharedHelper.constructFocalLengthString(fLength1, fLength2);
+
+                                            boolean serialLengthOK = SharedHelper.checkSerialLength(completeFocalString, serial, note);
+                                            boolean lensExists = false;
+                                            boolean readyToSave = false;
+
+                                            if (serialLengthOK) {
+                                                lensExists = SharedHelper.checkIfLensExists(listDataChild.get(typeTitle), fLength1, fLength2, serial, note);
+                                                readyToSave = (serialLengthOK && !lensExists);
+                                            }
+
+                                            if (readyToSave) {
+                                                parentListener.onAdd(manufTitle, typeTitle, fLength1, fLength2, serial, note);
+                                                dialog.dismiss();
+                                            } else {
+                                                CharSequence toastText;
+                                                if (lensExists) {
+                                                    toastText = "Error: Lens already exists in file.";
+                                                } else {
+                                                    toastText = "Error: Lens name too long.";
+                                                }
+
+                                                SharedHelper.makeToast(context, toastText, Toast.LENGTH_LONG);
+                                            }
                                         }
 
-                                        if (readyToSave) {
-                                            parentListener.onAdd(manufTitle, typeTitle, fLength1, fLength2, serial, note);
-                                            dialog.dismiss();
-                                        }
                                         else {
-                                            CharSequence toastText;
-                                            if (lensExists) {
-                                                toastText = "Error: Lens already exists in file.";
-                                            }
-                                            else {
-                                                toastText = "Error: Lens name too long.";
+                                            CharSequence toastText = "Error: Invalid Focal Length";
 
-                                            }
-
-                                            int duration = Toast.LENGTH_SHORT;
-
-                                            Toast toast = Toast.makeText(context, toastText, duration);
-
-                                            toast.show();
+                                            SharedHelper.makeToast(context, toastText, Toast.LENGTH_LONG);
                                         }
                                     }
                                 });

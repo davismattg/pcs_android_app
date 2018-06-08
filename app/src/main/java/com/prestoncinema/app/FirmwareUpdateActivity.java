@@ -95,7 +95,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private int progressStatus = 0;
     private ArrayList<String> fileArray = new ArrayList<String>();
     private List<String> productNameArray = new ArrayList<String>();
-    private int[] baudRateArray = {19200, 57600, 115200, 9600};
+    private int[] baudRateArray = {57600, 9600, 38400, 115200, 19200};
     private int baudRateIndex = 0;
     private StringBuilder sBuilder = new StringBuilder("");
     private Handler handler = new Handler();
@@ -143,7 +143,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     // TODO: Add version history and other relevant info in this activity so users can see it all at once
-    // TODO: Add alert dialog when firmware update finished
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -163,10 +162,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             getSupportFragmentManager().beginTransaction().add(R.id.fragmentContainer, fragment).commit();
         }
 
-        mConnectedTextView = (TextView) findViewById(R.id.ConnectedTextView);
-
-//        mProgressDialog = new ProgressDialog(FirmwareUpdateActivity.this);
-//        uploadDialog = new AlertDialog(FirmwareUpdateActivity.this);
+        mConnectedTextView = findViewById(R.id.ConnectedTextView);
 
         mBleManager = BleManager.getInstance(this);
         isConnected = (mBleManager.getState() == 2);
@@ -202,6 +198,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
 
         if (isConnected) {
+            // set up the module with baud rate = 57.6 kBaud (for some reason DXL doesn't output data when baudrate = 19.2k)
             showSearchingForUnitDialog();
         }
 
@@ -292,6 +289,17 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //    }
 
     /**
+     * This method is a bit of a workaround for the DXL module. It doesn't output data if the BLE module's
+     * current baud rate is set to 19.2K, so we initialize the MDR-4/DXL module's baud rate to hopefully catch it.
+     */
+    private void initializeBaudRate() {
+        String baudRateSwitchString = "+++\nAT+BAUDRATE=57600";
+        responseExpected = "1\nOK\n";
+        uartSendData("+++", false);
+//        uartSendData("AT+BAUDRATE=57600", false);
+    }
+
+    /**
      * Show the user a dialog while the system is changing baud rates and looking for unit
      */
     private void showSearchingForUnitDialog() {
@@ -353,7 +361,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //        }
 
         // TODO: if sending Y, E, or P to MDR-4, don't add \r\n cuz it might reject it as junk
-        if (productRxString.equals("MDR4\n")) {
+        if (productRxString.equals("MDR4\n") || productRxString.equals("DXL \n")) {
             if (expectingDone) {
 //                Timber.d("MDR4 detected, add r and n");
                 data += "\r\n";
@@ -376,6 +384,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
     }
 
+    /**
+     * This method initiates the download of firmware files from the XML file stored on Firebase.
+     * When complete, it sets the flag indicated the firmware files were downloaded successfully.
+     */
     public void startDownload() {
         Timber.d("----------------- downloading firmware versions -------------------------");
         new DownloadFirmwareTask(getApplicationContext(), new DownloadCompleteListener() {
@@ -383,6 +395,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             public void downloadComplete(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareFilesMap) {
                 Timber.d("downloadComplete inner entered");
                 firmwareFilesDownloaded = true;
+                initializeBaudRate();
             }
         }).execute(pcsPath);
     }
@@ -648,9 +661,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             if (characteristic.getService().getUuid().toString().equalsIgnoreCase(UUID_SERVICE)) {
                 if (characteristic.getUuid().toString().equalsIgnoreCase(UUID_RX)) {
                     final byte[] bytes = characteristic.getValue();
-//                    Timber.d("data received: " + bytesToText(bytes, false));
-                    String convData = bytesToText(bytes, true);
-//                    Timber.d("convData: " + convData + "$$");
+
                     String newRxData = buildRxPacket(bytes);
                     Timber.d("newRxData:" + newRxData + "$$");
 
@@ -681,7 +692,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private String buildRxPacket(byte[] bytes) {
         String text = bytesToText(bytes, false);
         String response = text.replaceAll("[^A-Za-z0-9?.* \n]", "");
-//        Timber.d("buildRxPacket - response: " + response + "$$");
 
         if (expectingDone) {
             if (response.contains("*")) {
@@ -743,27 +753,37 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     private void processRxData(String text) {
-//        Timber.d("processRxData (" + text + "):\nstartConnectionSetup: " + startConnectionSetup + "\nisConnectionReady: " +
-//                isConnectionReady + "\nresponseExpected: " + responseExpected + "\nbaudRateWait: " + baudRateWait);
+        Timber.d("processRxData (" + text + "):\nprogramLoaded: " + programLoaded + "\nstartConnectionSetup: " + startConnectionSetup + "\nisConnectionReady: " +
+                isConnectionReady + "\nlastDataSent: " + lastDataSent + "\nresponseExpected: " + responseExpected + "\nbaudRateWait: " + baudRateWait);
+
         if (!programLoaded) {
             if (text.length() > 2) {
                 String productCheck = checkForProductString(text);
+                Timber.d("productCheck = " + productCheck);
+
                 if (productCheck.length() > 0) {
-//                    Timber.d("productRxString found before anything else");
+                    Timber.d("productRxString found before anything else");
                     startConnectionSetup = false;
                     productRxString = productCheck;
                     final String filePath = getS19Path(productRxString);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            loadProgramFile(filePath);
-                        }
-                    });
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+                    loadProgramFile(filePath);
+//                        }
+//                    });
                     isConnectionReady = true;
                     responseExpected = "";
                 }
             }
         }
+
+//        if (productNameArray.contains(text)) {
+//            Timber.d("product detected before flags. Settings flags");
+//            startConnectionSetup = false;
+//            isConnectionReady = true;
+//        }
+
         if (startConnectionSetup) {
 //            Timber.d(lastDataSent + " sent, expect " + responseExpected + " in return");
             switch (lastDataSent) {
@@ -775,13 +795,14 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //                            Timber.d("Sending baudrate to device: " + currBaudRate);
                             uartSendData("AT+BAUDRATE=" + currBaudRate, false);
                             baudRateIndex += 1;
-                            if (baudRateIndex == 4) {
+                            if (baudRateIndex == baudRateArray.length) {
                                 baudRateIndex = 0;
                             }
                             responseExpected = "OK";
                             baudRateWait = 0;
                         }
                         else {
+                            Timber.d("response not found, increment baud rate counter");
                             baudRateWait += 1;
                         }
                     }
@@ -809,7 +830,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //                                Timber.d("Sending baudrate to device: " + currBaudRate);
                                 uartSendData("AT+BAUDRATE=" + currBaudRate, false);
                                 baudRateIndex += 1;
-                                if (baudRateIndex == 4) {
+                                if (baudRateIndex == baudRateArray.length) {
                                     baudRateIndex = 0;
                                 }
                                 responseExpected = "OK";
@@ -817,7 +838,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                             } else {
                                 //in data mode since module returned 0 from +++
 //                                Timber.d("Device probably in data mode, check w/ AT command");
-                                uartSendData("AT", false);
+//                                uartSendData("AT", false);
                                 responseExpected = "readyToGo";
                                 baudRateWait = 0;
                             }
@@ -833,7 +854,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                         responseExpected = "OK";
                     }
                     break;
-                case "AT+BAUDRATE=9600": case "AT+BAUDRATE=19200": case "AT+BAUDRATE=57600": case "AT+BAUDRATE=115200": case "ATZ":
+                case "AT+BAUDRATE=9600": case "AT+BAUDRATE=19200":case "AT+BAUDRATE=38400": case "AT+BAUDRATE=57600": case "AT+BAUDRATE=115200": case "ATZ":
                     if (baudRateWait < packetsToWait) {
                         if (text.contains(responseExpected)) {              // expect "OK" if baudrate changed successfully
                             Timber.d("OK received; baudrate changed successfully. Switch back to data mode and check for productString");
@@ -927,31 +948,19 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             isConnectionReady = true;
         } else {
             if (text.contains("0\nOK\n")) {
-                //                if (lastDataSent == "+++") {
-                //                    commandMode = false;
-                //                }
                 if (baudRateSent) {
                     startConnectionSetup = false;
-                    //                    programMode = true;
-                    //                    Timber.d("programMode set to true - ready to program!");
                 } else {
                     uartSendData("+++", false);
                 }
             } else if (text.contains("1\nOK\n")) {
-                //                if (lastDataSent == "+++") {
-                //                    commandMode = true;
-                //                }
                 if (baudRateSent) {
                     uartSendData("+++", false);
                 } else {
                     int currBaudRate = baudRateArray[baudRateIndex];
                     Timber.d("Sending baudrate to device: " + currBaudRate);
                     uartSendData("AT+BAUDRATE=" + currBaudRate, false);
-//                    uartSendData("+++\nATZ+++", false);
                     baudRateSent = true;
-                    //                    baudRateWait = 0;
-//                    startConnectionSetup = false;
-                    //                    isFirstGoodPacket = true;
                 }
             } else {
                 // ping the device to see if we're in command mode or data mode. command mode should receive "OK" response
@@ -962,30 +971,31 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     private String checkForProductString(String text) {
-//        Timber.d("checkForProductString entered");
+        Timber.d("checkForProductString (" + text + ")");
         String returnVal = "";
-        String[] stringArr = text.split("\n");
-        for (String str : stringArr) {
-            int prodInd = productNameArray.indexOf(str + "\n");
-//            Timber.d("Index of " + str + " in productArray: " + prodInd);
-            if (prodInd > -1) {
-                returnVal = productNameArray.get(prodInd);
+
+        if (!text.contains("OK")) {
+            String[] stringArr = text.split("\n");
+            for (String str : stringArr) {
+                int prodInd = productNameArray.indexOf(str + "\n");
+                if (prodInd > -1) {
+                    returnVal = productNameArray.get(prodInd);
+                }
             }
         }
+
         return returnVal;
     }
 
     // examine the UART response to implement handshake before programming and s19 file sending
     private void checkRxData(String text) {
-        Timber.d("checkRxData - text = " + text); //, "booleans: " + programLoaded + " and " + programMode);
+        Timber.d("checkRxData - text = " + text + ", booleans: " + programLoaded + " and " + programMode);
         if (programLoaded && programMode) {
             if (productNameArray.contains(text)) {
-//                Timber.d("Product detected");
                 productDetected = convertProductString(text);
                 uartSendData("Y", false);
             }
             else if (text.contains("V")) {
-//                Timber.d("Firmware version detected");
                 if (updateConfirmed) {
                     updateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setVisibility(View.GONE);
                     updateDialog.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
@@ -1007,7 +1017,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     expectingDone = true;
                 }
 
-//                Timber.d("* detected. currentLine: " + currentLine + " of " + fileArray.size());
                 sendProgramFile(currentLine);
             }
             else if (text.contains("Erased")) {
@@ -1055,7 +1064,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     public void confirmUpdate(String ver) {
         updateConfirmEntered = true;
         searchingForUnitDialog.dismiss();
-        final String currentVersion = ver.replaceAll("\n", " ").split(" ")[1];
+        final String currentVersion = "V" + ver.split("V")[1].replaceAll("\n", "").trim();
+//        final String currentVersion = ver.replaceAll("\n", " ").split(" ")[1];
         sBuilder.setLength(0);
 
         SharedPreferences sharedPref = this.getBaseContext().getSharedPreferences("firmwareURLs", Context.MODE_PRIVATE);
@@ -1251,6 +1261,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private String convertProductString(String prod) {
         String trimmedString = prod.replaceAll("[^A-Za-z0-9_]", "");
         switch (trimmedString) {
+            case "DXL":
+                return "DXL Module";
             case "Hand3":
                 return "HU3";
             case "MDR":
@@ -1334,18 +1346,11 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     public void sendProgramFile(int line) {
-//        if (currentLine == 0) {
-////            isProgramming = true;
-//        }
-//        Timber.d("sendProgramFile - currentLine: " + line);
         if (currentLine < fileArray.size()) {
-//            Timber.d("file line to send: " + fileArray.get(line) + "$$");
             uartSendData(fileArray.get(line), false);
             currentLine += 1;
         }
         else if (currentLine == fileArray.size()) {
-//            Timber.d("End of array detected");
-//            programMode = false;
             programLoaded = false;
             isConnectionReady = false;
             currentLine = 0;

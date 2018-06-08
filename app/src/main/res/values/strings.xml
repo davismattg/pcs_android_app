@@ -134,18 +134,20 @@
         Click \"Firmware Updates\" button.\n\n
         The app will detect your device and display the currently installed version. Press \"Confirm\" to program the device.
     </string>
-    <string name="firmware_update_instructions_see_below">Unit not detected? Click below for instructions to boot it up in programming mode.</string>
+    <string name="firmware_update_instructions_see_below">Unit not detected? The PCS app supports firmware updates for the products listed below.\n\nClick for instructions to boot each unit up in programming mode.</string>
 
     <string name="update_hu3">1) Power off unit\n2) Hold down the Iris Set button\n3) Power on the HU3\n4) Release the Iris Set button\n\nIf done correctly, the HU3 display will show \"Ready to load\".</string>
     <string name="update_mdr2">1) Power off unit\n2) Hold down the Reset/Motor Cal button\n3) Plug in the power cable\n4) Release the Reset/Motor Cal button</string>
     <string name="update_mdr3">1) Power off unit\n2) Hold down the Reset/Motor Cal button\n3) Plug in the power cable\n4) Release the Reset/Motor Cal button</string>
     <string name="update_mdr4">1) Power off unit\n2) Hold down the Reset/Motor Cal button\n3) Plug in the power cable\n4) Release the Reset/Motor Cal button</string>
     <string name="update_vi">1) Power off unit\n2) Hold down the Menu button\n3) Plug in the power cable\n4) Release the Menu button</string>
+    <string name="update_dxl">1) Power down DXL camera\n2) Hold down Reset/Motor Cal button on module\n3) Power on camera\n4) When module has booted up (radio channel number visible), release Reset/Motor Cal button</string>
 
     <string name="searching_for_unit">Searching for unit...\n\nMake sure unit is in programming mode</string>
     <string name="no_updater_found_title">No Updater module connected!</string>
     <string name="no_updater_found">You must connect to an Updater before you can update firmware.</string>
     <string-array name="product_names">
+        <item>"DXL \n"</item>
         <item>"Hand3\n"</item>
         <item>"MDR4\n"</item>
         <item>"MDR3\n"</item>
@@ -161,6 +163,7 @@
     <string name="my_list_tab">My Lists</string>
     <string name="all_lenses_tab">All Lenses</string>
     <string name="confirm_lens_delete">Are you sure you want to remove this lens from the list?</string>
+    <string name="confirm_lens_delete_from_database">Are you sure you want to delete this lens from the database?\n\nIt will also be removed from any lists it belongs to.</string>
 
     <string-array name="lens_sort_array">
         <item>Manuf: A-Z</item>

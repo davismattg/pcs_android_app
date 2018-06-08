@@ -86,12 +86,12 @@ public class SharedHelper {
         HashMap<String, ArrayList<String>> instructionsMap = new HashMap<String, ArrayList<String>>();
 
         String hu3 = context.getResources().getString(R.string.update_hu3);
-        String mdr2 = context.getResources().getString(R.string.update_mdr2);
-        String mdr3 = context.getResources().getString(R.string.update_mdr3);
         String mdr4 = context.getResources().getString(R.string.update_mdr4);
+        String mdr3 = context.getResources().getString(R.string.update_mdr3);
         String vi = context.getResources().getString(R.string.update_vi);
+        String dxl = context.getResources().getString(R.string.update_dxl);
+        String mdr2 = context.getResources().getString(R.string.update_mdr2);
 
-//        HashMap<String, String> instructionsMap = new HashMap<String, String>();
         ArrayList<String> instructions = new ArrayList<String>();
         ArrayList<String> headers = new ArrayList<String>();
 
@@ -99,12 +99,14 @@ public class SharedHelper {
         instructions.add(mdr4);
         instructions.add(mdr3);
         instructions.add(vi);
+        instructions.add(dxl);
         instructions.add(mdr2);
 
         headers.add("HU3");
         headers.add("MDR-4");
         headers.add("MDR-3");
         headers.add("Video Interface");
+        headers.add("DXL Module");
         headers.add("MDR-2");
 
         instructionsMap.put("headers", headers);
@@ -266,6 +268,9 @@ public class SharedHelper {
         Timber.d("get product image for " + product + "$$");
         int id;
         switch (product) {
+            case "DXL Module":
+                id = R.drawable.dxl_cropped;
+                break;
             case "HU3":
                 id = R.drawable.hu3_cropped;
                 break;
@@ -806,10 +811,8 @@ public class SharedHelper {
         switch (type) {
             // all the lens types that are zoom
             case "Optimo":case "Rouge":case "HR":case "Cinema Zoom":case "Zoom":case "Premier Zoom":case "Alura Zoom":case "Primo Zoom":case "Anam. Zoom":
-//                Timber.d("Zoom lens detected, switch to zoom lens FL mode");
                 return false;
             default:            // a prime lens detected
-//                Timber.d("Prime lens detected, switch to prime lens FL mode");
                 return true;
         }
     }
@@ -999,7 +1002,7 @@ public class SharedHelper {
         return count;
     }
 
-    public static Map<Integer, Integer> populateLensTypeHeaderCount(Map<Integer, Integer> initialMap, List<String> manufacturers, ArrayList<LensEntity> lenses) {
+    public static Map<Integer, Integer> populateLensTypeHeaderCount(Map<Integer, Integer> initialMap, ArrayList<LensEntity> lenses) {
         Map<Integer, Integer> count = initialMap;
         Map<String, Integer> manufMap = new HashMap<String, Integer>();
 

@@ -110,6 +110,10 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         notifyDataSetChanged();
     }
 
+    public void updateHeaderCount(Map<Integer, Integer> newCount) {
+        this.lensListDataHeaderCount = newCount;
+    }
+
     public void setSelectedListener(LensSelectedListener listener) { this.selectedListener = listener; }
 
     public void setManufacturerSelectedListener(ManufacturerSelectedListener listener) {
