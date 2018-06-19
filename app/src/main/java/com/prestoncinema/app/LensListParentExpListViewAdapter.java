@@ -288,15 +288,15 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
                 Integer[] currentExpandedStatus = childExpandedStatus;
                 Timber.d("expanded status for groupPos " + groupPosition + ": " + childExpandedStatus.toString());
 
-                if (childExpandedStatus[groupPosition] == 0) {
-                    currentExpandedStatus[groupPosition] = 1;
-                }
+                if (groupPosition < childExpandedStatus.length) {
+                    if (childExpandedStatus[groupPosition] == 0) {
+                        currentExpandedStatus[groupPosition] = 1;
+                    } else {
+                        currentExpandedStatus[groupPosition] = 0;
+                    }
 
-                else {
-                    currentExpandedStatus[groupPosition] = 0;
+                    seriesExpandedStatus.put(groupPosition, currentExpandedStatus);
                 }
-
-                seriesExpandedStatus.put(groupPosition, currentExpandedStatus);
 
 //                seriesExpandedStatus.put(groupPosition, 1)
 //                Timber.d("series expanded status for gp = " + groupPosition + ": " + seriesExpandedStatus.get(parentNode)[groupPosition]);

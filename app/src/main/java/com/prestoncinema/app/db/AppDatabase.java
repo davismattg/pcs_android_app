@@ -64,10 +64,10 @@ public abstract class AppDatabase extends RoomDatabase {
                             public void run() {
                                 // Generate the data for pre-population
                                 AppDatabase database = AppDatabase.getInstance(context, executors);
-                                LensListEntity list = DataGenerator.generateDefaultLensList();
-                                List<LensEntity> lenses = DataGenerator.generateDefaultLenses(list);
+//                                LensListEntity list = DataGenerator.generateDefaultLensList();
+//                                List<LensEntity> lenses = DataGenerator.generateDefaultLenses(list);
 
-                                insertData(database, list, lenses);
+//                                insertData(database, list, lenses);
 
                                 // notify that the database was created and it's ready to be used
                                 database.setDatabaseCreated();

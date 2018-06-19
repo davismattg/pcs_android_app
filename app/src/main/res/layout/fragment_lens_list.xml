@@ -60,11 +60,10 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
-            android:text="@string/default_lens_list_note"
-            android:textColor="@color/lightGray"
+            android:text="@string/selected_lenses_count"
+            android:textColor="@color/white"
             android:textSize="14sp"
-            android:id="@+id/lensListNoteTextView"
-            android:visibility="invisible"
+            android:id="@+id/lensListSelectedCountTextView"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

@@ -92,7 +92,8 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
                     Log.d(TAG, "current version on device: " + currentFirmwareVersion);
                     Log.d(TAG, "latest version from web: " + latestRelease.version);
 
-                    boolean updateNeeded = !hasLatestFirmware(currentFirmwareVersion, latestRelease.version);
+//                    boolean updateNeeded = !hasLatestFirmware(currentFirmwareVersion, latestRelease.version);
+                    boolean updateNeeded = true;
                     Log.d(TAG, "Update this device? " + updateNeeded);
 
                     if (updateNeeded) {

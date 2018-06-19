@@ -1373,4 +1373,43 @@ public class SharedHelper {
         getNumLensesInList(context, list.getId());
         return String.valueOf(numLensesInList);
     }
+
+    /**
+     * This method returns the number of lenses of a specified manufacturer
+     * @param lenses
+     * @param manufacturer
+     * @return
+     */
+    public static int getNumLensesForManufacturer(ArrayList<LensEntity> lenses, String manufacturer) {
+        int count = 0;
+
+        for (LensEntity lens : lenses) {
+            if (lens.getManufacturer().equals(manufacturer)) {
+                count += 1;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * This method returns the number of lenses of a specified series (within a manufacturer)
+     * @param lenses
+     * @param manufacturer
+     * @param series
+     * @return
+     */
+    public static int getNumLensesForSeries(ArrayList<LensEntity> lenses, String manufacturer, String series) {
+        int count = 0;
+
+        for (LensEntity lens : lenses) {
+            if (lens.getManufacturer().equals(manufacturer)) {
+                if (lens.getSeries().equals(series)) {
+                    count += 1;
+                }
+            }
+        }
+
+        return count;
+    }
 }

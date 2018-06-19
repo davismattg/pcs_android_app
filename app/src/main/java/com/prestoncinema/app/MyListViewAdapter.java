@@ -35,6 +35,8 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
 
     private LensListEntity lensList;
 
+    private int numChecked;
+
     public MyListViewAdapter(Context context, List<LensEntity> children, LensListEntity lensList) {
         super(context, -1, children);
         this.context = context;
@@ -45,6 +47,7 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
     public interface LensChangedListener {
         void onChange(LensListEntity lensList, LensEntity lens, String focalString, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
         void onDelete(LensListEntity lensList, LensEntity lens);
+        void onSelected(LensEntity lens);
     }
 
     public void setListener(LensChangedListener listener) {
@@ -70,6 +73,32 @@ public class MyListViewAdapter extends ArrayAdapter<LensEntity> {
 
         binding.setLens(lensObject);
         convertView.setTag(binding);
+
+        final ImageView checkLensImageView = convertView.findViewById(R.id.myListCheckLensImageView);
+
+        /* OnClickListener for the checkboxes */
+        checkLensImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                /* If the lens was previously checked, uncheck the box and set the checked attributes to false */
+                if (lensObject.getChecked()) {
+                    checkLensImageView.setImageResource(R.drawable.ic_check_box_gray_unchecked_24dp);
+                    lensObject.setChecked(false);
+                    numChecked -= 1;
+                }
+                /* If the lens was not previously checked, check the box and set the checked attribute to true */
+                else {
+                    checkLensImageView.setImageResource(R.drawable.ic_check_box_green_checked_24dp);
+                    lensObject.setChecked(true);
+                    numChecked += 1;
+                }
+
+                if (numChecked < 0) numChecked = 0;
+
+                /* Call the interface callback to notify LensListDetailsActivity of the change in "checked" status */
+                listener.onSelected(lensObject);
+            }
+        });
 
         convertView.setOnClickListener(new View.OnClickListener() {
             @Override

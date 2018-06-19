@@ -315,8 +315,9 @@
     <string name="lens_list_name_hint">List name</string>
     <string name="lens_list_note_hint">Note/comment (optional)</string>
     <string name="save_lenses_to_database">Save selected...</string>
-    <string name="send_selected_lenses">Send...</string>
+    <string name="send_selected_lenses">Send selected...</string>
     <string name="cancel">Cancel</string>
+    <string name="selected_lenses_count">lenses selected</string>
 
     <string name="import_lenses_select_action">What would you like to do?</string>
     <string name="create_new_lens_list">Create new lens list</string>

@@ -319,19 +319,25 @@ public class DatabaseHelper {
                     // if lens was a member of My List, add its ID to the HashMap to set in the LensListEntity
                     if (lens.getMyListA()) {
                         ArrayList<Long> aIds = lensIds.get("My List A");
-                        aIds.add(lensId);
+                        if (!aIds.contains(lensId)) {
+                            aIds.add(lensId);
+                        }
                         lensIds.put("My List A", aIds);
                     }
 
                     if (lens.getMyListB()) {
                         ArrayList<Long> bIds = lensIds.get("My List B");
-                        bIds.add(lensId);
+                        if (!bIds.contains(lensId)) {
+                            bIds.add(lensId);
+                        }
                         lensIds.put("My List B", bIds);
                     }
 
                     if (lens.getMyListC()) {
                         ArrayList<Long> cIds = lensIds.get("My List C");
-                        cIds.add(lensId);
+                        if (!cIds.contains(lensId)) {
+                            cIds.add(lensId);
+                        }
                         lensIds.put("My List C", cIds);
                     }
                 }

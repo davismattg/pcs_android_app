@@ -4,7 +4,7 @@ import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
-import android.databinding.generated.callback.OnClickListener;
+//import android.databinding.generated.callback.OnClickListener;
 
 import com.prestoncinema.app.db.entity.LensEntity;
 import com.prestoncinema.app.db.entity.LensListEntity;

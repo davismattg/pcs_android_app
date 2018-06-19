@@ -924,7 +924,6 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
         myListDataChild.get("My List B").clear();
         myListDataChild.get("My List C").clear();
 
-
         for (LensEntity thisLens : lensObjectArray) {
 //            if (thisLens.getMyListA()) {
             if (currentLensList.getMyListALongIds().contains(thisLens.getId())) {

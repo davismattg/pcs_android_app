@@ -36,8 +36,9 @@ public class MyListFragment extends Fragment {
      */
     OnLensChangedListener listener;
     public interface OnLensChangedListener {
-        public void onLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
-        public void onLensDeleted(LensListEntity lensList, LensEntity lens);
+        void onLensChanged(LensListEntity lensList, LensEntity lens, String serial, String note, boolean myListA, boolean myListB, boolean myListC);
+        void onLensDeleted(LensListEntity lensList, LensEntity lens);
+        void onLensSelected(LensEntity lens);
     }
 
     public static final String ARG_PAGE = "ARG_PAGE";
@@ -108,6 +109,11 @@ public class MyListFragment extends Fragment {
             @Override
             public void onDelete(LensListEntity lensList, LensEntity lens) {
                 listener.onLensDeleted(lensList, lens);
+            }
+
+            @Override
+            public void onSelected(LensEntity lens) {
+                listener.onLensSelected(lens);
             }
         });
 

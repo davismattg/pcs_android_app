@@ -55,6 +55,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import timber.log.Timber;
 
@@ -95,17 +97,22 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private int progressStatus = 0;
     private ArrayList<String> fileArray = new ArrayList<String>();
     private List<String> productNameArray = new ArrayList<String>();
-    private int[] baudRateArray = {57600, 9600, 38400, 115200, 19200};
+    private int[] baudRateArray = {57600, 38400, 9600, 115200, 19200};
     private int baudRateIndex = 0;
     private StringBuilder sBuilder = new StringBuilder("");
     private Handler handler = new Handler();
 
     private boolean isConnected = false;
     private int baudRateWait = 0;          // number of data packets to wait after changing baud rate
-    private int packetsToWait = 1;
-    private String lastDataSent = "";
-    private String responseExpected = "Hand3\n";
+    private int packetsToWait = 5;
+    private String lastDataSent;
+    private String responseExpected = "OK";
+    private String latestDataReceived = "";
     private String productDetected;
+
+    private int MODE_DATA = 0;
+    private int MODE_COMMAND = 1;
+    private int currentMode;
 
     private String productRxString = "";
 //    private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=85f014ae-9252-4e69-b1f4-9e3993a57451";
@@ -138,6 +145,11 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
     private List<Map<String, String>> firmwareMap = new ArrayList<Map<String, String>>();
     private SimpleAdapter firmwareAdapter;
+
+    private Timer mainTimer;
+    private TimerTask mainTimerTask;
+    private boolean mainTimerActive = false;
+    private boolean mainTimerNeeded = true;
 
     public FirmwareUpdateActivity() throws MalformedURLException {
     }
@@ -200,6 +212,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         if (isConnected) {
             // set up the module with baud rate = 57.6 kBaud (for some reason DXL doesn't output data when baudrate = 19.2k)
             showSearchingForUnitDialog();
+
+            currentMode = MODE_DATA;
+            // check whether the module is in DATA or COMMAND mode
+//            uartSendData("AT", false);
         }
 
         else {
@@ -220,6 +236,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
 
         getFirmwareVersions(productNameArray);
+
 //        mFirmwareListView = (ListView) findViewById(R.index.firmwareListView);
 //        firmwareAdapter = new SimpleAdapter(FirmwareUpdateActivity.this, firmwareMap, R.layout.firmware_list_item, new String[] {"productString", "versionString"}, new int[] {R.tag.firmwareProductTextView, R.tag.firmwareVersionTextView});
 //        mFirmwareListView.setAdapter(firmwareAdapter);
@@ -293,10 +310,9 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
      * current baud rate is set to 19.2K, so we initialize the MDR-4/DXL module's baud rate to hopefully catch it.
      */
     private void initializeBaudRate() {
-        String baudRateSwitchString = "+++\nAT+BAUDRATE=57600";
-        responseExpected = "1\nOK\n";
-        uartSendData("+++", false);
-//        uartSendData("AT+BAUDRATE=57600", false);
+        if (mainTimerNeeded) {
+            startTimer(100, 100);
+        }
     }
 
     /**
@@ -360,17 +376,25 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //            data += "\n";
 //        }
 
-        // TODO: if sending Y, E, or P to MDR-4, don't add \r\n cuz it might reject it as junk
-        if (productRxString.equals("MDR4\n") || productRxString.equals("DXL \n")) {
-            if (expectingDone) {
-//                Timber.d("MDR4 detected, add r and n");
-                data += "\r\n";
-            }
-//            else {
-//                Timber.d("MDR4 detected, adding newline only!");
+//        // TODO: if sending Y, E, or P to MDR-4, don't add \r\n cuz it might reject it as junk
+//        if (productRxString.equals("MDR4\n") || productRxString.equals("DXL \n")) {
+//            if (expectingDone) {
+////                Timber.d("MDR4 detected, add r and n");
 //                data += "\n";
 //            }
-            byte[] dataBytes = data.getBytes();
+//            else {
+////                Timber.d("MDR4 detected, adding newline only!");
+//                data += "\n";
+//            }
+//            byte[] dataBytes = data.getBytes();
+//        }
+
+//        else if (data.contains("Y")) {
+//
+//        }
+
+        if (expectingDone) {
+            data += "\r\n";
         }
         else {
             data += "\n";
@@ -568,7 +592,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             final String importedName = names[0];
             final String fileExtension = names[1];
 
-            if (fileExtension.equalsIgnoreCase("S19")) {
+            if (fileExtension.equalsIgnoreCase("S19") || fileExtension.equalsIgnoreCase("hex")) {
                 fileArray.clear();
                 InputStream inputStream = getContentResolver().openInputStream(uri);
                 reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -643,6 +667,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     @Override
     public void onDisconnected() {
         super.onDisconnected();
+        searchingForUnitDialog.dismiss();
         Timber.d("Disconnected. Back to previous activity");
         finish();
     }
@@ -656,16 +681,24 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     @Override
     public synchronized void onDataAvailable(BluetoothGattCharacteristic characteristic) {
         super.onDataAvailable(characteristic);
-        if (firmwareFilesDownloaded) {
+//        if (firmwareFilesDownloaded) {
             // UART RX
             if (characteristic.getService().getUuid().toString().equalsIgnoreCase(UUID_SERVICE)) {
                 if (characteristic.getUuid().toString().equalsIgnoreCase(UUID_RX)) {
                     final byte[] bytes = characteristic.getValue();
 
                     String newRxData = buildRxPacket(bytes);
-                    Timber.d("newRxData:" + newRxData + "$$");
+//                    Timber.d("newRxData: " + newRxData);
 
-                    processRxData(newRxData);
+                    if (newRxData.length() > 0) {
+                        latestDataReceived = newRxData;
+                        processRxData(newRxData);
+                    }
+
+//                    if (newRxData.length() > 0) {
+//                        Timber.d("newRxData:" + newRxData + "$$");
+//                        processRxData(newRxData);
+//                    }
 
                     // MQTT publish to RX
                     MqttSettings settings = MqttSettings.getInstance(com.prestoncinema.app.FirmwareUpdateActivity.this);
@@ -677,7 +710,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     }
                 }
             }
-        }
+//        }
     }
 
     /**
@@ -754,7 +787,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
     private void processRxData(String text) {
         Timber.d("processRxData (" + text + "):\nprogramLoaded: " + programLoaded + "\nstartConnectionSetup: " + startConnectionSetup + "\nisConnectionReady: " +
-                isConnectionReady + "\nlastDataSent: " + lastDataSent + "\nresponseExpected: " + responseExpected + "\nbaudRateWait: " + baudRateWait);
+                isConnectionReady + "\nlastDataSent: " + lastDataSent + "\nresponseExpected: " + responseExpected);
 
         if (!programLoaded) {
             if (text.length() > 2) {
@@ -764,171 +797,190 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                 if (productCheck.length() > 0) {
                     Timber.d("productRxString found before anything else");
                     startConnectionSetup = false;
+                    mainTimerNeeded = false;
                     productRxString = productCheck;
+
+                    if (mainTimerActive) {
+                        Timber.d("canceling main timer");
+                        mainTimer.cancel();
+                        mainTimerActive = false;
+                    }
+
                     final String filePath = getS19Path(productRxString);
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
                     loadProgramFile(filePath);
-//                        }
-//                    });
+
                     isConnectionReady = true;
                     responseExpected = "";
                 }
             }
         }
 
-//        if (productNameArray.contains(text)) {
-//            Timber.d("product detected before flags. Settings flags");
-//            startConnectionSetup = false;
-//            isConnectionReady = true;
-//        }
+        if (productNameArray.contains(text)) {
+            Timber.d("product detected before flags. Settings flags");
+            startConnectionSetup = false;
+            isConnectionReady = true;
+            mainTimerNeeded = false;
+        }
 
         if (startConnectionSetup) {
 //            Timber.d(lastDataSent + " sent, expect " + responseExpected + " in return");
-            switch (lastDataSent) {
-                case "AT":
-                    if (baudRateWait < packetsToWait) {
-                        if (text.contains(responseExpected)) {              // "OK" in this case
-//                            Timber.d("OK found after sending AT, we're in command mode. Send baudRate");
-                            int currBaudRate = baudRateArray[baudRateIndex];
-//                            Timber.d("Sending baudrate to device: " + currBaudRate);
-                            uartSendData("AT+BAUDRATE=" + currBaudRate, false);
-                            baudRateIndex += 1;
-                            if (baudRateIndex == baudRateArray.length) {
-                                baudRateIndex = 0;
-                            }
-                            responseExpected = "OK";
-                            baudRateWait = 0;
-                        }
-                        else {
-                            Timber.d("response not found, increment baud rate counter");
-                            baudRateWait += 1;
-                        }
-                    }
-                    else {
-                        if (responseExpected.equals("readyToGo")) {
-//                            Timber.d("Device confirmed to be in data mode, check for product string");
-                            startConnectionSetup = false;
-                            baudRateWait = 0;
-                        }
-                        else {
-//                            Timber.d("OK not received, change to command mode");
-                            uartSendData("+++", false);
-                            responseExpected = "1\nOK\n";
-                            baudRateWait = 0;
-                        }
-                    }
-                    break;
-                case "+++":
-                    if (baudRateWait < packetsToWait) {
-                        if (text.contains(responseExpected)) {
-                            if (responseExpected.contains("1")) {               // if is 1, in command mode. 0 = data mode
-                                //in command mode since module returned 1 OK
-//                                Timber.d("1 OK found and expected. Device in command mode, send new baud rate");
-                                int currBaudRate = baudRateArray[baudRateIndex];
-//                                Timber.d("Sending baudrate to device: " + currBaudRate);
-                                uartSendData("AT+BAUDRATE=" + currBaudRate, false);
-                                baudRateIndex += 1;
-                                if (baudRateIndex == baudRateArray.length) {
-                                    baudRateIndex = 0;
-                                }
-                                responseExpected = "OK";
-                                baudRateWait = 0;
-                            } else {
-                                //in data mode since module returned 0 from +++
-//                                Timber.d("Device probably in data mode, check w/ AT command");
-//                                uartSendData("AT", false);
-                                responseExpected = "readyToGo";
-                                baudRateWait = 0;
-                            }
-                        } else {                    // expected response not received, increment packet wait counter
-                            baudRateWait += 1;
-                        }
-                    }
-                    else {
-                        // in opposite mode than we want, so send +++
-//                        Timber.d("response not as expected from +++. Check mode w/ AT");
-                        baudRateWait = 0;
-                        uartSendData("AT", false);
-                        responseExpected = "OK";
-                    }
-                    break;
-                case "AT+BAUDRATE=9600": case "AT+BAUDRATE=19200":case "AT+BAUDRATE=38400": case "AT+BAUDRATE=57600": case "AT+BAUDRATE=115200": case "ATZ":
-                    if (baudRateWait < packetsToWait) {
-                        if (text.contains(responseExpected)) {              // expect "OK" if baudrate changed successfully
-                            Timber.d("OK received; baudrate changed successfully. Switch back to data mode and check for productString");
-                            uartSendData("+++", false);
-                            responseExpected = "0\nOK\n";
-                            baudRateWait = 0;
-                        } else {                                            // expected response not received, increment packet wait counter
-                            baudRateWait += 1;
-                        }
-                    }
-                    else {
-//                        Timber.d("Baudrate not changed successfully. Check mode w/ AT");
-                        baudRateWait = 0;
-                        uartSendData("AT", false);
-                        responseExpected = "OK";
-                    }
-                    break;
-                case "+++\nATZ\n+++":               // command to reset the BLE module, executed after user cancels previous update
-                    if (baudRateWait < packetsToWait) {
-                        if (text.contains(responseExpected)) {
-//                            Timber.d("system reset performed, don't send anything else out");
-                            baudRateWait = 0;
-                        }
-                        else {
-                            baudRateWait +=1;
-                        }
-                    }
-                    else {
-//                        Timber.d("system update response not received properly. check mode:");
-                        baudRateWait = 0;
-                        responseExpected = "OK";
-                        uartSendData("AT", false);
-                    }
-                    break;
-                default:
-//                    Timber.d("default_lenses case");
-                    setUpConnection(text);
-            }
+//            switch (lastDataSent) {
+//                case "AT":
+//                    currentMode = text.contains("OK") ? MODE_COMMAND : MODE_DATA;
+//
+//                    Timber.d("MODE = " + currentMode);
+//                    if (baudRateWait < packetsToWait) {
+//                        if (text.contains(responseExpected)) {              // "OK" in this case
+////                            Timber.d("OK found after sending AT, we're in command mode. Send baudRate");
+//                            int currBaudRate = baudRateArray[baudRateIndex];
+////                            Timber.d("Sending baudrate to device: " + currBaudRate);
+//                            uartSendData("AT+BAUDRATE=" + currBaudRate, false);
+//                            baudRateIndex += 1;
+//                            if (baudRateIndex == baudRateArray.length) {
+//                                baudRateIndex = 0;
+//                            }
+//                            responseExpected = "OK";
+//                            baudRateWait = 0;
+//                        }
+//                        else {
+//                            Timber.d("response not found, increment baud rate counter");
+//                            baudRateWait += 1;
+//                        }
+//                    }
+//                    else {
+//                        if (responseExpected.equals("readyToGo")) {
+////                            Timber.d("Device confirmed to be in data mode, check for product string");
+//                            startConnectionSetup = false;
+//                            baudRateWait = 0;
+//                        }
+//                        else {
+////                            Timber.d("OK not received, change to command mode");
+//                            uartSendData("+++", false);
+//                            responseExpected = "1\nOK\n";
+//                            baudRateWait = 0;
+//                        }
+//                    }
+//                    break;
+//                case "+++":
+//                    currentMode = text.contains("0") ? MODE_DATA : MODE_COMMAND;
+//
+//                    if (currentMode == MODE_COMMAND) {
+//                        uartSendData("+++", false);
+//                    }
+//
+//                    break;
+//                    if (baudRateWait < packetsToWait) {
+//                        if (text.contains(responseExpected)) {
+//                            if (responseExpected.contains("1")) {               // if is 1, in command mode. 0 = data mode
+//                                //in command mode since module returned 1 OK
+////                                Timber.d("1 OK found and expected. Device in command mode, send new baud rate");
+//                                int currBaudRate = baudRateArray[baudRateIndex];
+////                                Timber.d("Sending baudrate to device: " + currBaudRate);
+//                                uartSendData("AT+BAUDRATE=" + currBaudRate, false);
+//                                baudRateIndex += 1;
+//                                if (baudRateIndex == baudRateArray.length) {
+//                                    baudRateIndex = 0;
+//                                }
+//                                responseExpected = "OK";
+//                                baudRateWait = 0;
+//                            } else {
+//                                //in data mode since module returned 0 from +++
+////                                Timber.d("Device probably in data mode, check w/ AT command");
+////                                uartSendData("AT", false);
+//                                responseExpected = "readyToGo";
+//                                baudRateWait = 0;
+//                            }
+//                        } else {                    // expected response not received, increment packet wait counter
+//                            baudRateWait += 1;
+//                        }
+//                    }
+//                    else {
+//                        // in opposite mode than we want, so send +++
+////                        Timber.d("response not as expected from +++. Check mode w/ AT");
+//                        baudRateWait = 0;
+//                        uartSendData("AT", false);
+//                        responseExpected = "OK";
+//                    }
+//                    break;
+//                case "AT+BAUDRATE=9600": case "AT+BAUDRATE=19200":case "AT+BAUDRATE=38400": case "AT+BAUDRATE=57600": case "AT+BAUDRATE=115200": case "ATZ":
+//                    if (baudRateWait < packetsToWait) {
+//                        if (text.contains(responseExpected)) {              // expect "OK" if baudrate changed successfully
+//                            Timber.d("OK received; baudrate changed successfully. Switch back to data mode and check for productString");
+//                            uartSendData("+++", false);
+//                            responseExpected = "0\nOK\n";
+//                            baudRateWait = 0;
+//                        } else {                                            // expected response not received, increment packet wait counter
+//                            baudRateWait += 1;
+//                        }
+//                    }
+//                    else {
+////                        Timber.d("Baudrate not changed successfully. Check mode w/ AT");
+//                        baudRateWait = 0;
+//                        uartSendData("AT", false);
+//                        responseExpected = "OK";
+//                    }
+//                    break;
+//                case "+++\nATZ\n+++":               // command to reset the BLE module, executed after user cancels previous update
+//                    if (baudRateWait < packetsToWait) {
+//                        if (text.contains(responseExpected)) {
+////                            Timber.d("system reset performed, don't send anything else out");
+//                            baudRateWait = 0;
+//                        }
+//                        else {
+//                            baudRateWait +=1;
+//                        }
+//                    }
+//                    else {
+////                        Timber.d("system update response not received properly. check mode:");
+//                        baudRateWait = 0;
+//                        responseExpected = "OK";
+//                        uartSendData("AT", false);
+//                    }
+//                    break;
+//                default:
+//                    setUpConnection(text);
+//            }
         }
 
-        else if (isConnectionReady) {
+        if (isConnectionReady) {
+            mainTimerNeeded = false;
+            if (mainTimerActive) {
+                mainTimer.cancel();
+                mainTimerActive = false;
+            }
             checkRxData(text);
         }
 
-        else {      // startConnectionSetup == false, check for the productString
-            String productCheck = checkForProductString(text);
-//            Timber.d("checked for product string in productArray. Result: " + productCheck + "$$");
-            if (baudRateWait < packetsToWait) {
-                if (productCheck.length() > 0) {
-//                    Timber.d("Product found in productArray! :))))))))))))))))))))))))))))))))))))))))))))))");
-                    baudRateWait = 0;
-                    productRxString = productCheck;
-                    final String filePath = getS19Path(productRxString);
-                    startConnectionSetup = false;
-                    isConnectionReady = true;
-                    searchingForUnitDialog.dismiss();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            loadProgramFile(filePath);
-                        }
-                    });
-
-                } else {
-                    baudRateWait += 1;
-                }
-            } else {
-//                Timber.d("productString not found. startConnectionSetup set to true.");
-                baudRateWait = 0;
-                startConnectionSetup = true;
-                lastDataSent = "";
-                responseExpected = "Hand3";
-            }
-        }
+//        else {      // startConnectionSetup == false, check for the productString
+////            String productCheck = checkForProductString(text);
+//////            Timber.d("checked for product string in productArray. Result: " + productCheck + "$$");
+////            if (baudRateWait < packetsToWait) {
+////                if (productCheck.length() > 0) {
+//////                    Timber.d("Product found in productArray! :))))))))))))))))))))))))))))))))))))))))))))))");
+////                    baudRateWait = 0;
+////                    productRxString = productCheck;
+////                    final String filePath = getS19Path(productRxString);
+////                    startConnectionSetup = false;
+////                    isConnectionReady = true;
+////                    searchingForUnitDialog.dismiss();
+////                    runOnUiThread(new Runnable() {
+////                        @Override
+////                        public void run() {
+////                            loadProgramFile(filePath);
+////                        }
+////                    });
+////
+////                } else {
+////                    baudRateWait += 1;
+////                }
+////            } else {
+//////                Timber.d("productString not found. startConnectionSetup set to true.");
+////                baudRateWait = 0;
+////                startConnectionSetup = true;
+////                lastDataSent = "";
+////                responseExpected = "Hand3";
+////            }
+////        }
     }
 
     private void setUpConnection(String text) {
@@ -1051,9 +1103,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             else if (text.contains("ERROR\n")) {
 //                Timber.d("ERROR detected, check mode and re-send last command ----");
 //                uartSendData(lastDataSent, false);
-                uartSendData("+++", false);
-                startConnectionSetup = true;
-                isConnectionReady = false;
+//                uartSendData("AT", false);
+                uartSendData("+++\n" + lastDataSent, false);
+//                startConnectionSetup = true;
+//                isConnectionReady = false;
             }
             else {
                 Timber.d("--------------- Unknown: " + text + "$$");
@@ -1346,7 +1399,8 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     public void sendProgramFile(int line) {
-        if (currentLine < fileArray.size()) {
+        Timber.d("sending firmware line " + line);
+        if (line < fileArray.size()) {
             uartSendData(fileArray.get(line), false);
             currentLine += 1;
         }
@@ -1378,7 +1432,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         sBuilder.setLength(0);
         baudRateWait = 0;                           // packet wait index
         lastDataSent = "";
-        responseExpected = "Hand3\n";
+        responseExpected = "OK";
         productDetected = "";
 //        productRxString = "";
         Timber.d("ALL VALUES RESTORED TO DEFAULTS");
@@ -1405,6 +1459,60 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             default:
                 break;
         }
+    }
+
+    private void startTimer(int delay, int interval) {
+        mainTimerActive = true;
+
+        Timer timer;
+        TimerTask task;
+
+        baudRateIndex = 0;
+        baudRateWait = 0;
+
+        mainTimer = new Timer();
+        mainTimerTask = new TimerTask() {
+            @Override
+            public void run() {
+                if (productNameArray.contains(latestDataReceived)) {
+                    Timber.d("--------------------------------------------------- product detected: " + latestDataReceived);
+                    startConnectionSetup = false;
+                    isConnectionReady = true;
+                }
+
+                else {
+                    baudRateWait++;
+
+                    if (baudRateWait == packetsToWait) {
+                        int currBaudRate = baudRateArray[baudRateIndex];
+                        String baudRateString = "AT+BAUDRATE=" + currBaudRate;
+                        Timber.d("baudRateWait done, changing baud rate to " + currBaudRate);
+
+                        if (latestDataReceived.contains("1")) {
+                            Timber.d("command mode detected, don't switch modes");
+                            uartSendData(baudRateString + "\n+++", false);
+                        }
+
+                        else {
+                            Timber.d("data mode detected, switch and send baud rate");
+                            uartSendData("+++\n" + baudRateString + "\n+++", false);
+                        }
+
+                        baudRateIndex += 1;
+                        if (baudRateIndex == baudRateArray.length) {
+                            baudRateIndex = 0;
+                        }
+
+                        baudRateWait = 0;
+                    }
+                }
+            }
+        };
+
+        timer = mainTimer;
+        task = mainTimerTask;
+
+        timer.scheduleAtFixedRate(task, delay, interval);
     }
 
     private String bytesToText(byte[] bytes, boolean simplifyNewLine) {

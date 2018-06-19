@@ -290,11 +290,14 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                     CalZImageView.setVisibility(View.VISIBLE);
                 }
 
-                // set up listeners for when the user checks the MyList boxes. If F of Lens isn't calibrated, don't let them add to list
+                // set up listeners for when the user checks the MyList boxes.
+                // If focus isn't calibrated, don't let them add to MyList.
+                // Also check that each list doesn't have more than 15 lenses
                 if (!allLenses) {
                     MyListCheckBoxListener listener = new MyListCheckBoxListener();
                     listener.mContext = context;
                     listener.isFCal = childObject.getCalibratedF();
+                    listener.lensList = lensList;
 
                     myListACheckBox.setOnCheckedChangeListener(listener);
                     myListBCheckBox.setOnCheckedChangeListener(listener);
@@ -329,73 +332,6 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                         .setNeutralButton("Delete", null)
                         .setCancelable(true)
                         .create();
-
-                //                            // set up the TextWatcher on the lens serial editText so we can check the entered text length as the user types
-                //                            final TextWatcher serialTextWatcher = new TextWatcher() {
-                //                                boolean acceptEntry = true;
-                //                                boolean wasTrimmed = false;                                                                                // boolean to indicate if the text was changed by the TextWatcher afterTextChanged method
-                //                                int maxEnteredLength;
-                //                                @Override
-                //                                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                //                                    Timber.d("before changing text, s = " + s);
-                //                                    if (!wasTrimmed) {
-                //                                        String serial = lensSerialEditText.getText().toString().trim();
-                ////                                        String serial = s.toString();
-                //                                        // returns true if the lens serial + note is 14 chars or less
-                //                                        int serialStringLength = checkSerialLength(childText, serial, note), serial);
-                //                                        maxEnteredLength = 14 - serialStringLength;
-                //                                        if (serialStringLength > 14) {
-                //                                            acceptEntry = false;
-                //                                        } else {
-                //                                            acceptEntry = true;
-                //                                        }
-                //                                    }
-                //                                }
-                //
-                //                                @Override
-                //                                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                //                                    Timber.d("onTextChanged: " + s);
-                //                                }
-                //
-                //                                @Override
-                //                                public void afterTextChanged(Editable s) {
-                //                                    Timber.d("max length allowed: " + maxEnteredLength);
-                //                                    if (acceptEntry) {
-                ////                                    if (maxEnteredLength > 0) {
-                //                                        wasTrimmed = false;
-                //                                        Timber.d("accepted. s = " + s);
-                //                                        return;
-                //                                    }
-                //
-                //                                    else {
-                ////                                        acceptEntry = true;
-                //                                        wasTrimmed = true;
-                //
-                //                                        CharSequence toastText = "Error: Lens name too long.";
-                //                                        int duration = Toast.LENGTH_SHORT;
-                //                                        Toast toast = Toast.makeText(context, toastText, duration);
-                //                                        toast.show();
-                //
-                //                                        Timber.d("acceptEntry false, s length = " + s.length());
-                //                                        Timber.d("s.length() - 1: " + s.charAt(s.length() - 2));
-                //                                        Timber.d("s.length(): " + s.charAt(s.length() - 1));
-                //
-                //
-                //                                        s.delete(s.length() - 1, s.length());
-                ////                                        s.replace(s.length() - 1, s.length(), "");
-                ////                                        Timber.d("s = " + s);
-                ////                                        CharSequence trimmedSerial = s.delete(s.length() - 1, s.length());
-                ////                                        CharSequence trimmedSerial = s.subSequence(0, s.length() - 1);
-                ////                                        Timber.d("s = " + s + ", trimmed = " + trimmedSerial);
-                ////                                        lensSerialEditText.setText(trimmedSerial);
-                ////                                        lensSerialEditText.setText(s.delete(s.length() - 2, s.length() - 1));
-                //                                    }
-                //
-                //                                    Timber.d("afterTextChanged: " + s);
-                //                                }
-                //                            };
-                ////
-                //                            lensSerialEditText.addTextChangedListener(serialTextWatcher);
 
                 // custom onShowListener so we can do some checks before saving the lens. prevents "Save" button from automatically closing the dialog
                 dialog.setOnShowListener(new DialogInterface.OnShowListener() {
@@ -440,16 +376,13 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
                                     CharSequence toastText;
 
                                     if (lensExists) {
-                                        toastText = "Error: Lens already exists in file.";
+                                        toastText = "Error: Lens already exists in this list.";
                                     }
                                     else {
                                         toastText = "Error: Lens name too long.";
                                     }
 
-                                    int duration = Toast.LENGTH_LONG;
-
-                                    Toast toast = Toast.makeText(context, toastText, duration);
-                                    toast.show();
+                                    SharedHelper.makeToast(context, toastText, Toast.LENGTH_LONG);
                                 }
                             }
                         };

@@ -77,9 +77,11 @@ public class LensListFragment extends Fragment {
 
     private boolean fromImport = false;
     private boolean allLensesChecked = false;
+    private int numLensesChecked;
     private String listNote;
 
     private ImageView selectAllLensesImageView;
+    private TextView numLensesSelectedTextView;
 
     private LensListEntity lensList;
 
@@ -137,11 +139,24 @@ public class LensListFragment extends Fragment {
             }
         });
 
-        /* Set the listener for sending/receiving only a selected few lenses */
+        /* Set the listener for selecting a single lens */
         lensListExpAdapter.setSelectedListener(new LensListParentExpListViewAdapter.LensSelectedListener() {
             @Override
             public void onSelected(LensEntity lens) {
                 selectedListener.onLensSelected(lens);
+
+                if (lens.getChecked()) {
+                    numLensesChecked += 1;
+                }
+                else {
+                    numLensesChecked -= 1;
+                }
+
+                if (numLensesChecked < 0) {
+                    numLensesChecked = 0;
+                }
+
+                updateNumLensesChecked();
             }
         });
 
@@ -150,12 +165,23 @@ public class LensListFragment extends Fragment {
             @Override
             public void onSelected(String manufacturer, boolean checked) {
                 manufacturerSelectedListener.onManufacturerSelected(manufacturer, checked);
-            }
 
-//            @Override
-//            public void updateChildren(String manufacturer, boolean checked) {
-//                manufacturerSelectedListener.updateChildren(manufacturer, checked);
-//            }
+                int numLensesInManufacturer = SharedHelper.getNumLensesForManufacturer(lensObjectArrayList, manufacturer);
+
+                if (checked) {
+                    numLensesChecked += numLensesInManufacturer;
+                }
+
+                else {
+                    numLensesChecked -= numLensesInManufacturer;
+                }
+
+                if (numLensesChecked < 0) {
+                    numLensesChecked = 0;
+                }
+
+                updateNumLensesChecked();
+            }
         });
 
         /* Set the listener for selecting/deselecting lenses at Series level */
@@ -163,6 +189,22 @@ public class LensListFragment extends Fragment {
             @Override
             public void onSelected(String manufacturer, String series, boolean seriesChecked, boolean checkParent) {
                 seriesSelectedListener.onSeriesSelected(manufacturer, series, seriesChecked, checkParent);
+
+                int numLensesInSeries = SharedHelper.getNumLensesForSeries(lensObjectArrayList, manufacturer, series);
+
+                if (seriesChecked) {
+                    numLensesChecked += numLensesInSeries;
+                }
+
+                else {
+                    numLensesChecked -= numLensesInSeries;
+                }
+
+                if (numLensesChecked < 0) {
+                    numLensesChecked = 0;
+                }
+
+                updateNumLensesChecked();
             }
 
 //            @Override
@@ -173,6 +215,11 @@ public class LensListFragment extends Fragment {
 
         /* Check if all lenses in the list are checked, and set the "checkbox" ImageView resource to reflect that */
         allLensesChecked = SharedHelper.areAllLensesChecked(lensObjectArrayList);
+
+        // see how many lenses are checked and set the TextView
+        numLensesSelectedTextView = binding.lensListSelectedCountTextView;
+        numLensesChecked = SharedHelper.getCheckedLenses(lensObjectArrayList).size();
+        updateNumLensesChecked();
 
         if (allLensesChecked) {
             binding.selectAllLensesImageView.setImageResource(R.drawable.ic_check_box_green_checked_24dp);
@@ -261,6 +308,16 @@ public class LensListFragment extends Fragment {
         selectAllLensesImageView.setImageResource(checked ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_white_unchecked_24dp );
     }
 
+    /**
+     * This method updates the TextView above the lens list that displays the number of selected lenses
+     * (across all lists)
+     */
+    public void updateNumLensesChecked() {
+        String text = getResources().getString(R.string.selected_lenses_count);
+        String newText = numLensesChecked + " " + text;
+
+        numLensesSelectedTextView.setText(newText);
+    }
     public ExpandableListAdapter getAdapter() {
         return lensListExpAdapter;
     }
