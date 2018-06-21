@@ -221,6 +221,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         convertView.setId((int) childObject.getId());
         convertView.setLongClickable(true);                                                                                             // enable longClick on the lens view
 
+        checkLensImageView.setImageResource(childObject.getChecked() ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_gray_unchecked_24dp);
+
         /* OnClickListener for the checkboxes */
         checkLensImageView.setOnClickListener(new View.OnClickListener() {
             @Override

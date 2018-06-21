@@ -412,7 +412,7 @@ public class AllLensesActivity extends AppCompatActivity implements LensListFrag
             lensList.setName("All Lenses");
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            fragment = LensListFragment.newInstance(0, lensList, allLensesManufHeader, allLensesTypeHeader, allLensesTypeHeaderCount, allLensesPositionMap, allLenses, fromImport, listNote, context);
+            fragment = LensListFragment.newInstance(0, lensList, allLensesManufHeader, allLensesTypeHeader, allLensesTypeHeaderCount, allLensesPositionMap, allLenses, fromImport, listNote, numLensesChecked, context);
             fragmentTransaction.add(R.id.allLensesFragmentContainer, fragment);
 
             // use this method instead of commit() because app was crashing if screen was rotated

@@ -239,7 +239,7 @@ public class SharedHelper {
         ArrayList<LensEntity> checkedLenses = new ArrayList<>();
         for (LensEntity lens : lenses) {
             if (lens.getChecked()) {
-                lens.setChecked(false);
+//                lens.setChecked(false);
                 checkedLenses.add(lens);
             }
         }

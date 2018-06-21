@@ -78,6 +78,7 @@ public class LensListFragment extends Fragment {
     private boolean fromImport = false;
     private boolean allLensesChecked = false;
     private int numLensesChecked;
+    private int numLensesCheckedOverall;
     private String listNote;
 
     private ImageView selectAllLensesImageView;
@@ -89,7 +90,7 @@ public class LensListFragment extends Fragment {
             int page, LensListEntity lensList, List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
             Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer,
             ArrayList<Integer>>> lensPositionMap, ArrayList<LensEntity> lensObjectArrayList,
-            boolean fromImport, String note, Context context) {
+            boolean fromImport, String note, int numLensesCheckedOverall, Context context) {
 
         LensListFragment fragment = new LensListFragment();
         fragment.context = context;
@@ -101,6 +102,7 @@ public class LensListFragment extends Fragment {
         fragment.lensObjectArrayList = lensObjectArrayList;
         fragment.fromImport = fromImport;
         fragment.listNote = note;
+        fragment.numLensesCheckedOverall = numLensesCheckedOverall;
 
         return fragment;
     }
@@ -147,13 +149,19 @@ public class LensListFragment extends Fragment {
 
                 if (lens.getChecked()) {
                     numLensesChecked += 1;
+                    numLensesCheckedOverall += 1;
                 }
                 else {
                     numLensesChecked -= 1;
+                    numLensesCheckedOverall -= 1;
                 }
 
                 if (numLensesChecked < 0) {
                     numLensesChecked = 0;
+                }
+
+                if (numLensesCheckedOverall < 0) {
+                    numLensesCheckedOverall = 0;
                 }
 
                 updateNumLensesChecked();
@@ -170,14 +178,20 @@ public class LensListFragment extends Fragment {
 
                 if (checked) {
                     numLensesChecked += numLensesInManufacturer;
+                    numLensesCheckedOverall += numLensesInManufacturer;
                 }
 
                 else {
                     numLensesChecked -= numLensesInManufacturer;
+                    numLensesCheckedOverall -= numLensesInManufacturer;
                 }
 
                 if (numLensesChecked < 0) {
                     numLensesChecked = 0;
+                }
+
+                if (numLensesCheckedOverall < 0) {
+                    numLensesCheckedOverall = 0;
                 }
 
                 updateNumLensesChecked();
@@ -194,14 +208,20 @@ public class LensListFragment extends Fragment {
 
                 if (seriesChecked) {
                     numLensesChecked += numLensesInSeries;
+                    numLensesCheckedOverall += numLensesInSeries;
                 }
 
                 else {
                     numLensesChecked -= numLensesInSeries;
+                    numLensesCheckedOverall -= numLensesInSeries;
                 }
 
                 if (numLensesChecked < 0) {
                     numLensesChecked = 0;
+                }
+
+                if (numLensesCheckedOverall < 0) {
+                    numLensesCheckedOverall = 0;
                 }
 
                 updateNumLensesChecked();
@@ -301,6 +321,8 @@ public class LensListFragment extends Fragment {
             lensListExpAdapter.updateSelected(selected);
 
             lensListExpAdapter.expandGroups();
+
+            updateNumLensesChecked();
         }
     }
 
@@ -311,10 +333,12 @@ public class LensListFragment extends Fragment {
     /**
      * This method updates the TextView above the lens list that displays the number of selected lenses
      * (across all lists)
+     * // TODO: make this update when the individual lenses are checked
      */
     public void updateNumLensesChecked() {
         String text = getResources().getString(R.string.selected_lenses_count);
-        String newText = numLensesChecked + " " + text;
+//        String newText = numLensesChecked + " " + text;
+        String newText = numLensesCheckedOverall + " " + text;
 
         numLensesSelectedTextView.setText(newText);
     }

@@ -370,32 +370,13 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             }
         }
 
-        // Add eol
-//        if (data.contains("+++")) {
-            // Add newline character if checked
-//            data += "\n";
-//        }
-
-//        // TODO: if sending Y, E, or P to MDR-4, don't add \r\n cuz it might reject it as junk
-//        if (productRxString.equals("MDR4\n") || productRxString.equals("DXL \n")) {
-//            if (expectingDone) {
-////                Timber.d("MDR4 detected, add r and n");
-//                data += "\n";
-//            }
-//            else {
-////                Timber.d("MDR4 detected, adding newline only!");
-//                data += "\n";
-//            }
-//            byte[] dataBytes = data.getBytes();
-//        }
-
-//        else if (data.contains("Y")) {
-//
-//        }
-
-        if (expectingDone) {
-            data += "\r\n";
+        // TODO: if sending Y, E, or P to MDR-4, don't add \r\n cuz it might reject it as junk
+        if (productRxString.equals("MDR4\n") || productRxString.equals("DXL \n")) {
+            if (expectingDone) {
+                data += "\r\n";
+            }
         }
+
         else {
             data += "\n";
         }
@@ -681,36 +662,20 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     @Override
     public synchronized void onDataAvailable(BluetoothGattCharacteristic characteristic) {
         super.onDataAvailable(characteristic);
-//        if (firmwareFilesDownloaded) {
-            // UART RX
-            if (characteristic.getService().getUuid().toString().equalsIgnoreCase(UUID_SERVICE)) {
-                if (characteristic.getUuid().toString().equalsIgnoreCase(UUID_RX)) {
-                    final byte[] bytes = characteristic.getValue();
+        // UART RX
+        if (characteristic.getService().getUuid().toString().equalsIgnoreCase(UUID_SERVICE)) {
+            if (characteristic.getUuid().toString().equalsIgnoreCase(UUID_RX)) {
+                final byte[] bytes = characteristic.getValue();
 
-                    String newRxData = buildRxPacket(bytes);
-//                    Timber.d("newRxData: " + newRxData);
+                String newRxData = buildRxPacket(bytes);
+                Timber.d("newRxData: " + newRxData);
 
-                    if (newRxData.length() > 0) {
-                        latestDataReceived = newRxData;
-                        processRxData(newRxData);
-                    }
-
-//                    if (newRxData.length() > 0) {
-//                        Timber.d("newRxData:" + newRxData + "$$");
-//                        processRxData(newRxData);
-//                    }
-
-                    // MQTT publish to RX
-                    MqttSettings settings = MqttSettings.getInstance(com.prestoncinema.app.FirmwareUpdateActivity.this);
-                    if (settings.isPublishEnabled()) {
-                        String topic = settings.getPublishTopic(MqttUartSettingsActivity.kPublishFeed_RX);
-                        final int qos = settings.getPublishQos(MqttUartSettingsActivity.kPublishFeed_RX);
-                        final String text = bytesToText(bytes, false);
-                        mMqttManager.publish(topic, text, qos);
-                    }
+                if (newRxData.length() > 0) {
+                    latestDataReceived = newRxData;
+                    processRxData(newRxData);
                 }
             }
-//        }
+        }
     }
 
     /**
@@ -750,7 +715,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     if (response.contains("OK")) {
                         sBuilder.append(response);
                     } else {
-//                        Timber.d("newline detected. splitting...length = " + response.length());
                         if (response.length() > 1) {
                             String resp = response.split("\n")[0] + "\n";
                             sBuilder.append(resp);
@@ -763,7 +727,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     return packet;
                 } else {
                     if (response.contains("V")) {
-//                        Timber.d("Version detected early on, passing through");
                         String packet = "";
                         if (response.contains("\n")) {
                             sBuilder.append(response.split("\n")[0]);
@@ -822,7 +785,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             mainTimerNeeded = false;
         }
 
-        if (startConnectionSetup) {
+//        if (startConnectionSetup) {
 //            Timber.d(lastDataSent + " sent, expect " + responseExpected + " in return");
 //            switch (lastDataSent) {
 //                case "AT":
@@ -940,7 +903,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 //                default:
 //                    setUpConnection(text);
 //            }
-        }
+//        }
 
         if (isConnectionReady) {
             mainTimerNeeded = false;
@@ -983,44 +946,44 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 ////        }
     }
 
-    private void setUpConnection(String text) {
-        Timber.d("setUpConnection: " + text + ", baudRateWait: " + baudRateWait);
-        String productDetected = checkForProductString(text);
-        if (productDetected.length() > 0) {
-            Timber.d("product detected in setUpConnection: " + productDetected);
-            productRxString = productDetected;
-            final String filePath = getS19Path(productRxString);
-            startConnectionSetup = false;
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    loadProgramFile(filePath);
-                }
-            });
-            isConnectionReady = true;
-        } else {
-            if (text.contains("0\nOK\n")) {
-                if (baudRateSent) {
-                    startConnectionSetup = false;
-                } else {
-                    uartSendData("+++", false);
-                }
-            } else if (text.contains("1\nOK\n")) {
-                if (baudRateSent) {
-                    uartSendData("+++", false);
-                } else {
-                    int currBaudRate = baudRateArray[baudRateIndex];
-                    Timber.d("Sending baudrate to device: " + currBaudRate);
-                    uartSendData("AT+BAUDRATE=" + currBaudRate, false);
-                    baudRateSent = true;
-                }
-            } else {
-                // ping the device to see if we're in command mode or data mode. command mode should receive "OK" response
-                uartSendData("AT", false);
-                responseExpected = "OK";
-            }
-        }
-    }
+//    private void setUpConnection(String text) {
+//        Timber.d("setUpConnection: " + text + ", baudRateWait: " + baudRateWait);
+//        String productDetected = checkForProductString(text);
+//        if (productDetected.length() > 0) {
+//            Timber.d("product detected in setUpConnection: " + productDetected);
+//            productRxString = productDetected;
+//            final String filePath = getS19Path(productRxString);
+//            startConnectionSetup = false;
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    loadProgramFile(filePath);
+//                }
+//            });
+//            isConnectionReady = true;
+//        } else {
+//            if (text.contains("0\nOK\n")) {
+//                if (baudRateSent) {
+//                    startConnectionSetup = false;
+//                } else {
+//                    uartSendData("+++", false);
+//                }
+//            } else if (text.contains("1\nOK\n")) {
+//                if (baudRateSent) {
+//                    uartSendData("+++", false);
+//                } else {
+//                    int currBaudRate = baudRateArray[baudRateIndex];
+//                    Timber.d("Sending baudrate to device: " + currBaudRate);
+//                    uartSendData("AT+BAUDRATE=" + currBaudRate, false);
+//                    baudRateSent = true;
+//                }
+//            } else {
+//                // ping the device to see if we're in command mode or data mode. command mode should receive "OK" response
+//                uartSendData("AT", false);
+//                responseExpected = "OK";
+//            }
+//        }
+//    }
 
     private String checkForProductString(String text) {
         Timber.d("checkForProductString (" + text + ")");
@@ -1238,14 +1201,6 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     private void activateUploadProgress(final ProgressBar pb) {
-//        mProgressDialog = new ProgressDialog(this);
-//        mProgressDialog.setMessage("Uploading firmware to device, please wait...");
-//        mProgressDialog.setCancelable(false);
-//        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-//        mProgressDialog.setIndeterminate(false);
-//        mProgressDialog.setMax(fileArray.size());
-//        mProgressDialog.setProgressNumberFormat(null);
-//        mProgressDialog.show();
         pb.setMax(fileArray.size());
 
         new Thread(new Runnable() {
@@ -1398,8 +1353,12 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
     }
 
+    /**
+     * This method is the main method for sending a firmware file to the device. It sends the file
+     * line-by-line that is stored in fileArray, and the line to send is indicated by currentLine.
+     * @param line the index of the current line in the file that we want to send.
+     */
     public void sendProgramFile(int line) {
-        Timber.d("sending firmware line " + line);
         if (line < fileArray.size()) {
             uartSendData(fileArray.get(line), false);
             currentLine += 1;

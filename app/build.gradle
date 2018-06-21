@@ -9,9 +9,9 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 // version numbering variables
-def versionMajor = 1
-def versionMinor = 0
-def versionPatch = 0
+def versionMajor = 0
+def versionMinor = 1
+def versionPatch = 6
 
 android {
     signingConfigs {
@@ -54,8 +54,7 @@ android {
     dataBinding {
         enabled = true
     }
-    //useLibrary 'org.apache.http.legacy'
-    // TODO: remove Apache library and use HttpURLConnection (Apache is deprecated since Android 6.0)
+
     aaptOptions {
         noCompress "zip"
     }

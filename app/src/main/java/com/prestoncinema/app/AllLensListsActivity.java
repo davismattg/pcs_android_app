@@ -795,11 +795,9 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                             setSelectedLensesCount();
                             populateListsToUpdate();
                         }
-//                        else {
-//
-//                        }
-//                        selectedLensesLayout.setVisibility(View.VISIBLE);
-//                        selectedLensesCountTextView.setText(numSelectedLenses);
+                        else {
+                            selectedLensesLayout.setVisibility(View.GONE);
+                        }
                     }
 
                     @Override
@@ -3179,6 +3177,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
                             intent.putExtra("listNote", list.getNote());
                             intent.putExtra("connected", isConnected);
                             intent.putExtra("allLensLists", allLensListsArrayList);
+                            intent.putExtra("numLensesCheckedOverall", numSelectedLenses);
                             intent.putParcelableArrayListExtra("lenses", lensesToManage);
                             startActivity(intent);
                         }

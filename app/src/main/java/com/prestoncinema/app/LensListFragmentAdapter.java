@@ -52,10 +52,12 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
 
     private LensListEntity lensList;
 
+    private int numLensesCheckedOverall;
+
     public LensListFragmentAdapter(FragmentManager fm, LensListEntity lensList, List<String> myListDataHeader, HashMap<String, List<LensEntity>> myListDataChild,
                                    List<String> lensListManufHeader, HashMap<String, List<String>> lensListTypeHeader,
                                    Map<Integer, Integer> lensListDataHeaderCount, HashMap<Integer, HashMap<Integer, ArrayList<Integer>>> lensPositionMap,
-                                   ArrayList<LensEntity> lensObjectArrayList, String note, Context context) {
+                                   ArrayList<LensEntity> lensObjectArrayList, String note, int numLensesCheckedOverall, Context context) {
         super(fm);
 
         this.lensList = lensList;
@@ -67,6 +69,7 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
         this.lensPositionMap = lensPositionMap;
         this.allLensesList = lensObjectArrayList;
         this.listNote = note;
+        this.numLensesCheckedOverall = numLensesCheckedOverall;
         this.context = context;
     }
 
@@ -78,7 +81,7 @@ public class LensListFragmentAdapter extends FragmentStatePagerAdapter {
     @Override
     public Fragment getItem(int position) {
         if (position == 0) {
-            allLensesFragment = LensListFragment.newInstance(position + 1, this.lensList, this.lensListManufHeader, this.lensListTypeHeader, this.lensListDataHeaderCount, this.lensPositionMap, this.allLensesList, fromImport, listNote, this.context);
+            allLensesFragment = LensListFragment.newInstance(position + 1, this.lensList, this.lensListManufHeader, this.lensListTypeHeader, this.lensListDataHeaderCount, this.lensPositionMap, this.allLensesList, fromImport, listNote, numLensesCheckedOverall, this.context);
             return allLensesFragment;
         }
         else {

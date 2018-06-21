@@ -91,6 +91,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
     private Button sendButton;
 
     private int numLensesChecked = 0;
+    private int numLensesCheckedOverall = 0;
 
     private List<String> lensListDataHeader = new ArrayList<>(Arrays.asList("Angenieux", "Canon", "Cooke", "Fujinon", "Leica", "Panavision", "Zeiss", "Other"));
     private Map<Integer, Integer> lensListDataHeaderCount = new HashMap<Integer, Integer>(lensListDataHeader.size());
@@ -212,6 +213,8 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
             allLensLists = getIntent().getParcelableArrayListExtra("allLensLists");
 
             currentListId = extras.getLong("listId");
+
+            numLensesCheckedOverall = extras.getInt("numLensesCheckedOverall");
 
             isConnected = extras.getBoolean("connected");
             importLenses();
@@ -895,7 +898,7 @@ public class LensListDetailsActivity extends UartInterfaceActivity implements Ad
             allLensesSelected = true;
         }
 
-        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), currentLensList, myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, lensFileNote, LensListDetailsActivity.this);
+        lensListFragmentAdapter = new LensListFragmentAdapter(getSupportFragmentManager(), currentLensList, myListDataHeader, myListDataChild, lensListManufHeader, lensListTypeHeader, lensListDataHeaderCount, lensPositionMap, lensObjectArray, lensFileNote, numLensesCheckedOverall, LensListDetailsActivity.this);
         viewPager.setAdapter(lensListFragmentAdapter);
 
         showOrHideFab();

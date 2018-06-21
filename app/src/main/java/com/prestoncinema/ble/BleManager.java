@@ -15,8 +15,11 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import timber.log.Timber;
 
 public class BleManager implements BleGattExecutor.BleExecutorListener {
     // Log
@@ -260,6 +263,7 @@ public class BleManager implements BleGattExecutor.BleExecutorListener {
                 return;
             }
 
+//            Timber.d("writeService: " + Arrays.toString(value));
             mExecutor.write(service, uuid, value);
             mExecutor.execute(mGatt);
         }

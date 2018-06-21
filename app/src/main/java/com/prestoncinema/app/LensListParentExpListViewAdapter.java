@@ -105,10 +105,10 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         void onSelected(String manufacturer, String series, boolean seriesChecked, boolean checkParent);
     }
 
-    public void setLenses(ArrayList<LensEntity> newLenses) {
-        this.lensObjectArrayList = newLenses;
-        notifyDataSetChanged();
-    }
+//    public void setLenses(ArrayList<LensEntity> newLenses) {
+//        lensObjectArrayList = newLenses;
+//        notifyDataSetChanged();
+//    }
 
     public void updateHeaderCount(Map<Integer, Integer> newCount) {
         this.lensListDataHeaderCount = newCount;
@@ -156,8 +156,8 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
 
         // TODO: make this handle when there are 0 lenses for a manuf
         boolean allChecked = true;
-        if (this.lensObjectArrayList.size() > 0) {
-            for (LensEntity lens : this.lensObjectArrayList) {
+        if (lensObjectArrayList.size() > 0) {
+            for (LensEntity lens : lensObjectArrayList) {
                 if (lens.getManufacturer().equals(manuf)) {
                     numInManuf += 1;
                     if (!lens.getChecked()) {
@@ -211,7 +211,7 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
         for (String series : lensTypeList) {
             ArrayList<LensEntity> tempLensList = new ArrayList<>();
             lensChildHash.put(series, tempLensList);
-            for (LensEntity lens : this.lensObjectArrayList) {
+            for (LensEntity lens : lensObjectArrayList) {
                 if (lens.getManufacturer().equals(parentNode) && lens.getSeries().equals(series)) {
                     tempLensList.add(lens);
                 }
@@ -229,7 +229,7 @@ public class LensListParentExpListViewAdapter extends BaseExpandableListAdapter 
                 this.listDataChild.get(parentNode),
                 lensChildHash,
                 lensPositionIndicesMap,
-                this.lensObjectArrayList,
+                lensObjectArrayList,
                 parentNode
         );
         lensSecondLevel.setAdapter(childAdapter);
