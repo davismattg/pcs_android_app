@@ -273,17 +273,20 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             // Setting to remember devices upon connection
             rememberDevice = sharedPreferences.getBoolean("pref_remember_device", true);
 
-            // Subscribe the app to the "firmware" topic by default_lenses.
+            // Subscribe the app to the "firmware" topic by default.
             notifyFirmwareUpdate = sharedPreferences.getBoolean("pref_subscribe_to_firmware_updates", true);
 
             if (notifyFirmwareUpdate) {
                 Timber.d("subscribe to firmware updates");
                 FirebaseMessaging.getInstance().subscribeToTopic("firmware");
                 FirebaseMessaging.getInstance().subscribeToTopic("test");
+//                FirebaseMessaging.getInstance().subscribeToTopic("ios-test");
             }
-            else {
+            else {  // unsubscribe
                 Timber.d("unsubscribe from firmware updates");
                 FirebaseMessaging.getInstance().unsubscribeFromTopic("firmware");
+                FirebaseMessaging.getInstance().unsubscribeFromTopic("test");
+//                FirebaseMessaging.getInstance().unsubscribeFromTopic("ios-test");
             }
         }
 

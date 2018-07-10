@@ -328,7 +328,7 @@
     <string name="all_lenses_menu_import_from_hu3">Receive from HU3</string>
     <string name="all_lenses_menu_import">Import lens list</string>
     <string name="all_lenses_menu_export">Export</string>
-    <string name="all_lenses_menu_delete">Clear all</string>
+    <string name="all_lenses_menu_delete">Delete all</string>
     <string name="all_lenses_menu_restore">Restore Default Lenses</string>
     <!-- Uart Activity -->
     <string name="title_activity_uart">HU3 Lens Management</string>

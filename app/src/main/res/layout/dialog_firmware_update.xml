@@ -5,12 +5,22 @@
     android:background="@color/white"
     android:padding="10dp">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/productNameTextView"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/black" />
     <ImageView
         android:layout_width="230dp"
         android:layout_height="230dp"
         android:id="@+id/productTypeImageView"
         android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"
+        android:layout_below="@id/productNameTextView"
         android:src="@drawable/unknown_cropped"/>
 
     <LinearLayout
