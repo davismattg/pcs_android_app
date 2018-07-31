@@ -3,6 +3,7 @@ package com.prestoncinema.app;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +41,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
     private LensSelectedListener selectedListener;
     private SeriesSelectedListener seriesSelectedListener;
     private ExpandedStateListener expandedStateListener;
+
+    private ViewGroup parentListView;
 
     private ArrayList<Boolean> seriesCheckedStatus = new ArrayList<>();
 
@@ -161,6 +164,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
         final String childText = SharedHelper.constructFocalLengthString(childObject.getFocalLength1(), childObject.getFocalLength2());
 
         LensListLensBinding binding;
+
+        parentListView = parent;
 
         /* If this is the first time we're inflating this view */
         if (convertView == null) {
@@ -514,6 +519,8 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 
         // initialize the view components
         final ImageView checkImageView = (ImageView) convertView.findViewById(R.id.checkLensTypeImageView);
+        final FrameLayout checkBoxCheckedLayout = convertView.findViewById(R.id.seriesCheckBoxCheckedLayout);
+        final FrameLayout addLensLayout = convertView.findViewById(R.id.lensTypeAddImageLayout);
         ImageView typeImageView = (ImageView) convertView.findViewById(R.id.lensTypeImageView);
         TextView typeTextView = (TextView) convertView.findViewById(R.id.lensListType);
         ImageView addImageView = (ImageView) convertView.findViewById(R.id.lensTypeAddImageView);
@@ -523,31 +530,52 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 
         int childCount = getChildrenCount(groupPosition);
 
+        // show the green check box if needed
+        if (getGroupChecked(groupPosition)) {
+            checkImageView.setVisibility(View.INVISIBLE);
+            checkBoxCheckedLayout.setVisibility(View.VISIBLE);
+        }
+
+        // otherwise, show the empty gray one
+        else {
+            checkImageView.setVisibility(View.VISIBLE);
+            checkBoxCheckedLayout.setVisibility(View.INVISIBLE);
+        }
+//        checkImageView.setImageResource(getGroupChecked(groupPosition) ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_gray_unchecked_24dp);
+
         if (childCount == 0) {
-            typeTextView.setTextColor(0xFFBBBBBB);
-            typeImageView.setImageResource(R.drawable.ic_expand_more_empty_24dp);
+            int textColor = context.getResources().getColor(R.color.disabledGray);
+            typeTextView.setTextColor(textColor); //setTextColor(0xFFBBBBBB);
+            checkImageView.setVisibility(View.INVISIBLE);
+            checkBoxCheckedLayout.setVisibility(View.INVISIBLE);
+            typeImageView.setVisibility(View.INVISIBLE);
         }
         else {
-            typeTextView.setTextColor(0xFFFFFFFF);
+            int textColor = context.getResources().getColor(R.color.darkBlue);
+            typeTextView.setTextColor(textColor);
+            checkImageView.setVisibility(View.VISIBLE);
+            typeImageView.setVisibility(View.VISIBLE);
+
             // depending on the isExpanded state of the group (and if there are > 0 children in the group), display the appropriate up/down chevron icon
-            typeImageView.setImageResource(isExpanded ? R.drawable.ic_expand_less_white_24dp : R.drawable.ic_expand_more_white_24dp);
+            typeImageView.setImageResource(isExpanded ? R.drawable.ic_expand_less_blue_24dp : R.drawable.ic_expand_more_blue_24dp);
         }
 
-        checkImageView.setImageResource(getGroupChecked(groupPosition) ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_gray_unchecked_24dp);
-
+        // OnClickListener for when the box is unchecked and is being checked
         checkImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /* If the lens was previously checked, uncheck the box and set the checked attributes to false */
-                if (getGroupChecked(groupPosition)) {
-                    checkImageView.setImageResource(R.drawable.ic_check_box_gray_unchecked_24dp);
-                    seriesCheckedStatus.set(groupPosition, false);
-                }
+//                /* If the lens was previously checked, uncheck the box and set the checked attributes to false */
+//                if (getGroupChecked(groupPosition)) {
+//                    checkImageView.setImageResource(R.drawable.ic_check_box_gray_unchecked_24dp);
+//                    seriesCheckedStatus.set(groupPosition, false);
+//                }
                 /* If the lens was not previously checked, check the box and set the checked attribute to true */
-                else {
-                    checkImageView.setImageResource(R.drawable.ic_check_box_green_checked_24dp);
+//                else {
+//                    checkImageView.setImageResource(R.drawable.ic_check_box_green_checked_24dp);
+                checkImageView.setVisibility(View.INVISIBLE);
+                checkBoxCheckedLayout.setVisibility(View.VISIBLE);
                     seriesCheckedStatus.set(groupPosition, true);
-                }
+//                }
 
                 /* Call the interface callback to notify LensListDetailsActivity of the change in "checked" status */
                 seriesSelectedListener.onSelected(manufTitle, typeTitle, getGroupChecked(groupPosition), getSeriesCheckedStatus());
@@ -558,8 +586,21 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
             }
         });
 
+        // OnClickListener for when the box is already checked and is being unchecked
+        checkBoxCheckedLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                checkBoxCheckedLayout.setVisibility(View.INVISIBLE);
+                checkImageView.setVisibility(View.VISIBLE);
+                seriesCheckedStatus.set(groupPosition, false);
 
-        addImageView.setOnClickListener(new View.OnClickListener() {
+                /* Call the interface callback to notify LensListDetailsActivity of the change in "checked" status */
+                seriesSelectedListener.onSelected(manufTitle, typeTitle, getGroupChecked(groupPosition), getSeriesCheckedStatus());
+                notifyDataSetChanged();
+            }
+        });
+
+        addLensLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 //                runOnUiThread(new Runnable() {
@@ -683,6 +724,9 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 //            }
         });
 
+        String tagString = manufTitle + " - " + typeTitle;
+        convertView.setTag(tagString);
+
         return convertView;
     }
 
@@ -726,8 +770,19 @@ public class LensListChildExpListViewAdapter extends BaseExpandableListAdapter
 //        checkBoxesEnabled = true;
     }
 
-    public void updateCheckboxes(boolean checked) {
+    public void updateCheckBoxes(int groupPosition, boolean checked) {
+        this.seriesCheckedStatus.set(groupPosition, checked);
 
+//        LensListChildExpListView listView = new LensListChildExpListView(context);
+
+//        View groupView = getGroupView(groupPosition, true, null, parentListView);
+
+
+//        if (checked) {
+//            groupView.findViewById()
+//        }
+
+//        notifyDataSetChanged();
     }
 
     public void expandGroup(int gp) {

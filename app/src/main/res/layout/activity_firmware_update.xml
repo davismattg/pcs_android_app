@@ -11,34 +11,42 @@
     tools:context="com.prestoncinema.app.FirmwareUpdateActivity">
 
     <!--</LinearLayout>-->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:orientation="vertical">-->
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/fragmentContainer">
+            android:id="@+id/fragmentContainerInstructions"
+            android:layout_alignParentStart="true">
         </FrameLayout>
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        <!--<FrameLayout-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_below="@+id/fragmentContainerInstructions"-->
+            <!--android:id="@+id/fragmentContainerFirmware">-->
+        <!--</FrameLayout>-->
 
-            <TextView
-                android:text="Not Connected"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@color/black"
-                android:textColor="@color/medGray"
-                android:paddingLeft="60dp"
-                android:paddingRight="60dp"
-                android:id="@+id/ConnectedTextView"
-                android:textSize="18sp"
-                android:layout_alignParentBottom="true"
-                android:drawableEnd = "@drawable/icon_disconnected"
-                android:gravity="center" />
-        </RelativeLayout>
-    </LinearLayout>
+        <!--<RelativeLayout-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent">-->
+
+            <!--<TextView-->
+                <!--android:text="Not Connected"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="50dp"-->
+                <!--android:background="@color/black"-->
+                <!--android:textColor="@color/medGray"-->
+                <!--android:paddingLeft="60dp"-->
+                <!--android:paddingRight="60dp"-->
+                <!--android:id="@+id/ConnectedTextView"-->
+                <!--android:textSize="18sp"-->
+                <!--android:layout_alignParentBottom="true"-->
+                <!--android:drawableEnd = "@drawable/icon_disconnected"-->
+                <!--android:gravity="center" />-->
+        <!--</RelativeLayout>-->
+    <!--</LinearLayout>-->
 </RelativeLayout>

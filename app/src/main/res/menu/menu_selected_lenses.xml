@@ -4,7 +4,7 @@
         android:title="@string/send_to"
         android:id="@+id/shareSelectedLensesMenuItem" />
     <item
-        android:title="@string/clear"
+        android:title="@string/deselect_all"
         android:id="@+id/clearSelectedLensesMenuItem" />
     <item
         android:title="@string/delete"

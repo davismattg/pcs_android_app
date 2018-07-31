@@ -8,17 +8,17 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/firmware_update_instructions_see_below"
+        android:text="@string/firmware_files_on_device"
         android:layout_margin="10dp"
         android:textSize="16sp"
         android:textColor="@color/lightestGray"
-        android:id="@+id/instructionsTextView" />
+        android:id="@+id/firmwareFilesTextView" />
 
     <ExpandableListView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/instructionsTextView"
-        android:id="@+id/firmwareUpdateInstructionsExpListView">
+        android:layout_below="@+id/firmwareFilesTextView"
+        android:id="@+id/firmwareFilesExpListView">
 
     </ExpandableListView>
 </RelativeLayout>

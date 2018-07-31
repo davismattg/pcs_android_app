@@ -169,7 +169,7 @@ public class MyListExpListViewAdapter extends BaseExpandableListAdapter {
         LinearLayout addLensLayout = (LinearLayout) convertView.findViewById(R.id.myListAddLensImageViewLayout);
         final ImageView addLensImageView = (ImageView) convertView.findViewById(R.id.myListAddLensImageView);
 
-        headerImageView.setImageResource(isExpanded ? R.drawable.ic_expand_less_alt_white_24dp : R.drawable.ic_expand_more_alt_white_24dp);
+        headerImageView.setImageResource(isExpanded ? R.drawable.ic_expand_less_blue_24dp : R.drawable.ic_expand_more_alt_white_24dp);
         headerTextView.setText(headerTitle);
         headerCountTextView.setText(String.valueOf(headerCount));
 

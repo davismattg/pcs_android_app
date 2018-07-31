@@ -144,8 +144,9 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private SwipeRefreshLayout mSwipeRefreshLayout;
 
     private ArrayList<String> firmwareArrayList = new ArrayList<String>();
-    private HashMap<String, ArrayList<String>> firmwareUpdateInstructions = new HashMap<String, ArrayList<String>>();
-
+    private HashMap<String, ArrayList<String>> firmwareUpdateInstructions = new HashMap<>();
+    private HashMap<String, String> currentFirmwareVersions = new HashMap<>();
+    private HashMap<String, ArrayList<String>> currentFirmwareChanges = new HashMap<>();
     private List<Map<String, String>> firmwareMap = new ArrayList<Map<String, String>>();
     private SimpleAdapter firmwareAdapter;
 
@@ -164,8 +165,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         setContentView(R.layout.activity_firmware_update);
 
         firmwareUpdateInstructions = SharedHelper.populateFirmwareUpdateInstructions(FirmwareUpdateActivity.this);
+        currentFirmwareVersions = SharedHelper.populateFirmwareVersions(FirmwareUpdateActivity.this);
+        currentFirmwareChanges = SharedHelper.populateFirmwareChanges(FirmwareUpdateActivity.this);
 
-        if (findViewById(R.id.fragmentContainer) != null) {
+        if (findViewById(R.id.fragmentContainerInstructions) != null) {
             if (savedInstanceState != null) {
                 return;
             }
@@ -174,8 +177,17 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             Bundle bundle = new Bundle();
             bundle.putSerializable("instructions", firmwareUpdateInstructions);
             fragment.setArguments(bundle);
-            getSupportFragmentManager().beginTransaction().add(R.id.fragmentContainer, fragment).commit();
+            getSupportFragmentManager().beginTransaction().add(R.id.fragmentContainerInstructions, fragment).commit();
         }
+
+//        if (findViewById(R.id.fragmentContainerFirmware) != null) {
+//            FirmwareFilesCurrentFragment fragment = new FirmwareFilesCurrentFragment();
+//            Bundle bundle = new Bundle();
+//            bundle.putSerializable("firmwareVersions", currentFirmwareVersions);
+//            bundle.putSerializable("firmwareChanges", currentFirmwareChanges);
+//            fragment.setArguments(bundle);
+//            getSupportFragmentManager().beginTransaction().add(R.id.fragmentContainerFirmware, fragment).commit();
+//        }
 
         mConnectedTextView = findViewById(R.id.ConnectedTextView);
 
@@ -183,12 +195,12 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         isConnected = (mBleManager.getState() == 2);
 
         BluetoothDevice device = mBleManager.getConnectedDevice();
-        if (device != null) {
-            updateConnectedTextView(isConnected, device.getName());
-        }
-        else {
-            updateConnectedTextView(isConnected, "");
-        }
+//        if (device != null) {
+//            updateConnectedTextView(isConnected, device.getName());
+//        }
+//        else {
+//            updateConnectedTextView(isConnected, "");
+//        }
 
         // Get default_lenses theme colors
         TypedValue typedValue = new TypedValue();
@@ -405,7 +417,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             public void downloadComplete(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareFilesMap) {
                 Timber.d("downloadComplete inner entered");
                 firmwareFilesDownloaded = true;
-                initializeBaudRate();
+
+                if (isConnected) {
+                    initializeBaudRate();
+                }
             }
         }).execute(pcsPath);
     }
@@ -462,12 +477,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
         switch (id) {
             case R.id.myFirmwareFilesMenuItem:
-                Timber.d("show my firmware files");       // TODO: make this bring up an AlertDialog with current versions on user's phone
+                Timber.d("show my firmware files");
                 Intent intent = new Intent(this, FirmwareInfoActivity.class);
-                intent.putStringArrayListExtra("firmwareArrayList", firmwareArrayList);
-//                intent.putExtra("help", "uart_help.html");
+//                intent.putStringArrayLissdftExtra("firmwareArrayList", firmwareArrayList);
                 startActivity(intent);
-//                showFirmwareAlertDialog(firmwareMap);
                 return true;
             case R.id.firmwareUpdateCheckMenuItem:
                 Timber.d("check for firmware updates");

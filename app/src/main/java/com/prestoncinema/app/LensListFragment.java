@@ -84,6 +84,8 @@ public class LensListFragment extends Fragment {
     private ImageView selectAllLensesImageView;
     private TextView numLensesSelectedTextView;
 
+    private FrameLayout selectAllLensesCheckBoxLayout;
+
     private LensListEntity lensList;
 
     public static LensListFragment newInstance(
@@ -242,14 +244,15 @@ public class LensListFragment extends Fragment {
         updateNumLensesChecked();
 
         if (allLensesChecked) {
-            binding.selectAllLensesImageView.setImageResource(R.drawable.ic_check_box_green_checked_24dp);
+            binding.selectAllLensesImageView.setVisibility(View.INVISIBLE); //ImageResource(R.drawable.ic_check_box_green_checked_24dp);
+            binding.selectAllLensesCheckBoxLayout.setVisibility(View.VISIBLE);
         }
 
         /* OnClickListener for the "Select All" checkbox */
         binding.selectAllLensesImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                allLensesChecked = !allLensesChecked;
+                allLensesChecked = true;
 
 //                // if fromImport == true, none of the lenses are in the DB yet, so just update the ArrayList
 //                if (fromImport) {
@@ -259,16 +262,31 @@ public class LensListFragment extends Fragment {
 //
 //                // otherwise, actually update the checked entry for each lens in the DB
 //                else {
-                    manufacturerSelectedListener.onManufacturerSelected(null, allLensesChecked);
+                    manufacturerSelectedListener.onManufacturerSelected(null, true);
 //                }
-
+                binding.selectAllLensesImageView.setVisibility(View.INVISIBLE);
+                binding.selectAllLensesCheckBoxLayout.setVisibility(View.VISIBLE);
                 // set the correct checked state for the ImageView
-                binding.selectAllLensesImageView.setImageResource(allLensesChecked ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_white_unchecked_24dp );
+//                binding.selectAllLensesImageView.setImageResource(allLensesChecked ? R.drawable.ic_check_box_green_checked_24dp : R.drawable.ic_check_box_white_unchecked_24dp );
             }
         });
 
         selectAllLensesImageView = binding.selectAllLensesImageView;
 
+        selectAllLensesCheckBoxLayout = binding.selectAllLensesCheckBoxLayout;
+
+        // OnClickListener for the Select All checkbox when it's selected (i.e. to deselect all)
+        binding.selectAllLensesCheckBoxLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                allLensesChecked = false;
+
+                manufacturerSelectedListener.onManufacturerSelected(null, false);
+
+                binding.selectAllLensesImageView.setVisibility(View.VISIBLE);
+                binding.selectAllLensesCheckBoxLayout.setVisibility(View.INVISIBLE);
+            }
+        });
         /* If the fragment is being used to select lenses received from the HU3, make some UI tweaks */
 //        if (fromImport) {
 ////            binding.lensListNoteTextView.setVisibility(View.GONE);

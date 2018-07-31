@@ -125,6 +125,8 @@
     <string name="info_item_service">Service</string>
     <string name="info_help_title">Info List Help</string>
 
+    <string name="title_activity_firmware_info">My Firmware Versions</string>
+
     <!-- Firmware Update Activity -->
     <string name="title_activity_firmware_update">Firmware Updates</string>
     <string name="firmware_update_instructions">
@@ -134,8 +136,9 @@
         Click \"Firmware Updates\" button.\n\n
         The app will detect your device and display the currently installed version. Press \"Confirm\" to program the device.
     </string>
-    <string name="firmware_update_instructions_see_below">Unit not detected? The PCS app supports firmware updates for the products listed below.\n\nClick for instructions to boot each unit up in programming mode.</string>
-
+    <string name="firmware_update_instructions_see_below">Unit not detected? Preston Connect only supports firmware updates for the products listed below.\n\nClick for instructions to boot each unit up in programming mode.</string>
+    <string name="firmware_files_on_device">The files listed below are stored on this device and can be loaded onto Preston units without an internet connection.</string>
+    <string name="whats_new_in_firmware_version">What\'s new in this version: </string>
     <string name="update_hu3">1) Power off unit\n2) Hold down the Iris Set button\n3) Power on the HU3\n4) Release the Iris Set button\n\nIf done correctly, the HU3 display will show \"Ready to load\".</string>
     <string name="update_mdr2">1) Power off unit\n2) Hold down the Reset/Motor Cal button\n3) Plug in the power cable\n4) Release the Reset/Motor Cal button</string>
     <string name="update_mdr3">1) Power off unit\n2) Hold down the Reset/Motor Cal button\n3) Plug in the power cable\n4) Release the Reset/Motor Cal button</string>
@@ -144,15 +147,34 @@
     <string name="update_dxl">1) Power down DXL camera\n2) Hold down Reset/Motor Cal button on module\n3) Power on camera\n4) When module has booted up (radio channel number visible), release Reset/Motor Cal button</string>
 
     <string name="searching_for_unit">Searching for unit...\n\nMake sure unit is in programming mode</string>
-    <string name="no_updater_found_title">No Updater module connected!</string>
-    <string name="no_updater_found">You must connect to an Updater before you can update firmware.</string>
+    <string name="no_updater_found_title">No Bluetooth Module connected</string>
+    <string name="no_updater_found">You must connect to a module before you can update firmware.</string>
+
     <string-array name="product_names">
-        <item>"DXL \n"</item>
         <item>"Hand3\n"</item>
         <item>"MDR4\n"</item>
         <item>"MDR3\n"</item>
-        <item>"MDR\n"</item>
         <item>"MLink\n"</item>
+        <item>"DXL \n"</item>
+        <item>"MDR\n"</item>
+    </string-array>
+
+    <string-array name="product_rx_strings">
+        <item>"Hand3"</item>
+        <item>"MDR4"</item>
+        <item>"MDR3"</item>
+        <item>"MLink"</item>
+        <item>"DXL"</item>
+        <item>"MDR"</item>
+    </string-array>
+
+    <string-array name="product_names_friendly">
+        <item>HU3</item>
+        <item>MDR-4</item>
+        <item>MDR-3</item>
+        <item>Video Interface</item>
+        <item>DXL Module</item>
+        <item>MDR-2</item>
     </string-array>
 
     <!-- Lens Activity -->
@@ -276,6 +298,7 @@
     <string name="share_selected">Share selected</string>
     <string name="send_to">Send to...</string>
     <string name="clear">Clear</string>
+    <string name="deselect_all">Deselect all</string>
     <string name="delete">Delete</string>
     <string name="delete_selected">Delete selected</string>
     <string name="help">Help</string>

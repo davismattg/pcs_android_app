@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/lightGray"
+    android:padding="10dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/firmwareChangesWhatsNewTextView"
+        android:textColor="@color/darkestGray"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:text="@string/whats_new_in_firmware_version"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/firmwareChangesTextView"
+        android:layout_below="@+id/firmwareChangesWhatsNewTextView"
+        android:textColor="@color/darkestGray"
+        android:textSize="16sp" />
+
+</RelativeLayout>

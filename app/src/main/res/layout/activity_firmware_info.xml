@@ -4,14 +4,24 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/app_background"
     tools:context="com.prestoncinema.app.FirmwareInfoActivity">
 
-    <ExpandableListView
-        android:id="@+id/firmwareListView"
-        android:layout_width="395dp"
-        android:layout_height="587dp"
-        android:layout_marginStart="8dp"
-        android:background="#333333"
+    <!--<ExpandableListView-->
+        <!--android:id="@+id/firmwareListView"-->
+        <!--android:layout_width="395dp"-->
+        <!--android:layout_height="587dp"-->
+        <!--android:layout_marginStart="8dp"-->
+        <!--android:background="#333333"-->
+        <!--app:layout_constraintStart_toStartOf="parent"-->
+        <!--tools:layout_editor_absoluteY="8dp"></ExpandableListView>-->
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/fragmentContainer"
         app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteY="8dp"></ExpandableListView>
+        app:layout_constraintTop_toTopOf="parent">
+    </FrameLayout>
+
 </android.support.constraint.ConstraintLayout>

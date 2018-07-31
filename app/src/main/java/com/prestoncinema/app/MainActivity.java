@@ -278,14 +278,14 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
             if (notifyFirmwareUpdate) {
                 Timber.d("subscribe to firmware updates");
-                FirebaseMessaging.getInstance().subscribeToTopic("firmware");
-                FirebaseMessaging.getInstance().subscribeToTopic("test");
+                FirebaseMessaging.getInstance().subscribeToTopic("firmware-android");
+//                FirebaseMessaging.getInstance().subscribeToTopic("test");
 //                FirebaseMessaging.getInstance().subscribeToTopic("ios-test");
             }
             else {  // unsubscribe
                 Timber.d("unsubscribe from firmware updates");
-                FirebaseMessaging.getInstance().unsubscribeFromTopic("firmware");
-                FirebaseMessaging.getInstance().unsubscribeFromTopic("test");
+                FirebaseMessaging.getInstance().unsubscribeFromTopic("firmware-android");
+//                FirebaseMessaging.getInstance().unsubscribeFromTopic("test");
 //                FirebaseMessaging.getInstance().unsubscribeFromTopic("ios-test");
             }
         }

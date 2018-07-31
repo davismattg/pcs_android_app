@@ -2,6 +2,7 @@ package com.prestoncinema.app;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
@@ -34,6 +35,8 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
+
+import static android.content.Context.MODE_PRIVATE;
 
 /**
  * Created by MATT on 11/14/2017.
@@ -93,7 +96,7 @@ public class SharedHelper {
         String mdr2 = context.getResources().getString(R.string.update_mdr2);
 
         ArrayList<String> instructions = new ArrayList<String>();
-        ArrayList<String> headers = new ArrayList<String>();
+        ArrayList<String> headers = getProductNames(context);
 
         instructions.add(hu3);
         instructions.add(mdr4);
@@ -102,17 +105,124 @@ public class SharedHelper {
         instructions.add(dxl);
         instructions.add(mdr2);
 
-        headers.add("HU3");
-        headers.add("MDR-4");
-        headers.add("MDR-3");
-        headers.add("Video Interface");
-        headers.add("DXL Module");
-        headers.add("MDR-2");
-
         instructionsMap.put("headers", headers);
         instructionsMap.put("instructions", instructions);
 
         return instructionsMap;
+    }
+
+    /**
+     * This method gets the current firmware versions from the SharedPreferences and formats the
+     * changes for each version in an ArrayList of Strings for display in an ExpandableListView
+     * @param context
+     * @return
+     */
+    public static HashMap<String, ArrayList<String>> populateFirmwareChanges(Context context) {
+        HashMap<String, ArrayList<String>> firmwareMap = new HashMap<>();
+
+        // get the user-friendly product names from the String resources
+        ArrayList<String> headers = getProductNames(context);
+
+        // get the product names as they are reported to app via serial port
+        ArrayList<String> productRxStrings = getProductRxStrings(context);
+
+        // initialize the arraylist of changes for each product
+        ArrayList<String> changes = new ArrayList<>();
+
+        // get the firmware information from the shared preferences
+        SharedPreferences sharedPref = context.getSharedPreferences("firmwareURLs", MODE_PRIVATE);
+
+        // loop through the products and add the changes
+        for (int i = 0; i < headers.size(); i++) {
+            String productPrefs = sharedPref.getString(productRxStrings.get(i), "Not found");
+
+            if (productPrefs != "Not Found") {
+                changes = new ArrayList<>(Arrays.asList(getChangesFromPreferences(productPrefs)));
+            }
+
+            // assign the changes to the user-friendly product name
+            firmwareMap.put(headers.get(i), changes);
+        }
+
+        return firmwareMap;
+    }
+
+
+    /**
+     * This method gets the current firmware versions from the SharedPreferences and returns the
+     * currently installed version as a string associated with the user friendly product name.
+     * @param context
+     * @return
+     */
+    public static HashMap<String, String> populateFirmwareVersions(Context context) {
+        HashMap<String, String> versionsMap = new HashMap<>();
+
+        // get the user-friendly product names from the String resources
+        ArrayList<String> headers = getProductNames(context);
+
+        // get the product names as they are reported to app via serial port
+        ArrayList<String> productRxStrings = getProductRxStrings(context);
+
+        // get the firmware information from the shared preferences
+        SharedPreferences sharedPref = context.getSharedPreferences("firmwareURLs", MODE_PRIVATE);
+
+        String version = "";
+
+        // loop through the products and get the latest version
+        for (int i = 0; i < headers.size(); i++) {
+            String productPrefs = sharedPref.getString(productRxStrings.get(i), "");
+
+            if (productPrefs.length() > 0) {
+                version = getVersionFromPreferences(productPrefs);
+            }
+
+            versionsMap.put(headers.get(i), version);
+        }
+
+        return versionsMap;
+    }
+
+    public static String[] getChangesFromPreferences(String preference) {
+        String[] changeSplit = preference.split("=");
+        String[] out = new String[0];
+        String change = "";
+
+        if (changeSplit.length > 2) {
+            change = changeSplit[2];
+            out = change.split("&&");
+        }
+
+        return out;
+    }
+
+
+    public static String getVersionFromPreferences(String preference) {
+        String[] split = preference.split("=");
+
+        String version = "";
+
+        if (split.length > 2) {
+            version = split[0];
+        }
+
+        return version;
+    }
+    /**
+     * This method gets the currently supported product names (in user-friendly format) from the
+     * string resources.
+     * @param context the Context of the method call, used to retrieve the resources
+     * @return ArrayList of product name Strings
+     */
+    public static ArrayList<String> getProductNames(Context context) {
+        ArrayList<String> productNames = new ArrayList<>(Arrays.asList(context.getResources().getStringArray(R.array.product_names_friendly)));
+
+        return productNames;
+    }
+
+    public static ArrayList<String> getProductRxStrings(Context context) {
+        ArrayList<String> productNames = new ArrayList<>(Arrays.asList(context.getResources().getStringArray(R.array.product_rx_strings)));
+
+        return productNames;
     }
 
     /* Method to show an indeterminate progress dialog during database operations */

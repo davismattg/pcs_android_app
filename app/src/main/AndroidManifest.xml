@@ -123,6 +123,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.prestoncinema.app.MainActivity" />
         </activity>
+        <activity android:name=".FirmwareInfoActivity"
+            android:label="@string/title_activity_firmware_info"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.prestoncinema.app.FirmwareUpdateActivity" />
+        </activity>
         <activity
             android:name=".AllLensListsActivity"
             android:label="@string/title_activity_lens"
@@ -194,9 +203,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.prestoncinema.app.settings.MqttUartSettingsActivity" />
         </activity>
-        <activity android:name=".FirmwareInfoActivity">
 
-        </activity>
     </application>
 
 </manifest>

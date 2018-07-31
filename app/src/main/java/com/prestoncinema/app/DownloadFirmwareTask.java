@@ -140,6 +140,11 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
         return deviceVersion.equals(webVersion);
     }
 
+    /**
+     * This method adds the downloaded firmware release info to the device's SharedPreferences.
+     * That makes it easy to view which files are present on the phone (and thus which files can
+     * be loaded without internet connection.
+     */
     private boolean addToFirmwarePref(Map<String, Map<String, PCSReleaseParser.ProductInfo>> firmwareMap) {
         boolean urlOK = false;
         boolean changesOK = false;
@@ -182,8 +187,9 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
 //            String changeValue = productName + "=" + changes;
 
             urlEditor.putString(entry.getKey(), hexValue);
-//            changesEditor.putString(entry.getKey(), changes);
+            changesEditor.putString(entry.getKey(), changes);
         }
+
         if (urlEditor.commit()) {
             Log.d(TAG, "URL pref written to successfully");
             urlOK = true;
