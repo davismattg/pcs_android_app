@@ -338,7 +338,7 @@ public class LensListFragment extends Fragment {
             Timber.d("update adapter from select all");
             lensListExpAdapter.updateSelected(selected);
 
-            lensListExpAdapter.expandGroups();
+            //lensListExpAdapter.expandGroups();
 
             updateNumLensesChecked();
         }

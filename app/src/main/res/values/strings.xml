@@ -110,10 +110,15 @@
     <string name="title_activity_main_colored"><font fgcolor="#FFFFFF">Preston </font><font fgcolor="#FF533D">Cinema </font><font fgcolor="#FFFFFF">Systems</font></string>
     <string name="firmware_button">Firmware Updates</string>
     <string name="lenses_button">Lens Management</string>
-    <string name="scanning">Scanning for PCS Bluetooth Modules...</string>
-    <string name="swipe_to_refresh_devices">No modules found\n\nSwipe down to refresh list</string>
+    <string name="scanning">Scanning...</string>
+    <string name="swipe_to_refresh_devices">Pull to refresh</string>
     <string name="disconnected">Disconnected</string>
     <string name="connected">Connected</string>
+    <string name="connect">Connect</string>
+    <string name="connecting">Connecting to module...</string>
+    <string name="disconnecting">Disconnecting from module...</string>
+    <string name="disconnect">Disconnect</string>
+
     <!-- Scan Help Activity -->
     <string name="title_activity_mainhelp">Help</string>
 
@@ -147,8 +152,11 @@
     <string name="update_dxl">1) Power down DXL camera\n2) Hold down Reset/Motor Cal button on module\n3) Power on camera\n4) When module has booted up (radio channel number visible), release Reset/Motor Cal button</string>
 
     <string name="searching_for_unit">Searching for unit...\n\nMake sure unit is in programming mode</string>
+    <string name="downloading_firmware_versions">Downloading the latest firmware versions...</string>
+    <string name="no_modules_detected">No modules detected</string>
     <string name="no_updater_found_title">No Bluetooth Module connected</string>
     <string name="no_updater_found">You must connect to a module before you can update firmware.</string>
+    <string name="update_canceled_warning">Please cycle power on your Preston unit before using it or trying another update.</string>
 
     <string-array name="product_names">
         <item>"Hand3\n"</item>

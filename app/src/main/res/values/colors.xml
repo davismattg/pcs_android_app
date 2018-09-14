@@ -16,7 +16,7 @@
     <item name="medGray" type="color">#FF555555</item>
     <item name="dividerGray" type="color">#FF66757A</item>
     <!--<item name="dividerGray" type="color">#FF636363</item>-->
-    <!--<item name="lightMedGray" type="color">#FF919191</item>-->
+    <item name="medLightMedGray" type="color">#FFB3B3B3</item>
     <item name="disabledGray" type="color">#FF969696</item>
     <item name="lightMedGray" type="color">#FFD6D6D6</item>
     <item name="lightGray" type="color">#FFCCCCCC</item>
@@ -26,7 +26,7 @@
     <item name="white" type="color">#FFFFFFFF</item>
     <item name="black" type="color">#FF000000</item>
     <item name="altWhite" type="color">#FFCCFF00</item>
-    <item name="bluetoothBlue" type="color">#FF0000CC</item>
+    <item name="bluetoothBlue" type="color">#FF4444FF</item>
     <!--<item name="newGreen" type="color">#FF3DCC3D</item>-->
     <item name="newGreen" type="color">#FF53AA3D</item>
     <item name="cancelRed" type="color">#FFCC3333</item>

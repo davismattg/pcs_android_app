@@ -226,8 +226,14 @@ public class DatabaseHelper {
                         // record found in database, so retrieve it
                         else {
                             LensEntity foundLens = database.lensDao().getLensByAttributes(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
-                            lensId = foundLens.getId();
-                            Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
+                            if (foundLens != null) {
+                                lensId = foundLens.getId();
+                                Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
+                            }
+                            else {
+                                lensId = database.lensDao().insert(lens);
+                                Timber.d("no match by lens params, inserting into db");
+                            }
                         }
 
                         allIds.add(lensId);
@@ -307,8 +313,14 @@ public class DatabaseHelper {
                     // record found in database, so retrieve it
                     else {
                         LensEntity foundLens = database.lensDao().getLensByAttributes(lens.getManufacturer(), lens.getSeries(), lens.getFocalLength1(), lens.getFocalLength2(), lens.getSerial(), lens.getNote());
-                        lensId = foundLens.getId();
-                        Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
+                        if (foundLens != null) {
+                            lensId = foundLens.getId();
+                            Timber.d("duplicate lens detected, retrieving from DB (ID = " + lensId + ")");
+                        }
+                        else {
+                            lensId = database.lensDao().insert(lens);
+                            Timber.d("no match by lens params, inserting into db");
+                        }
                     }
 
                     // add each lens' ID into the HashMap so we can create the join entries later

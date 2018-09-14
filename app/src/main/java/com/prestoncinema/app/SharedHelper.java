@@ -405,13 +405,14 @@ public class SharedHelper {
     }
 
     /* Method to build a LensEntity from the data string obtained from HU3 or a file */
-    // TODO: use StripChars to eliminate the index nonsense in this method
     public static LensEntity buildLensFromDataString(String data) {
         /* Initialize the Lens object that will store all the info about this lens */
         LensEntity lensObject = new LensEntity();
 
+        // strip the leading STX char off if it's present
         String line = checkLensChars(data);
 
+        // StringBuilder used to create the new lens dataString
         StringBuilder lineBuilder = new StringBuilder(line);
 
         byte[] bytes = line.getBytes();
@@ -467,23 +468,23 @@ public class SharedHelper {
 
         int noteBegin;
         String lensNote;
-        if (convertedSerial.length() > 0 && lensName.contains(convertedSerial)) {                                                         // serial string present, look for it in the lens name
-            noteBegin = lensName.indexOf(convertedSerial) + convertedSerial.length();               // set the tag to separate the lens serial and note
-        }
-        else {
-            noteBegin = lensName.indexOf("mm") + 2;                                                 // no serial present, so anything after "mm" is considered the note
-        }
 
-        lensNote = lensName.substring(noteBegin).trim();                                            // grab the note using the tag determined above
-        lensObject.setNote(lensNote);                                                               // set the note property of the lens object
+        noteBegin = lensName.indexOf("mm") + 2;                                                 // no serial present, so anything after "mm" is considered the note
+
+        // remove the serial from the note
+        lensNote = lensName.substring(noteBegin).trim().replace(convertedSerial, "");                                            // grab the note using the tag determined above
+
+        if (!lensNote.equals(convertedSerial)) {
+            lensObject.setNote(lensNote);                                                               // set the note property of the lens object
+        }
 
         /* Data String (raw String that gets sent to HU3 */
         lensObject.setDataString(lineBuilder.toString());
 
         /* isPrime */
-        lensObject.setIsPrime(SharedHelper.isPrime(lensObject.getSeries()));
+        lensObject.setIsPrime(isPrime(lensObject.getSeries()));
 
-        /* Checked attribute TODO: make sure this pulls the value from DB correctly */
+        /* Checked attribute */
         lensObject.setChecked(false);
 
         return lensObject;

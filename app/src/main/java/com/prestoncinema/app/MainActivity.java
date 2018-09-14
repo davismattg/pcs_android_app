@@ -1,8 +1,6 @@
 package com.prestoncinema.app;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -21,7 +19,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -31,7 +28,6 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.PopupMenu;
 import android.text.Html;
 import android.text.Spanned;
 import android.util.Log;
@@ -41,20 +37,14 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -69,7 +59,6 @@ import com.prestoncinema.ble.BleUtils;
 import com.prestoncinema.ui.utils.DialogUtils;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,7 +75,7 @@ import static android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 public class MainActivity extends AppCompatActivity implements BleManager.BleManagerListener, BleUtils.ResetBluetoothAdapterListener, FirmwareUpdater.FirmwareUpdaterListener {
     // Constants
     private final static String TAG = MainActivity.class.getSimpleName();
-    private final static long kMinDelayToUpdateUI = 200;    // in milliseconds
+    private final static long kMinDelayToUpdateUI = 1500;    // in milliseconds
     private static final String kGenericAttributeService = "00001801-0000-1000-8000-00805F9B34FB";
     private static final String kServiceChangedCharacteristic = "00002A05-0000-1000-8000-00805F9B34FB";
 
@@ -107,24 +96,17 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private AlertDialog firmwareUpdateAlertDialog;
     private ListView mScannedDevicesListView;
     private BLEModuleListViewAdapter mScannedDevicesAdapter;
-    private TextView mConnectedTextView;
+    //private TextView mConnectedTextView;
     private long mLastUpdateMillis;
     private TextView mNoDevicesTextView;
-    private TextView mDevicesFoundTextView;
+//    private TextView mDevicesFoundTextView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private ProgressDialog pDialog;
     public static final int progress_bar_type = 0;
 
     private AlertDialog mConnectingDialog;
-    private View mFiltersPanelView;
-    private ImageView mFiltersExpandImageView;
-    private ImageButton mFiltersClearButton;
-    private TextView mFiltersTitleTextView;
-    private EditText mFiltersNameEditText;
-    private SeekBar mFiltersRssiSeekBar;
-    private TextView mFiltersRssiValueTextView;
-    private CheckBox mFiltersUnnamedCheckBox;
-    private CheckBox mFiltersUartCheckBox;
+    private AlertDialog connectingDialog;
+    private Button connectedButton;
 
     // Data
     private BleManager mBleManager;
@@ -135,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 //    private Context mContext;
 //    private DownloadTask mDownloadTask;
 
+    private BluetoothDevice currentDevice;
     private ArrayList<BluetoothDeviceData> mScannedDevices;
     private BluetoothDeviceData mSelectedDeviceData;
     private Class<?> mComponentToStartWhenConnected;
@@ -150,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     private boolean isConnected = false;
 
-    private boolean autoConnect;
+    private boolean autoConnect = false;
     private boolean notifyFirmwareUpdate;
     private boolean rememberDevice;
 
@@ -167,12 +150,11 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Timber.d("onCreate -------------------");
         firmwareUpdateChangesAdapter = new ArrayAdapter<>(MainActivity.this, R.layout.firmware_change_list_item);
 
         fullTitle = getResources().getString(R.string.title_activity_main_colored);
         setTitle(fullTitle);
-
-//        showDebugDBAddressLogToast(getApplicationContext());
 
         // Get the intent that started the activity. If it was launched from firmware update notification,
         // prepare the alert dialog to the user showing the changes for that version.
@@ -216,28 +198,31 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             mScannedDevicesListView.setAdapter(mScannedDevicesAdapter);
         }
 
-        mConnectedTextView = findViewById(R.id.ConnectedTextView);
-        registerForContextMenu(mConnectedTextView);
+        //mConnectedTextView = findViewById(R.id.ConnectedTextView);
+        //registerForContextMenu(mConnectedTextView);
 
         BluetoothDevice device = mBleManager.getConnectedDevice();
         if (device != null) {
-            updateConnectedTextView(isConnected, device.getName());
+            updateConnectedButton(isConnected, device.getName(), false);
         }
         else {
-            updateConnectedTextView(isConnected, "");
+            updateConnectedButton(isConnected, "", false);
         }
 
-        mNoDevicesTextView = findViewById(R.id.noDevicesTextView);
-        mDevicesFoundTextView =  findViewById(R.id.devicesFoundTextView);
+        mNoDevicesTextView = findViewById(R.id.noModulesDetectedTextView);
+//        mDevicesFoundTextView =  findViewById(R.id.devicesFoundTextView);
 
         mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh() {
                 mScannedDevices.clear();
-                if (!isConnected) {
-                    startScan(null);
+                if (mBleManager != null) {
+                    mBleManager.disconnect();
                 }
+//                if (!isConnected) {
+                    startScan(null);
+//                }
 
                 mSwipeRefreshLayout.postDelayed(new Runnable() {
                     @Override
@@ -248,16 +233,16 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
         });
 
-        if (isConnected) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mSwipeRefreshLayout.setVisibility(View.GONE);
-                    mDevicesFoundTextView.setVisibility(View.GONE);
-//                    swipeRefreshTextView.setVisibility(View.GONE);
-                }
-            });
-        }
+//        if (isConnected) {
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    mSwipeRefreshLayout.setVisibility(View.GONE);
+//                    mDevicesFoundTextView.setVisibility(View.GONE);
+////                    swipeRefreshTextView.setVisibility(View.GONE);
+//                }
+//            });
+//        }
 
 
 //        SharedPreferences preferences = getSharedPreferences(kPreferences, MODE_PRIVATE);
@@ -268,7 +253,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
             // Setting to autoconnect to remembered devices
-            autoConnect = sharedPreferences.getBoolean("pref_remember_and_autoconnect", true);
+            autoConnect = sharedPreferences.getBoolean("pref_remember_and_autoconnect", false);
 
             // Setting to remember devices upon connection
             rememberDevice = sharedPreferences.getBoolean("pref_remember_device", true);
@@ -392,11 +377,25 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         Timber.d("onResume - connected: " + isConnected);
 
         BluetoothDevice device = mBleManager.getConnectedDevice();
+
         if (device != null) {
-            updateConnectedTextView(isConnected, device.getName());
+            BluetoothDeviceData deviceData;
+            deviceData = new BluetoothDeviceData();
+            deviceData.device = device;
+            deviceData.rssi = 127;
+
+            if (currentDevice == null) {
+                mScannedDevices.clear();
+                mScannedDevices.add(deviceData);
+                currentDevice = device;
+                mScannedDevicesAdapter.notifyDataSetChanged();
+                updateConnectedButton(isConnected, device.getName(), false);
+            }
         }
+
         else {
-            updateConnectedTextView(isConnected, "");
+            updateConnectedButton(isConnected, "", false);
+            autostartScan();
         }
 
         // Set listener
@@ -486,26 +485,30 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     private void autostartScan() {
         Timber.d("autoStartScan() called -------------------");
+//        mScannedDevices.clear();
+        mBleManager.disconnect();
+
         isConnected = false;
-        updateConnectedTextView(isConnected, "");
+        updateConnectedButton(false, "", false);
+
         if (BleUtils.getBleStatus(this) == BleUtils.STATUS_BLE_ENABLED) {
             // If was connected, disconnect
-            mBleManager.disconnect();
+            //mBleManager.disconnect();
 
-            // Force restart scanning
-            if (mScannedDevices != null) {      // Fixed a weird bug when resuming the app (this was null on very rare occasions even if it should not be)
-                mScannedDevices.clear();
-            }
+//            // Force restart scanning
+//            if (mScannedDevices != null) {      // Fixed a weird bug when resuming the app (this was null on very rare occasions even if it should not be)
+//                mScannedDevices.clear();
+//            }
 
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mSwipeRefreshLayout.setVisibility(View.VISIBLE);
-                    mDevicesFoundTextView.setVisibility(View.VISIBLE);
-//                    swipeRefreshTextView.setVisibility(View.VISIBLE);
-//                    mDevicesScrollView.setVisibility(View.VISIBLE);
-                }
-            });
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    mSwipeRefreshLayout.setVisibility(View.VISIBLE);
+//                    mDevicesFoundTextView.setVisibility(View.VISIBLE);
+////                    swipeRefreshTextView.setVisibility(View.VISIBLE);
+////                    mDevicesScrollView.setVisibility(View.VISIBLE);
+//                }
+//            });
             startScan(null);
         }
     }
@@ -520,7 +523,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         }
 
         SharedPreferences.Editor sharedPrefEditor = getSharedPreferences("connectedStatus", MODE_PRIVATE).edit();
-        sharedPrefEditor.putBoolean("connected", true);
+        sharedPrefEditor.putBoolean("connected", isConnected);
         sharedPrefEditor.apply();
         Timber.d("sharedPref - connected = " + getSharedPreferences("connectedStatus", MODE_PRIVATE).getBoolean("connected", false));
 
@@ -542,6 +545,13 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             mConnectingDialog.cancel();
             mConnectingDialog = null;
         }
+
+        if (connectingDialog != null) {
+            connectingDialog.cancel();
+            connectingDialog = null;
+        }
+
+        currentDevice = null;
 
         super.onStop();
     }
@@ -589,6 +599,13 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         if (mConnectingDialog != null) {
             mConnectingDialog.cancel();
         }
+
+        if (connectingDialog != null) {
+            connectingDialog.cancel();
+            connectingDialog = null;
+        }
+
+        currentDevice = null;
 
         super.onDestroy();
     }
@@ -702,102 +719,102 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
 
     // region Filters
-    private void openFiltersPanel(final boolean isOpen, boolean animated) {
-        SharedPreferences.Editor preferencesEditor = getSharedPreferences(kPreferences, MODE_PRIVATE).edit();
-        preferencesEditor.putBoolean(kPreferences_filtersPanelOpen, isOpen);
-        preferencesEditor.apply();
+//    private void openFiltersPanel(final boolean isOpen, boolean animated) {
+//        SharedPreferences.Editor preferencesEditor = getSharedPreferences(kPreferences, MODE_PRIVATE).edit();
+//        preferencesEditor.putBoolean(kPreferences_filtersPanelOpen, isOpen);
+//        preferencesEditor.apply();
+//
+//        mFiltersExpandImageView.setImageResource(isOpen ? R.drawable.ic_expand_less_black_24dp : R.drawable.ic_expand_more_black_24dp);
+//
+//        mFiltersPanelView.setVisibility(isOpen ? View.VISIBLE : View.GONE);
+//
+//        mFiltersPanelView.animate()
+//                .alpha(isOpen ? 1.0f : 0)
+//                .setDuration(300)
+//                .setListener(new AnimatorListenerAdapter() {
+//                    @Override
+//                    public void onAnimationEnd(Animator animation) {
+//                        super.onAnimationEnd(animation);
+//                        mFiltersPanelView.setVisibility(isOpen ? View.VISIBLE : View.GONE);
+//                    }
+//                });
+//
+//    }
 
-        mFiltersExpandImageView.setImageResource(isOpen ? R.drawable.ic_expand_less_black_24dp : R.drawable.ic_expand_more_black_24dp);
+//    public void onClickExpandFilters(View view) {
+//        SharedPreferences preferences = getSharedPreferences(kPreferences, MODE_PRIVATE);
+//        boolean filtersIsPanelOpen = preferences.getBoolean(kPreferences_filtersPanelOpen, false);
+//
+//        openFiltersPanel(!filtersIsPanelOpen, true);
+//    }
 
-        mFiltersPanelView.setVisibility(isOpen ? View.VISIBLE : View.GONE);
+//    public void onClickRemoveFilters(View view) {
+//        mPeripheralList.setDefaultFilters();
+//        mFiltersNameEditText.setText(mPeripheralList.getFilterName());
+//        setRssiSliderValue(mPeripheralList.getFilterRssiValue());
+//        mFiltersUnnamedCheckBox.setChecked(mPeripheralList.isFilterUnnamedEnabled());
+//        mFiltersUartCheckBox.setChecked(mPeripheralList.isFilterOnlyUartEnabled());
+//        updateFilters();
+//    }
 
-        mFiltersPanelView.animate()
-                .alpha(isOpen ? 1.0f : 0)
-                .setDuration(300)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        super.onAnimationEnd(animation);
-                        mFiltersPanelView.setVisibility(isOpen ? View.VISIBLE : View.GONE);
-                    }
-                });
-
-    }
-
-    public void onClickExpandFilters(View view) {
-        SharedPreferences preferences = getSharedPreferences(kPreferences, MODE_PRIVATE);
-        boolean filtersIsPanelOpen = preferences.getBoolean(kPreferences_filtersPanelOpen, false);
-
-        openFiltersPanel(!filtersIsPanelOpen, true);
-    }
-
-    public void onClickRemoveFilters(View view) {
-        mPeripheralList.setDefaultFilters();
-        mFiltersNameEditText.setText(mPeripheralList.getFilterName());
-        setRssiSliderValue(mPeripheralList.getFilterRssiValue());
-        mFiltersUnnamedCheckBox.setChecked(mPeripheralList.isFilterUnnamedEnabled());
-        mFiltersUartCheckBox.setChecked(mPeripheralList.isFilterOnlyUartEnabled());
-        updateFilters();
-    }
-
-    public void onClickFilterNameSettings(View view) {
-        PopupMenu popup = new PopupMenu(this, view);
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                boolean processed = true;
-                switch (item.getItemId()) {
-                    case R.id.scanfilter_name_contains:
-                        mPeripheralList.setFilterNameExact(false);
-                        break;
-                    case R.id.scanfilter_name_exact:
-                        mPeripheralList.setFilterNameExact(true);
-                        break;
-                    case R.id.scanfilter_name_sensitive:
-                        mPeripheralList.setFilterNameCaseInsensitive(false);
-                        break;
-                    case R.id.scanfilter_name_insensitive:
-                        mPeripheralList.setFilterNameCaseInsensitive(true);
-                        break;
-                    default:
-                        processed = false;
-                        break;
-                }
-                updateFilters();
-                return processed;
-            }
-        });
-        MenuInflater inflater = popup.getMenuInflater();
-        Menu menu = popup.getMenu();
-        inflater.inflate(R.menu.menu_scan_filters_name, menu);
-        final boolean isFilterNameExact = mPeripheralList.isFilterNameExact();
-        menu.findItem(isFilterNameExact ? R.id.scanfilter_name_exact : R.id.scanfilter_name_contains).setChecked(true);
-        final boolean isFilterNameCaseInsensitive = mPeripheralList.isFilterNameCaseInsensitive();
-        menu.findItem(isFilterNameCaseInsensitive ? R.id.scanfilter_name_insensitive : R.id.scanfilter_name_sensitive).setChecked(true);
-        popup.show();
-    }
+//    public void onClickFilterNameSettings(View view) {
+//        PopupMenu popup = new PopupMenu(this, view);
+//        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+//            @Override
+//            public boolean onMenuItemClick(MenuItem item) {
+//                boolean processed = true;
+//                switch (item.getItemId()) {
+//                    case R.id.scanfilter_name_contains:
+//                        mPeripheralList.setFilterNameExact(false);
+//                        break;
+//                    case R.id.scanfilter_name_exact:
+//                        mPeripheralList.setFilterNameExact(true);
+//                        break;
+//                    case R.id.scanfilter_name_sensitive:
+//                        mPeripheralList.setFilterNameCaseInsensitive(false);
+//                        break;
+//                    case R.id.scanfilter_name_insensitive:
+//                        mPeripheralList.setFilterNameCaseInsensitive(true);
+//                        break;
+//                    default:
+//                        processed = false;
+//                        break;
+//                }
+//                updateFilters();
+//                return processed;
+//            }
+//        });
+//        MenuInflater inflater = popup.getMenuInflater();
+//        Menu menu = popup.getMenu();
+//        inflater.inflate(R.menu.menu_scan_filters_name, menu);
+//        final boolean isFilterNameExact = mPeripheralList.isFilterNameExact();
+//        menu.findItem(isFilterNameExact ? R.id.scanfilter_name_exact : R.id.scanfilter_name_contains).setChecked(true);
+//        final boolean isFilterNameCaseInsensitive = mPeripheralList.isFilterNameCaseInsensitive();
+//        menu.findItem(isFilterNameCaseInsensitive ? R.id.scanfilter_name_insensitive : R.id.scanfilter_name_sensitive).setChecked(true);
+//        popup.show();
+//    }
 
 
-    private void updateFiltersTitle() {
-        final String filtersTitle = mPeripheralList.filtersDescription();
-        mFiltersTitleTextView.setText(filtersTitle != null ? String.format(Locale.ENGLISH, getString(R.string.scan_filters_title_filter_format), filtersTitle) : getString(R.string.scan_filters_title_nofilter));
-        mFiltersClearButton.setVisibility(mPeripheralList.isAnyFilterEnabled() ? View.VISIBLE : View.GONE);
-    }
+//    private void updateFiltersTitle() {
+//        final String filtersTitle = mPeripheralList.filtersDescription();
+//        mFiltersTitleTextView.setText(filtersTitle != null ? String.format(Locale.ENGLISH, getString(R.string.scan_filters_title_filter_format), filtersTitle) : getString(R.string.scan_filters_title_nofilter));
+//        mFiltersClearButton.setVisibility(mPeripheralList.isAnyFilterEnabled() ? View.VISIBLE : View.GONE);
+//    }
 
-    private void updateFilters() {
-        updateFiltersTitle();
-        mScannedDevicesAdapter.notifyDataSetChanged();
-    }
+//    private void updateFilters() {
+//        updateFiltersTitle();
+//        mScannedDevicesAdapter.notifyDataSetChanged();
+//    }
+//
+//    private void setRssiSliderValue(int value) {
+//        mFiltersRssiSeekBar.setProgress(-value);
+//        updateRssiValue();
+//    }
 
-    private void setRssiSliderValue(int value) {
-        mFiltersRssiSeekBar.setProgress(-value);
-        updateRssiValue();
-    }
-
-    private void updateRssiValue() {
-        final int value = -mFiltersRssiSeekBar.getProgress();
-        mFiltersRssiValueTextView.setText(String.format(Locale.ENGLISH, getString(R.string.scan_filters_rssi_value_format), value));
-    }
+//    private void updateRssiValue() {
+//        final int value = -mFiltersRssiSeekBar.getProgress();
+//        mFiltersRssiValueTextView.setText(String.format(Locale.ENGLISH, getString(R.string.scan_filters_rssi_value_format), value));
+//    }
 
     // endregion
 
@@ -874,11 +891,35 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
 
     private void connect(BluetoothDevice device, boolean knownDevice) {
-        Timber.d("connect above clicked");
+        Timber.d("connect method &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+
         boolean isConnecting = mBleManager.connect(this, device.getAddress(), knownDevice);
-//        if (isConnecting) {
-//            showConnectionStatus(true);
+
+//        if (!isConnected) {
+//            showConnectingDialog(isConnecting);
 //        }
+    }
+
+    /**
+     * Show a dialog while attempting to connect to the Bluetooth module
+     * @param connecting
+     */
+    private void showConnectingDialog(boolean connecting) {
+        Timber.d("show\n\nconnecting\n\ndialog\n\n");
+
+        final String connStr = connecting ? getResources().getString(R.string.connecting) : getResources().getString(R.string.disconnecting);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        final View connectingDialogView = inflater.inflate(R.layout.dialog_connecting, null);
+        TextView strTextView = connectingDialogView.findViewById(R.id.connectingTextView);
+        strTextView.setText(connStr);
+
+        connectingDialog = builder.setView(connectingDialogView)
+            .setCancelable(true)
+            .create();
+        connectingDialog.show();
     }
 
     private void startHelp() {
@@ -976,11 +1017,11 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         Timber.d("filteredPeripherals: " + filteredPeripherals.toString());
 
         if (scannedDeviceIndex < filteredPeripherals.size()) {
-//            mSelectedDeviceData = filteredPeripherals.get(scannedDeviceIndex);
             mSelectedDeviceData = mScannedDevices.get(scannedDeviceIndex);
             Timber.d("filteredPeripherals device: " + mSelectedDeviceData.getName());
             BluetoothDevice device = mSelectedDeviceData.device;
             mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
+
             connect(device, false);
         } else {
             Log.w(TAG, "onClickDeviceConnect tag does not exist: " + scannedDeviceIndex);
@@ -1010,21 +1051,59 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private void startScan(final UUID[] servicesToScan) {
         Timber.d("startScan");
 
+        //isConnected = false;
+
         // Stop current scanning (if needed)
         stopScanning();
 
         // Configure scanning
         BluetoothAdapter bluetoothAdapter = BleUtils.getBluetoothAdapter(getApplicationContext());
 
+//        // hack to make devices disappear from the list if they're no longer present
+//        if (mScannedDevices != null) {
+//            mScannedDevices.clear();
+//
+//            if (mScannedDevicesAdapter != null) {
+//                mScannedDevicesAdapter.notifyDataSetChanged();
+//            }
+//        }
+
         // check if Bluetooth adapter is enabled and ready to go
         if (BleUtils.getBleStatus(this) != BleUtils.STATUS_BLE_ENABLED) {
             Log.w(TAG, "startScan: BluetoothAdapter not initialized or unspecified address.");
         }
         else {              // it's good to scan
+            // clear the list of scanned devices and reset the UI
+//            if (mScannedDevices != null) {
+//                mScannedDevices.clear();
+//                mScannedDevicesAdapter.notifyDataSetChanged();
+//
+//                updateUI();
+//            }
+
             mScanner = new BleDevicesScanner(bluetoothAdapter, servicesToScan, new BluetoothAdapter.LeScanCallback() {          // initialize the scanner
                 @Override
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
+                    // hack to make devices disappear from the list if they're no longer present
+                    long currentMillis = SystemClock.uptimeMillis();
+//                    if (currentMillis - mLastUpdateMillis > kMinDelayToUpdateUI) {          // Avoid updating when not a new device has been found and the time from the last update is really short to avoid updating UI so fast that it will become unresponsive
+//                        mLastUpdateMillis = currentMillis;
+//                        if (mScannedDevices != null) {
+//                            mScannedDevices.clear();
+//
+//                            updateUI();
+////                            if (mScannedDevicesAdapter != null) {
+////                                mScannedDevicesAdapter.notifyDataSetChanged();
+////                            }
+//                        }
+//                    }
+
                     final String deviceName = device.getName();                                                                 // get scanned device name
+
+                    if (deviceName != null) {
+                        Timber.d("found device: " + deviceName);
+                    }
+
                     if (deviceName != null && (deviceName.contains("Preston") || deviceName.contains("PCS"))) {                                            // check for the PCS string to only show applicable devices
                         boolean knownDevice = checkForDeviceInPreferences(device.getAddress(), deviceName);                 // check if the device address is already stored in SharedPreferences
                         if (knownDevice && autoConnect) {                                                                                  // if remembered, connect to it
@@ -1036,8 +1115,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                         }
 
                         BluetoothDeviceData previouslyScannedDeviceData = null;
-                        if (mScannedDevices == null)
+                        if (mScannedDevices == null) {
                             mScannedDevices = new ArrayList<>();       // Safeguard
+                        }
+//                        else {
+//                            mScannedDevices.clear();
+//                        }
 
                         // Check that the device was not previously found
                         for (BluetoothDeviceData deviceData : mScannedDevices) {
@@ -1062,7 +1145,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                         decodeScanRecords(deviceData);
 
                         // Update device data
-                        long currentMillis = SystemClock.uptimeMillis();
+
                         if (previouslyScannedDeviceData == null || currentMillis - mLastUpdateMillis > kMinDelayToUpdateUI) {          // Avoid updating when not a new device has been found and the time from the last update is really short to avoid updating UI so fast that it will become unresponsive
                             mLastUpdateMillis = currentMillis;
 
@@ -1237,23 +1320,21 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
 
     private void updateUI() {
+        if (mScannedDevices != null) {
+            Timber.d("updating UI - num of devices: " + mScannedDevices.size());
+        }
+
         // Scan button
-        final boolean isScanning = mScanner != null && mScanner.isScanning();
         final boolean isListEmpty = mScannedDevices == null || mScannedDevices.size() == 0;
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                mScanButton.setText(getString(isScanning ? R.string.scan_scanbutton_scanning : R.string.scan_scanbutton_scan));
 
-                // Show list and hide "no menu_devices" label
-                mNoDevicesTextView.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
-//                swipeRefreshTextView.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
-//                mDevicesScrollView.setVisibility(isListEmpty ? View.GONE : View.VISIBLE);
-//            }
-//        });
+        // Show list and hide "no menu_devices" label
+        if (mNoDevicesTextView != null) {
+            mNoDevicesTextView.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
+        }
 
-        // menu_devices list
-        mScannedDevicesAdapter.notifyDataSetChanged();
+        if (mScannedDevicesAdapter != null) {
+            mScannedDevicesAdapter.notifyDataSetChanged();
+        }
     }
 
     // region ResetBluetoothAdapterListener
@@ -1290,17 +1371,20 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     // region BleManagerListener
     @Override
     public void onConnected() {
-        Timber.d("onConnected BleManagerListener reached");
+        Timber.d("\n\n-----------------------------------\nonConnected\n\n-----------------------------------");
 
         isConnected = true;
-        runOnUiThread(new Runnable() {
-              @Override
-              public void run() {
-                  mSwipeRefreshLayout.setVisibility(View.GONE);
-                  mDevicesFoundTextView.setVisibility(View.GONE);
-//                  swipeRefreshTextView.setVisibility(View.GONE);
-              }
-          });
+
+
+        if (connectingDialog != null) {
+            Timber.d("dismissing connectingDialog");
+            connectingDialog.cancel();
+            connectingDialog = null;
+        }
+
+        else {
+            Timber.d("connectingDialog == null");
+        }
 
         boolean isScanning = mScanner != null && mScanner.isScanning();
 
@@ -1318,8 +1402,23 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         }
 
         if (mBleManager != null && mBleManager.getConnectedDevice() != null) {
-            updateConnectedTextView(isConnected, mBleManager.getConnectedDevice().getName());
+            updateConnectedButton(isConnected, mBleManager.getConnectedDevice().getName(), true);
         }
+
+        currentDevice = mBleManager.getConnectedDevice();
+
+        mScannedDevices.clear();
+        BluetoothDeviceData connectedDeviceData = new BluetoothDeviceData();
+        connectedDeviceData.device = currentDevice;
+        connectedDeviceData.rssi = -1;
+        mScannedDevices.add(connectedDeviceData);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mScannedDevicesAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     @Override
@@ -1331,14 +1430,23 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         Timber.d("MainActivity onDisconnected called --------------------");
 
         isConnected = false;
-        updateConnectedTextView(isConnected, "");
+        updateConnectedButton(isConnected, "", true);
 
         int connStat = mBleManager.getState();                      // should be 0 for STATE_DISCONNECTED
         Timber.d("connection status: " + connStat);
 
         // if we're truly disconnected, start scanning again for new modules
         if (connStat == 0) {
-            mScannedDevices.remove(mSelectedDeviceData);
+            if (connectingDialog != null) {
+                connectingDialog.cancel();
+                connectingDialog = null;
+            }
+
+//            mScannedDevices.remove(mSelectedDeviceData);
+            mScannedDevices.clear();
+
+            currentDevice = null;
+
             boolean isScanning = mScanner != null && mScanner.isScanning();
             if (isScanning) {
                 stopScanning();
@@ -1434,30 +1542,37 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
     // endregion
 
-    private void updateConnectedTextView(boolean status, final String deviceName) {
-        Timber.d("updateConnectedTextView: status = " + status);
-        if (status) {
-            Timber.d("updateConnectedTextView true");
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mConnectedTextView.setText(deviceName);
-                    mConnectedTextView.setTextColor(Color.WHITE);
-                    mConnectedTextView.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.icon_connected, 0);
+    private void updateConnectedButton(boolean status, final String deviceName, final boolean showToast) {
+        Timber.d("update connected button, status: " + status + ", device name: " + deviceName);
+        Timber.d("scannedDevices: " + mScannedDevices.toString());
+
+        final String connectedString = getResources().getString(R.string.disconnect);
+        String disconnectedString = getResources().getString(R.string.connect);
+        final String statusString = status ? connectedString : disconnectedString;
+
+        String connectedToastString = "Connected to " + deviceName;
+        String disconnectedToastString = "Module disconnected";
+        final String toastString = status ? connectedToastString : disconnectedToastString;
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (connectedButton != null) {
+                    if (showToast) {
+                        SharedHelper.makeToast(MainActivity.this, toastString, Toast.LENGTH_LONG);
+                    }
+                    connectedButton.setText(statusString);
                 }
-            });
-        }
-        else {
-            Timber.d("updateConnectedTextView false");
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mConnectedTextView.setText("Disconnected");
-                    mConnectedTextView.setTextColor(0xFF666666);
-                    mConnectedTextView.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.icon_disconnected, 0);
+
+                // TODO: figure out why this keeps getting called (i think mBleManager.connect() keeps getting called)
+                if (connectingDialog != null) {
+                    connectingDialog.cancel();
+                    connectingDialog = null;
                 }
-            });
-        }
+
+                updateUI();
+            }
+        });
     }
 
     // region SoftwareUpdateManagerListener
@@ -2032,22 +2147,40 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             final String deviceName = data.getNiceName();
             nameTextView.setText(deviceName);
 
+            if (data.device == currentDevice) {
+                connectButton.setText(getResources().getString(R.string.disconnect));
+            }
+
             int rrsiDrawableResource = getDrawableIdForRssi(data.rssi);
             rssiImageView.setImageResource(rrsiDrawableResource);
 
-            connectButton.setOnTouchListener(new View.OnTouchListener() {
+            connectButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public boolean onTouch(View view, MotionEvent motionEvent) {
-                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        Timber.d("onTouch: Device name = " + deviceName);
-                        onClickDeviceConnect((int) connectButton.getTag());
-                        view.performClick();
-                        return true;
-                    }
+                public void onClick(View view) {
+                    Timber.d("connect button clicked");
+                    connectedButton = connectButton;
 
-                    return false;
+                    if (isConnected) {
+                        mBleManager.disconnect();
+                    }
+                    else {
+                        onClickDeviceConnect((int) connectButton.getTag());
+                    }
                 }
             });
+//            connectButton.setOnTouchListener(new View.OnTouchListener() {
+//                @Override
+//                public boolean onTouch(View view, MotionEvent motionEvent) {
+//                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+//                        Timber.d("onTouch: Device name = " + deviceName);
+//                        onClickDeviceConnect((int) connectButton.getTag());
+//                        view.performClick();
+//                        return true;
+//                    }
+//
+//                    return false;
+//                }
+//            });
 
             return convertView;
         }
@@ -2294,16 +2427,16 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             });
             */
 
-            holder.connectButton.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        onClickDeviceConnect(groupPosition);
-                        return true;
-                    }
-                    return false;
-                }
-            });
+//            holder.connectButton.setOnTouchListener(new View.OnTouchListener() {
+//                @Override
+//                public boolean onTouch(View v, MotionEvent event) {
+//                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+//                        onClickDeviceConnect(groupPosition);
+//                        return true;
+//                    }
+//                    return false;
+//                }
+//            });
 
 
             BluetoothDeviceData deviceData = mFilteredPeripherals.get(groupPosition);

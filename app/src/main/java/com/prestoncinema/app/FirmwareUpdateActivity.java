@@ -115,7 +115,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private int currentMode;
 
     private int TIMER_DELAY = 500;
-    private int TIMER_INTERVAL = 1000;
+    private int TIMER_INTERVAL = 1500;
 
     private String productRxString = "";
 //    private String pcsPath = "https://firebasestorage.googleapis.com/v0/b/preston-42629.appspot.com/o/firmware_app%2Ffirmware.xml?alt=media&token=85f014ae-9252-4e69-b1f4-9e3993a57451";
@@ -133,9 +133,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     private MqttManager mMqttManager;
 
     private AlertDialog updateDialog;
+    private AlertDialog downloadingFirmwareDialog;
     private AlertDialog searchingForUnitDialog;
     private AlertDialog noUpdaterFoundDialog;
-    private AlertDialog updateCancelledDialog;
+    private AlertDialog updateCanceledDialog;
 
 //    private ProgressDialog mProgressDialog;
     private TextView mConnectedTextView;
@@ -225,8 +226,11 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         }
 
         if (isConnected) {
-            // set up the module with baud rate = 57.6 kBaud (for some reason DXL doesn't output data when baudrate = 19.2k)
-            showSearchingForUnitDialog();
+            // show an alert progress dialog while the system gets the latest firmware files
+            showDownloadingFirmwareDialog();
+
+//             // set up the module with baud rate = 57.6 kBaud (for some reason DXL doesn't output data when baudrate = 19.2k)
+//            showSearchingForUnitDialog();
 
             currentMode = MODE_DATA;
             // check whether the module is in DATA or COMMAND mode
@@ -309,16 +313,25 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             mMqttManager.disconnect();
         }
 
-        // Retain data
-//        saveRetainedDataFragment();
+        if (downloadingFirmwareDialog != null) {
+            downloadingFirmwareDialog.dismiss();
+        }
+
+        if (searchingForUnitDialog != null) {
+            searchingForUnitDialog.dismiss();
+        }
+
+        if (updateDialog != null) {
+            updateDialog.dismiss();
+        }
+
+        if (mainTimerActive) {
+            mainTimer.cancel();
+            mainTimerActive = false;
+        }
 
         super.onDestroy();
     }
-
-//    public void dismissKeyboard(View view) {
-//        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-//        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-//    }
 
     /**
      * This method is a bit of a workaround for the DXL module. It doesn't output data if the BLE module's
@@ -326,10 +339,32 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
      */
     private void initializeBaudRate() {
         Timber.d("initializing baud rate");
+
+        // hide the dialog that was shown while fetching the latest firmware versions
+        if (downloadingFirmwareDialog != null) {
+            downloadingFirmwareDialog.dismiss();
+        }
+
+        if (!updateConfirmEntered) {
+            showSearchingForUnitDialog();
+        }
+
         if (mainTimerNeeded) {
             Timber.d("main timer needed");
             startTimer(TIMER_DELAY, TIMER_INTERVAL);
         }
+    }
+
+    /**
+     * Show the user a progress dialog while the system is checking for the latest firmware files
+     */
+    private void showDownloadingFirmwareDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(FirmwareUpdateActivity.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        final View downloadingFirmwareDialogView = inflater.inflate(R.layout.dialog_downloading_firmware, null);
+        downloadingFirmwareDialog = builder.setView(downloadingFirmwareDialogView).create();
+        downloadingFirmwareDialog.show();
     }
 
     /**
@@ -340,33 +375,48 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         LayoutInflater inflater = getLayoutInflater();
 
         final View searchingForUnitDialogView = inflater.inflate(R.layout.dialog_searching_for_unit, null);
-        searchingForUnitDialog = builder.setView(searchingForUnitDialogView).create();
+        searchingForUnitDialog = builder.setView(searchingForUnitDialogView)
+//            .setPositiveButton("Switch modes", new DialogInterface.OnClickListener() {
+//                @Override
+//                public void onClick(DialogInterface dialogInterface, int i) {
+//                    uartSendData("+++", false);
+//                }
+//            })
+            .create();
+
         searchingForUnitDialog.show();
     }
 
+    /**
+     * Show the user an alert if there's no bluetooth module connected
+     */
     private void showNoUpdaterFoundDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(FirmwareUpdateActivity.this);
         LayoutInflater inflater = getLayoutInflater();
 
-        final View showNoUpdaterFoundDialogView = inflater.inflate(R.layout.dialog_no_updater_found, null);
-        noUpdaterFoundDialog = builder.setView(showNoUpdaterFoundDialogView)
-//                .setPositiveButton("Got it", new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        noUpdaterFoundDialog.dismiss();
-//                    }
-//                })
-//                .setNegativeButton("Scan", new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        Timber.d("go back to MainActivity to scan for modules");
-//                        noUpdaterFoundDialog.dismiss();
-//                    }
-//                })
-//                .setTitle(getResources().getString(R.string.no_updater_found_title))
-                .create();
-
+        final View noUpdaterFoundDialogView = inflater.inflate(R.layout.dialog_no_updater_found, null);
+        noUpdaterFoundDialog = builder.setView(noUpdaterFoundDialogView).create();
         noUpdaterFoundDialog.show();
+    }
+
+
+    private void showUpdateCanceledDialog() {
+        Timber.d("show update canceled dialog");
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(FirmwareUpdateActivity.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        final View updateCanceledDialogView = inflater.inflate(R.layout.dialog_update_canceled, null);
+        updateCanceledDialog = builder.setView(updateCanceledDialogView)
+        .setTitle("Firmware update canceled")
+        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+            }
+        })
+        .create();
+
+        updateCanceledDialog.show();
     }
 
 
@@ -398,7 +448,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             data += "\n";
         }
 
-//        Timber.d("lastDataSent: " + data + "$$");
+        Timber.d("uartSendData: " + data + "$$");
 
         // Send to uart
         if (!wasReceivedFromMqtt || settings.getSubscribeBehaviour() == MqttSettings.kSubscribeBehaviour_Transmit) {
@@ -666,12 +716,21 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     @Override
     public void onDisconnected() {
         super.onDisconnected();
+        if (downloadingFirmwareDialog != null) {
+            downloadingFirmwareDialog.dismiss();
+        }
+
         if (searchingForUnitDialog != null) {
             searchingForUnitDialog.dismiss();
         }
 
         if (updateDialog != null) {
             updateDialog.dismiss();
+        }
+
+        if (mainTimerActive) {
+            mainTimer.cancel();
+            mainTimerActive = false;
         }
 
         Timber.d("Disconnected. Back to previous activity");
@@ -694,7 +753,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
                 String newRxData = buildRxPacket(bytes);
 //                Timber.d("newRxData: " + newRxData);
-                latestDataReceived = newRxData;
+//                latestDataReceived = newRxData;
 //                baudRateWait++;
 
                 if (newRxData.length() > 0) {
@@ -776,9 +835,9 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
     }
 
     private void processRxData(String text) {
-//        Timber.d("processRxData (" + text + "):\nprogramLoaded: " + programLoaded + "\nstartConnectionSetup: " + startConnectionSetup + "\nisConnectionReady: " +
-//                isConnectionReady + "\nlastDataSent: " + lastDataSent + "\nresponseExpected: " + responseExpected);
-        Timber.d("data: " + text);
+        Timber.d("processRxData (" + text + "):\nprogramLoaded: " + programLoaded + "\nstartConnectionSetup: " + startConnectionSetup + "\nisConnectionReady: " +
+                isConnectionReady + "\nlastDataSent: " + lastDataSent + "\nresponseExpected: " + responseExpected);
+//        Timber.d("data: " + text);
 
         // set the mode flag so the timer knows whether to send +++ or not when changing baud rates
         if (!isConnectionReady) {
@@ -792,13 +851,14 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                 currentMode = MODE_DATA;
             }
 
-            Timber.d("current mode: " + currentMode);
+            String modeString = currentMode == MODE_COMMAND ? "command" : "data";
+            Timber.d("current mode: " + modeString);
         }
 
         if (!programLoaded) {
             if (text.length() > 2) {
                 String productCheck = checkForProductString(text);
-//                Timber.d("productCheck = " + productCheck);
+                Timber.d("productCheck = " + productCheck);
 
                 if (productCheck.length() > 0) {
 //                    Timber.d("productRxString found before anything else");
@@ -807,7 +867,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                     productRxString = productCheck;
 
                     if (mainTimerActive) {
-//                        Timber.d("canceling main timer");
+                        Timber.d("canceling main timer");
                         mainTimer.cancel();
                         mainTimerActive = false;
                     }
@@ -1052,9 +1112,10 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
     // examine the UART response to implement handshake before programming and s19 file sending
     private void checkRxData(String text) {
-//        Timber.d("checkRxData - text = " + text + ", booleans: " + programLoaded + " and " + programMode);
+        Timber.d("checkRxData - text = " + text + ", booleans: " + programLoaded + " and " + programMode);
         if (programLoaded && programMode) {
             if (productNameArray.contains(text)) {
+                Timber.d("productNameArray contains text");
                 productDetected = convertProductString(text);
                 uartSendData("Y", false);
             }
@@ -1121,13 +1182,18 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             }
             else {
                 Timber.d("--------------- Unknown: " + text + "$$");
+                uartSendData("Y", false);
             }
         }
     }
 
     public void confirmUpdate(String ver) {
         updateConfirmEntered = true;
-        searchingForUnitDialog.dismiss();
+
+        if (searchingForUnitDialog != null) {
+            searchingForUnitDialog.dismiss();
+        }
+
         String currentVer;
         String[] verSplit = ver.split("V");
         if (verSplit.length > 1) {
@@ -1170,6 +1236,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                            @Override
                            public void onClick(DialogInterface dialogInterface, int i) {
+                               showUpdateCanceledDialog();
                            }
                        })
                        .setNeutralButton("Import...", new DialogInterface.OnClickListener() {
@@ -1228,6 +1295,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
                        updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(new View.OnClickListener() {
                            @Override
                            public void onClick(View view) {
+                               showUpdateCanceledDialog();
                                restoreDefaults();
                                updateDialog.dismiss();
                            }
@@ -1374,7 +1442,7 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
      * @param filePath the S19 file's location in the user's internal storage
      */
     public void loadProgramFile(String filePath) {
-//        Timber.d("loadProgramFile() entered: " + filePath);
+        Timber.d("loadProgramFile() entered: " + filePath);
         BufferedReader reader = null;
 
         fileArray.clear();
@@ -1388,11 +1456,14 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
             }
             if (fileArray.size() > 0) {
                 programLoaded = true;
+                Timber.d("programLoaded set to true");
 //                if (mProgressDialog != null) {
 //                    mProgressDialog.dismiss();
 //                }
             }
             else {
+                Timber.d("fileArray size = 0");
+
 //                if (mProgressDialog != null) {
 //                    mProgressDialog.dismiss();
 //                }
@@ -1506,21 +1577,24 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
 
 //                    if (baudRateWait >= packetsToWait) {
                         int currBaudRate = baudRateArray[baudRateIndex];
-                        String baudRateString = "AT+BAUDRATE=" + currBaudRate;
-                        Timber.d("()()()()()()() - Changing baud rate to " + currBaudRate + ". Last data: " + latestDataReceived);
+                        String newBaudRateString = "AT+BAUDRATE=" + currBaudRate;
+//                        Timber.d("()()()()()()() - Changing baud rate to " + currBaudRate + ". Last data: " + latestDataReceived);
 
+                        String baudRateStringToSend = buildBaudRateString(newBaudRateString, currentMode);
+
+                        uartSendData(baudRateStringToSend, false);
 
 //                        if (latestDataReceived.contains("1")) {
 //                            Timber.d("command mode detected, don't switch modes");
-                        if (currentMode == MODE_COMMAND) {
-                            uartSendData(baudRateString + "\n+++\n", false);
-                        }
-
-//                        else if (latestDataReceived.contains("0")) {
-                        else {
-//                            Timber.d("data mode detected, switch and send baud rate");
-                            uartSendData("+++\n" + baudRateString + "\n+++\n", false);
-                        }
+//                        if (currentMode == MODE_COMMAND) {
+//                            uartSendData(baudRateString + "\n+++", false);
+//                        }
+//
+////                        else if (latestDataReceived.contains("0")) {
+//                        else {
+////                            Timber.d("data mode detected, switch and send baud rate");
+//                            uartSendData("+++\n" + baudRateString + "\n+++", false);
+//                        }
 
 //                        else {
 //                            Timber.d("mode unknown, send +++");
@@ -1544,6 +1618,27 @@ public class FirmwareUpdateActivity extends UartInterfaceActivity implements Mqt
         timer.scheduleAtFixedRate(task, delay, interval);
     }
 
+    /**
+     * This method is used to form the correct string to change the baud rate, depending on which mode
+     * the module is currently in.
+     * @param str the AT command string to change the baud rate (AT+BAUDRATE=XXXXX)
+     * @param mode the current mode of the module
+     * @return String the formatted string to send via uartSendData
+     */
+    private String buildBaudRateString(String str, int mode) {
+        String pluses = "+++";
+        String newLine = "\n";
+        String outputString = "";
+        if (mode == MODE_COMMAND) {
+            outputString = str + newLine + pluses;
+        }
+
+        else {
+            outputString = pluses + newLine + str + newLine + pluses;
+        }
+
+        return outputString;
+    }
     private String bytesToText(byte[] bytes, boolean simplifyNewLine) {
         String text = new String(bytes, Charset.forName("UTF-8"));
         if (simplifyNewLine) {

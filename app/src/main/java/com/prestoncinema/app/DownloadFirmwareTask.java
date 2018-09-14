@@ -169,8 +169,6 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
 
             String changes = "";
 
-            Log.d(TAG, "productInfo Map: " + productMap.toString());
-
             for (Object key : versionKeys) {
                 versionNum = (String) key;
             }
@@ -180,7 +178,6 @@ public class DownloadFirmwareTask extends AsyncTask<String, Void, Map<String, Ma
                 productName = prodInfo.firmwareReleases.get(0).description;
                 internalHexFile = prodInfo.firmwareReleases.get(0).internalFileLocation;
                 changes = stringifyFirmwareChanges(prodInfo.firmwareReleases.get(0).changes);
-                Timber.d("changes: " + changes);
             }
 
             String hexValue = versionNum + "=" + internalHexFile + "=" + changes;

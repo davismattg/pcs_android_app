@@ -1770,7 +1770,7 @@ public class AllLensListsActivity extends UartInterfaceActivity implements MqttM
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                CharSequence toastText = "Disconnected from Preston Updater";
+                CharSequence toastText = "Module disconnected";
                 SharedHelper.makeToast(AllLensListsActivity.this, toastText, Toast.LENGTH_LONG);
             }
         });
